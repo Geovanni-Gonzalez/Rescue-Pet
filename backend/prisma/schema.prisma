@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  VETERINARIAN
+  VOLUNTEER
+  ADOPTER
+}
+
+enum PetStatus {
+  QUARANTINE
+  AVAILABLE
+  TREATMENT
+  ADOPTED
+  DECEASED
+}
+
+enum AdoptionRequestStatus {
+  RECEIVED
+  INTERVIEW
+  VISIT
+  APPROVED
+  REJECTED
+}
+
+enum DocumentType {
+  ID_CARD
+  ADDRESS_PROOF
+  CONTRACT
+}
+
+enum ContractStatus {
+  GENERATED
+  SIGNED
+}
+
+model User {
+  id               String   @id @default(uuid())
+  fullName         String
+  email            String   @unique
+  passwordHash     String
+  phone            String?
+  role             Role     @default(ADOPTER)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relaciones
+  medicalRecords      MedicalRecord[]
+  adoptionRequests    AdoptionRequest[]
+  documents           Document[]
+  compatibilityTests  CompatibilityTest[]
+  compatibilityScores CompatibilityScore[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+}
+
+model Pet {
+  id                 String    @id @default(uuid())
+  name               String
+  species            String
+  breed              String?
+  estimatedAge       Int?      // en meses
+  size               String?
+  status             PetStatus @default(QUARANTINE)
+  mainPhotoUrl       String?
+  rescueLocationText String?
+  qrCodeUrl          String?
+  energyLevel        String?   // LOW, MEDIUM, HIGH
+  spaceNeed          String?   // SMALL, MEDIUM, LARGE
+  goodWithChildren   Boolean   @default(false)
+  goodWithPets       Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relaciones
+  medicalRecords      MedicalRecord[]
+  adoptionRequests    AdoptionRequest[]
+  compatibilityScores CompatibilityScore[]
+}
+
+model MedicalRecord {
+  id          String   @id @default(uuid())
+  petId       String
+  diagnosis   String
+  treatment   String?
+  notes       String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  pet       Pet  @relation(fields: [petId], references: [id])
+  createdBy User @relation(fields: [createdById], references: [id])
+}
+
+model CompatibilityTest {
+  id                 String   @id @default(uuid())
+  adopterId          String
+  housingType        String   // HOUSE, APARTMENT
+  hasYard            Boolean  @default(false)
+  childrenCount      Int      @default(0)
+  hasOtherPets       Boolean  @default(false)
+  dailyAvailableTime Int      // en horas
+  allergies          String?
+  experienceLevel    String   // NONE, BEGINNER, EXPERIENCED
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relaciones
+  adopter User @relation(fields: [adopterId], references: [id])
+}
+
+model CompatibilityScore {
+  id          String   @id @default(uuid())
+  adopterId   String
+  petId       String
+  score       Float    // de 0 a 100
+  explanation String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  adopter User @relation(fields: [adopterId], references: [id])
+  pet     Pet  @relation(fields: [petId], references: [id])
+}
+
+model AdoptionRequest {
+  id              String                @id @default(uuid())
+  adopterId       String
+  petId           String
+  status          AdoptionRequestStatus @default(RECEIVED)
+  rejectionReason String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  // Relaciones
+  adopter   User       @relation(fields: [adopterId], references: [id])
+  pet       Pet        @relation(fields: [petId], references: [id])
+  documents Document[]
+  contract  Contract?
+}
+
+model Document {
+  id                String       @id @default(uuid())
+  adopterId         String
+  adoptionRequestId String?
+  type              DocumentType
+  fileUrl           String
+  fileName          String
+  createdAt         DateTime     @default(now())
+
+  // Relaciones
+  adopter         User             @relation(fields: [adopterId], references: [id])
+  adoptionRequest AdoptionRequest? @relation(fields: [adoptionRequestId], references: [id])
+}
+
+model Contract {
+  id                String         @id @default(uuid())
+  adoptionRequestId String         @unique
+  pdfUrl            String?
+  signedPdfUrl      String?
+  signatureImageUrl String?
+  status            ContractStatus @default(GENERATED)
+  createdAt         DateTime       @default(now())
+  signedAt          DateTime?
+
+  // Relaciones
+  adoptionRequest AdoptionRequest @relation(fields: [adoptionRequestId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // INFO, WARNING, SUCCESS, ERROR
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  details   String?
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  user User @relation(fields: [userId], references: [id])
+}
