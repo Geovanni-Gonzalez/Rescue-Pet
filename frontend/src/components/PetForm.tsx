@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { FormField } from './FormField';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiErrorMessage } from '../lib/api';
+
+export interface PetFormData {
+  id: string;
+  name: string;
+  species: string;
+  breed?: string;
+  estimatedAge?: number;
+  size?: string;
+  energyLevel?: string;
+  spaceNeed?: string;
+}
 
 interface PetFormProps {
-  initialData?: any;
+  initialData?: PetFormData;
   isEdit?: boolean;
 }
 
@@ -23,7 +36,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -31,21 +44,21 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      if (isEdit) {
+      if (isEdit && initialData) {
         await axios.patch(`http://localhost:3000/pets/${initialData.id}`, formData);
         navigate(`/pets/${initialData.id}`);
       } else {
         const res = await axios.post('http://localhost:3000/pets', formData);
         navigate(`/pets/${res.data.pet.id}`);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al guardar la mascota');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error al guardar la mascota'));
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +77,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
         
         <div className="space-y-2">
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Nivel de Energía</label>
-          <select name="energyLevel" value={formData.energyLevel} onChange={(e) => handleChange(e as any)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+          <select name="energyLevel" value={formData.energyLevel} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
             <option value="">Seleccionar...</option>
             <option value="LOW">Bajo</option>
             <option value="MEDIUM">Medio</option>
@@ -74,7 +87,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
 
         <div className="space-y-2">
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Necesidad de Espacio</label>
-          <select name="spaceNeed" value={formData.spaceNeed} onChange={(e) => handleChange(e as any)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+          <select name="spaceNeed" value={formData.spaceNeed} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
             <option value="">Seleccionar...</option>
             <option value="SMALL">Pequeño</option>
             <option value="MEDIUM">Mediano</option>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PetCard } from '../components/PetCard';
 import { PetFilters } from '../components/PetFilters';
 import { LoadingState } from '../components/LoadingState';
@@ -8,10 +8,23 @@ import { CompatibilityExplanation } from '../components/CompatibilityExplanation
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '../components/ui/button';
+import { isNetworkError } from '../lib/api';
+
+interface CatalogPet {
+  id: string;
+  name: string;
+  species: string;
+  breed?: string;
+  estimatedAge?: number;
+  status: 'QUARANTINE' | 'AVAILABLE' | 'TREATMENT' | 'ADOPTED' | 'DECEASED';
+  mainPhotoUrl?: string;
+  compatibilityScore: number | null;
+  compatibilityExplanation?: string;
+}
 
 export function Catalog() {
   const navigate = useNavigate();
-  const [catalog, setCatalog] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<CatalogPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -20,9 +33,9 @@ export function Catalog() {
       try {
         const res = await axios.get('http://localhost:3000/matchmaking/catalog');
         setCatalog(res.data.catalog || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Fallback: si el backend no está disponible, mostrar mensaje
-        if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+        if (isNetworkError(err)) {
           setCatalog([]); // El usuario verá el EmptyState con CTA al test
         }
         console.warn('Backend no disponible — catálogo vacío.');

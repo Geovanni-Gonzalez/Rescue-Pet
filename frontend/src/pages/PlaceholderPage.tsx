@@ -1,4 +1,3 @@
-import React from 'react';
 import { EmptyState } from '../components/EmptyState';
 import { Construction } from 'lucide-react';
 

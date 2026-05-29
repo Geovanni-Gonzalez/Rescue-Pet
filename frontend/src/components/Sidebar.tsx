@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, PawPrint, HeartHandshake, Settings, Users, LogOut, Sparkles, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { PetForm } from '../components/PetForm';
 
 export function PetNew() {

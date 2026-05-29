@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { Button } from './ui/button';
 import { FormField } from './FormField';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '../lib/api';
+
+export interface CompatibilityTestData {
+  housingType: string;
+  hasYard: boolean;
+  childrenCount: number;
+  hasOtherPets: boolean;
+  dailyAvailableTime: number;
+  allergies: string;
+  experienceLevel: string;
+}
 
 interface CompatibilityTestFormProps {
-  initialData?: any;
+  initialData?: Partial<CompatibilityTestData> | null;
   onSubmitted?: () => void;
 }
 
@@ -23,7 +35,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target as HTMLInputElement;
     const { name, value, type, checked } = target;
     setFormData(prev => ({
@@ -32,7 +44,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -44,8 +56,8 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
       } else {
         navigate('/catalog');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al guardar el test');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error al guardar el test'));
     } finally {
       setIsLoading(false);
     }

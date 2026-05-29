@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
 import { StatusBadge } from './StatusBadge';
 import type { PetStatus } from './StatusBadge';

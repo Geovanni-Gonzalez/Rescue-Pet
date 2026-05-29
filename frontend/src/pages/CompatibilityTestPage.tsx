@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CompatibilityTestForm } from '../components/CompatibilityTestForm';
 import { LoadingState } from '../components/LoadingState';
 import { ClipboardList, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import axios from 'axios';
+import type { CompatibilityTestData } from '../components/CompatibilityTestForm';
 
 export function CompatibilityTestPage() {
-  const [initialData, setInitialData] = useState<any>(null);
+  const [initialData, setInitialData] = useState<CompatibilityTestData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();

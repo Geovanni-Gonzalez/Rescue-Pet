@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PetCard } from '../components/PetCard';
 import { PetFilters } from '../components/PetFilters';
 import { LoadingState } from '../components/LoadingState';
@@ -8,11 +8,22 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Plus } from 'lucide-react';
 import axios from 'axios';
+import type { PetStatus } from '../components/StatusBadge';
+
+interface Pet {
+  id: string;
+  name: string;
+  species: string;
+  breed?: string;
+  estimatedAge?: number;
+  status: PetStatus;
+  mainPhotoUrl?: string;
+}
 
 export function Pets() {
   const { role } = useAuth();
   const navigate = useNavigate();
-  const [pets, setPets] = useState<any[]>([]);
+  const [pets, setPets] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');

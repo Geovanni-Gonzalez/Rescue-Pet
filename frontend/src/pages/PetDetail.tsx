@@ -9,16 +9,35 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Button } from '../components/ui/button';
 import { Edit, QrCode as QrIcon, Heart } from 'lucide-react';
 import axios from 'axios';
+import { getApiErrorMessage } from '../lib/api';
+
+interface Pet {
+  id: string;
+  name: string;
+  species: string;
+  breed?: string;
+  estimatedAge?: number;
+  size?: string;
+  status: PetStatus;
+  mainPhotoUrl?: string;
+  qrCodeUrl?: string;
+}
+
+interface AdoptionRequestSummary {
+  id: string;
+  petId: string;
+  status: 'RECEIVED' | 'INTERVIEW' | 'VISIT' | 'APPROVED' | 'REJECTED';
+}
 
 export function PetDetail() {
   const { id } = useParams();
   const { role } = useAuth();
   const navigate = useNavigate();
-  const [pet, setPet] = useState<any>(null);
+  const [pet, setPet] = useState<Pet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [qrUrl, setQrUrl] = useState('');
-  const [existingRequest, setExistingRequest] = useState<any>(null);
+  const [existingRequest, setExistingRequest] = useState<AdoptionRequestSummary | null>(null);
   const [showAdoptionConfirm, setShowAdoptionConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,16 +52,18 @@ export function PetDetail() {
         if (role === 'ADOPTER') {
           try {
             const myRequestsRes = await axios.get('http://localhost:3000/adoption-requests/me');
-            const existing = myRequestsRes.data.requests.find((r: any) => r.petId === id && ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(r.status));
+            const existing = (myRequestsRes.data.requests as AdoptionRequestSummary[]).find(
+              (request) => request.petId === id && ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(request.status)
+            );
             if (existing) {
               setExistingRequest(existing);
             }
-          } catch (err) {
+          } catch {
             // Ignore error if no requests exist
           }
         }
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'No se pudo cargar la mascota');
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'No se pudo cargar la mascota'));
       } finally {
         setIsLoading(false);
       }
@@ -65,11 +86,11 @@ export function PetDetail() {
       const res = await axios.post('http://localhost:3000/adoption-requests', { petId: id });
       setExistingRequest(res.data.request);
       setShowAdoptionConfirm(false);
-    } catch (err: any) {
-      if (err.response?.data?.existingRequestId) {
-        setExistingRequest({ id: err.response.data.existingRequestId });
+    } catch (err: unknown) {
+      if (axios.isAxiosError<{ existingRequestId?: string; error?: string }>(err) && err.response?.data?.existingRequestId) {
+        setExistingRequest({ id: err.response.data.existingRequestId, petId: id || '', status: 'RECEIVED' });
       }
-      setError(err.response?.data?.error || 'Error al crear la solicitud');
+      setError(getApiErrorMessage(err, 'Error al crear la solicitud'));
     } finally {
       setIsSubmitting(false);
     }

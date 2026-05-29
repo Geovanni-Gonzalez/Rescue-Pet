@@ -1,4 +1,3 @@
-import React from 'react';
 import { Menu, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { RoleBadge } from './RoleBadge';

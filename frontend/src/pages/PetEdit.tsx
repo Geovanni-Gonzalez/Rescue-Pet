@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { PetForm } from '../components/PetForm';
 import { LoadingState } from '../components/LoadingState';
 import axios from 'axios';
+import type { PetFormData } from '../components/PetForm';
 
 export function PetEdit() {
   const { id } = useParams();
-  const [pet, setPet] = useState<any>(null);
+  const [pet, setPet] = useState<PetFormData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -15,7 +16,7 @@ export function PetEdit() {
       try {
         const res = await axios.get(`http://localhost:3000/pets/${id}`);
         setPet(res.data.pet);
-      } catch (err: any) {
+      } catch {
         setError('No se pudo cargar la mascota');
       } finally {
         setIsLoading(false);

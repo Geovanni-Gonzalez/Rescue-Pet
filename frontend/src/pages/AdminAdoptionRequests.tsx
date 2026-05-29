@@ -5,6 +5,7 @@ import { AdoptionRequestTable } from '../components/AdoptionRequestTable';
 import { Button } from '../components/ui/button';
 import type { AdoptionRequestStatusType } from '../components/AdoptionRequestTable';
 import axios from 'axios';
+import { getApiErrorMessage } from '../lib/api';
 
 interface Pet {
   id: string;
@@ -46,8 +47,8 @@ export function AdminAdoptionRequests() {
           : `http://localhost:3000/adoption-requests?status=${statusFilter}`;
         const res = await axios.get(url);
         setRequests(res.data.requests);
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'No se pudieron cargar las solicitudes');
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'No se pudieron cargar las solicitudes'));
       } finally {
         setIsLoading(false);
       }

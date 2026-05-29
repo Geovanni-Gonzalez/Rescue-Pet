@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
@@ -7,6 +8,7 @@ import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
 import type { Role } from '../context/AuthContext';
 import axios from 'axios';
+import { getApiErrorMessage, isNetworkError } from '../lib/api';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -17,7 +19,7 @@ export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -30,10 +32,10 @@ export function Login() {
         login(response.data.token, response.data.user);
         redirectByRole(response.data.user.role);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       // Fallback para el prototipo si el backend no está corriendo
-      if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+      if (isNetworkError(err)) {
         // MOCK LOGIN para que el prototipo pueda mostrarse visualmente
         const mockUser = {
           id: 'mock-1',
@@ -46,14 +48,15 @@ export function Login() {
         login('mock-token-123', mockUser);
         redirectByRole(mockUser.role);
       } else {
-        setError(err.response?.data?.error || 'Error al iniciar sesión. Verifica tus credenciales.');
+        setError(getApiErrorMessage(err, 'Error al iniciar sesión. Verifica tus credenciales.'));
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const redirectByRole = (_role: Role) => {
+  const redirectByRole = (role: Role) => {
+    void role;
     navigate('/');
   };
 

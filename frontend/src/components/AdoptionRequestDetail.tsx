@@ -9,6 +9,7 @@ import { Button } from './ui/button';
 import { ArrowLeft, User, Calendar, FileText } from 'lucide-react';
 import axios from 'axios';
 import type { AdoptionRequestStatusType } from './AdoptionRequestTable';
+import { getApiErrorMessage } from '../lib/api';
 
 interface Pet {
   id: string;
@@ -73,8 +74,8 @@ export function AdoptionRequestDetail() {
       try {
         const res = await axios.get(`http://localhost:3000/adoption-requests/${id}`);
         setRequest(res.data.request);
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'No se pudo cargar la solicitud');
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'No se pudo cargar la solicitud'));
       } finally {
         setIsLoading(false);
       }
@@ -98,8 +99,8 @@ export function AdoptionRequestDetail() {
       });
       setRequest(res.data.request);
       setShowRejectionDialog(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al actualizar el estado');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error al actualizar el estado'));
     } finally {
       setIsUpdating(false);
     }
