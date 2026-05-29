@@ -3,5 +3,5 @@ import app from './app';
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`[Server]: Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log(`[Server]: API running at http://localhost:${PORT}`);
 });

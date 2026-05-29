@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
+import axios from 'axios';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
 import type { Role } from '../context/AuthContext';
-import axios from 'axios';
 import { getApiErrorMessage, isNetworkError } from '../lib/api';
 
 export function Login() {
@@ -15,49 +15,46 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Intentar conectarse al backend real
       const response = await axios.post('http://localhost:3000/auth/login', { email, password });
-      
+
       if (response.data.success) {
         login(response.data.token, response.data.user);
-        redirectByRole(response.data.user.role);
+        navigate('/', { replace: true });
       }
     } catch (err: unknown) {
       console.error(err);
-      // Fallback para el prototipo si el backend no está corriendo
+
       if (isNetworkError(err)) {
-        // MOCK LOGIN para que el prototipo pueda mostrarse visualmente
         const mockUser = {
           id: 'mock-1',
           fullName: 'Usuario Demo (Mock)',
-          email: email,
-          role: email.includes('admin') ? 'ADMIN' : 
-                email.includes('vet') ? 'VETERINARIAN' : 
-                email.includes('vol') ? 'VOLUNTEER' : 'ADOPTER' as Role
+          email,
+          role: email.includes('admin')
+            ? 'ADMIN'
+            : email.includes('vet')
+              ? 'VETERINARIAN'
+              : email.includes('vol')
+                ? 'VOLUNTEER'
+                : 'ADOPTER' as Role,
         };
         login('mock-token-123', mockUser);
-        redirectByRole(mockUser.role);
+        navigate('/', { replace: true });
       } else {
-        setError(getApiErrorMessage(err, 'Error al iniciar sesión. Verifica tus credenciales.'));
+        setError(getApiErrorMessage(err, 'Error al iniciar sesion. Verifica tus credenciales.'));
       }
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const redirectByRole = (role: Role) => {
-    void role;
-    navigate('/');
   };
 
   return (
@@ -68,9 +65,9 @@ export function Login() {
             <PawPrint className="w-7 h-7" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">Rescue Pet</CardTitle>
-          <CardDescription>Inicia sesión para acceder al sistema</CardDescription>
+          <CardDescription>Inicia sesion para acceder al sistema</CardDescription>
         </CardHeader>
-        
+
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             {error && (
@@ -78,36 +75,39 @@ export function Login() {
                 {error}
               </div>
             )}
-            
+
             <FormField
-              label="Correo Electrónico"
+              label="Correo electronico"
               type="email"
               placeholder="ejemplo@correo.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
             />
-            
+
             <FormField
-              label="Contraseña"
+              label="Contrasena"
               type="password"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               required
             />
           </CardContent>
-          
+
           <CardFooter className="flex flex-col gap-4 pt-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Iniciando sesión...' : 'Ingresar'}
+              {isLoading ? 'Iniciando sesion...' : 'Ingresar'}
             </Button>
-            
+
             <div className="text-center text-sm text-gray-500">
-              ¿No tienes cuenta? <a href="/register" className="text-rescue-600 font-medium hover:underline">Regístrate como Adoptante</a>
+              No tienes cuenta?{' '}
+              <Link to="/register" className="text-rescue-600 font-medium hover:underline">
+                Registrate como adoptante
+              </Link>
             </div>
             <div className="text-center text-xs text-gray-400 mt-4 border-t pt-4">
-              Tip (Prototipo): Usa 'admin@...', 'vet@...', 'vol@...' para probar distintos roles si el backend está apagado.
+              Tip (Prototipo): Usa 'admin@...', 'vet@...', 'vol@...' para probar distintos roles si el backend esta apagado.
             </div>
           </CardFooter>
         </form>

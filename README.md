@@ -1,36 +1,6 @@
 # Rescue-Pet
 
-Sistema de gestión de adopción de mascotas.
-
-## Comandos de Ejecución
-
-### Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-El backend se ejecuta en http://localhost:3000
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-El frontend se ejecuta en http://localhost:5173 (o el puerto disponible)
-
-## Módulos Implementados
-
-- Gestión de Mascotas
-- Sistema de Usuarios y Autenticación
-- Pruebas de Compatibilidad
-- **Solicitudes de Adopción** (nuevo)
-  - Creación de solicitudes por adoptantes
-  - Gestión de estados (Recibida → Entrevista → Visita → Aprobada/Rechazada)
-  - Panel de administración para gestionar solicitudes
-  - Panel de adoptantes para ver sus solicitudes
-  - Registro de auditoría y notificaciones
+Sistema de gestion de adopcion de mascotas.
 
 ## Requisitos
 
@@ -38,62 +8,133 @@ El frontend se ejecuta en http://localhost:5173 (o el puerto disponible)
 - PostgreSQL
 - Prisma
 
-## Configuración de la Base de Datos
+## Estructura
 
-1. **Crear base de datos PostgreSQL**:
-   ```bash
-   # En PostgreSQL
+- `backend`: API Express + TypeScript + Prisma.
+- `frontend`: React + Vite + TypeScript + Tailwind CSS.
+- `docs`: documentacion funcional y tecnica.
+- `Roadmap.md`: flujo de desarrollo del proyecto.
+
+## Configuracion del Backend
+
+1. Crear la base de datos PostgreSQL:
+
+   ```sql
    CREATE DATABASE rescue_pet;
    ```
 
-2. **Configurar variables de entorno**:
-   - Copia `.env.example` a `.env` en el directorio `backend`
-   - Configura la URL de tu base de datos:
-   ```
-   DATABASE_URL="postgresql://usuario:password@localhost:5432/rescue_pet?schema=public"
-   JWT_SECRET="tu-clave-secreta-aqui"
-   ```
+2. Copiar variables de entorno:
 
-3. **Ejecutar migraciones**:
    ```bash
    cd backend
-   npx prisma migrate dev --name init
+   cp .env.example .env
    ```
 
-4. **(Opcional) Cargar datos de prueba**:
-   ```bash
-   npx prisma db seed
+3. Configurar `backend/.env`:
+
+   ```env
+   DATABASE_URL="postgresql://usuario:password@localhost:5432/rescue_pet?schema=public"
+   JWT_SECRET="cambia-esta-clave-en-desarrollo"
+   PORT=3000
+   FRONTEND_URL="http://localhost:5173"
    ```
+
+4. Instalar dependencias y preparar Prisma:
+
+   ```bash
+   npm install
+   npm run prisma:generate
+   npm run prisma:migrate
+   npm run prisma:seed
+   ```
+
+5. Ejecutar backend:
+
+   ```bash
+   npm run dev
+   ```
+
+El backend se ejecuta en `http://localhost:3000`.
+
+## Configuracion del Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+El frontend se ejecuta en `http://localhost:5173` o en el siguiente puerto disponible.
+
+## Comandos de Verificacion
+
+### Backend
+
+```bash
+cd backend
+npm run typecheck
+npm run build
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run lint
+npm run typecheck
+npm run build
+```
+
+> Nota: si `npm` o `npx` global fallan en Windows por una instalacion corrupta, se pueden usar los binarios locales despues de instalar dependencias, por ejemplo `.\node_modules\.bin\tsc.cmd --noEmit` o `.\node_modules\.bin\vite.cmd build`.
+
+## Modulos Implementados
+
+- Gestion de mascotas.
+- Sistema de usuarios, autenticacion y autorizacion por roles.
+- Pruebas de compatibilidad.
+- Catalogo inteligente para adoptantes.
+- Solicitudes de adopcion:
+  - Creacion de solicitudes por adoptantes.
+  - Gestion de estados: Recibida -> Entrevista -> Visita -> Aprobada/Rechazada.
+  - Panel administrativo para gestionar solicitudes.
+  - Panel de adoptantes para ver sus solicitudes.
+  - Registro de auditoria y notificaciones en base de datos.
+- Generacion de codigo QR por mascota.
 
 ## Usuarios de Prueba
 
-Para iniciar sesión, puedes usar los siguientes usuarios (contraseña: `password123`):
+La semilla crea usuarios de prueba con password `password123`.
 
 ### Administrador
+
 - Email: `admin@rescuepet.com`
-- Rol: ADMIN
-- Permisos: Gestión completa del sistema
+- Rol: `ADMIN`
+- Permisos: gestion completa del sistema.
 
 ### Veterinario
+
 - Email: `vet@rescuepet.com`
-- Rol: VETERINARIAN
-- Permisos: Gestión de estado médico de mascotas
+- Rol: `VETERINARIAN`
+- Permisos: gestion de estado medico de mascotas.
 
 ### Voluntario
+
 - Email: `volunteer@rescuepet.com`
-- Rol: VOLUNTEER
-- Permisos: Gestión de mascotas y solicitudes
+- Rol: `VOLUNTEER`
+- Permisos: gestion de mascotas y solicitudes.
 
 ### Adoptantes
-- Email: `adopter1@gmail.com` (Carlos Adoptante)
-- Email: `adopter2@gmail.com` (Ana Adoptante)
-- Rol: ADOPTER
-- Permisos: Ver catálogo, solicitar adopción, ver sus solicitudes
 
-## Nota de Prototipo
+- Email: `adopter1@gmail.com`
+- Email: `adopter2@gmail.com`
+- Rol: `ADOPTER`
+- Permisos: ver catalogo, solicitar adopcion y consultar solicitudes propias.
 
-Si el backend no está disponible, el frontend tiene un modo de prueba (mock) que permite iniciar sesión usando:
-- Cualquier email que contenga `admin@...` → Rol ADMIN
-- Cualquier email que contenga `vet@...` → Rol VETERINARIAN
-- Cualquier email que contenga `vol@...` → Rol VOLUNTEER
-- Cualquier otro email → Rol ADOPTER
+## Modo Prototipo
+
+Si el backend no esta disponible, el frontend permite login mock:
+
+- Email que contenga `admin@...`: rol `ADMIN`.
+- Email que contenga `vet@...`: rol `VETERINARIAN`.
+- Email que contenga `vol@...`: rol `VOLUNTEER`.
+- Cualquier otro email: rol `ADOPTER`.

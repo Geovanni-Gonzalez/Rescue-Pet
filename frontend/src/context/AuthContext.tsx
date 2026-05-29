@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 
@@ -9,7 +9,10 @@ export interface User {
   id: string;
   fullName: string;
   email: string;
+  phone?: string | null;
   role: Role;
+  isActive?: boolean;
+  createdAt?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +21,7 @@ interface AuthContextType {
   role: Role | null;
   isAuthenticated: boolean;
   login: (token: string, user: User) => void;
+  updateUser: (user: User) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -55,27 +59,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token]);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = useCallback((newToken: string, newUser: User) => {
     localStorage.setItem('rescue_pet_token', newToken);
     localStorage.setItem('rescue_pet_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-  };
+  }, []);
 
-  const logout = () => {
+  const updateUser = useCallback((updatedUser: User) => {
+    localStorage.setItem('rescue_pet_user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  }, []);
+
+  const logout = useCallback(() => {
     localStorage.removeItem('rescue_pet_token');
     localStorage.removeItem('rescue_pet_user');
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
-  };
+  }, []);
 
   const isAuthenticated = !!token && !!user;
   const role = user?.role ?? null;
 
   return (
-    <AuthContext.Provider value={{ user, token, role, isAuthenticated, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, role, isAuthenticated, login, updateUser, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

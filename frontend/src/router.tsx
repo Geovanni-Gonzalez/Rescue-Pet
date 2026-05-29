@@ -3,6 +3,8 @@ import { AppLayout } from './components/AppLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SmartRedirect } from './components/SmartRedirect';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { Profile } from './pages/Profile';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Pets } from './pages/Pets';
 import { PetDetail } from './pages/PetDetail';
@@ -22,7 +24,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/register',
-    element: <PlaceholderPage title="Registro de Adoptantes" />,
+    element: <Register />,
   },
   {
     path: '/',
@@ -78,7 +80,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'profile',
-            element: <PlaceholderPage title="Mi Perfil" />,
+            element: <Profile />,
           },
           {
             path: 'admin',

@@ -4,46 +4,91 @@ Este documento describe el esquema de base de datos implementado con Prisma para
 
 ## Diagrama Conceptual
 
-El sistema gira en torno a tres grandes ejes: **Usuarios**, **Mascotas (Pets)** y el **Proceso de Adopción**.
+El sistema gira alrededor de tres ejes: usuarios, mascotas y proceso de adopcion.
 
-- **User**: Maneja la identidad y los roles dentro del sistema (Administrador, Veterinario, Voluntario, Adoptante).
-- **Pet**: Almacena la información del animal, su estado actual y características.
-- **MedicalRecord**: Es gestionado exclusivamente por los Veterinarios y está vinculado a un Pet y al User que lo creó.
-- **AdoptionRequest**: Representa la intención de un Adoptante (User) de adoptar un Pet. Contiene el estado de la solicitud.
-- **CompatibilityTest & CompatibilityScore**: Mecanismo para evaluar qué tan adecuado es un Adoptante general, y una calificación específica para una mascota.
-- **Document & Contract**: Artefactos físicos/digitales generados durante el proceso de adopción, vinculados a la solicitud de adopción.
-- **Notification & AuditLog**: Elementos transversales para seguimiento y comunicación en la plataforma.
+- `User`: identidad, credenciales y roles.
+- `Pet`: informacion del animal, estado actual y caracteristicas.
+- `MedicalRecord`: historial clinico asociado a una mascota y a un veterinario/usuario creador.
+- `AdoptionRequest`: intencion de un adoptante de adoptar una mascota.
+- `CompatibilityTest` y `CompatibilityScore`: evaluacion de afinidad entre adoptante y mascota.
+- `Document` y `Contract`: artefactos digitales del proceso de adopcion.
+- `Notification` y `AuditLog`: comunicacion y trazabilidad.
 
 ## Entidades y Relaciones Clave
 
-### 1. Gestión de Usuarios y Roles
-La tabla `User` utiliza un Enum `Role` (`ADMIN`, `VETERINARIAN`, `VOLUNTEER`, `ADOPTER`).
-- Un `User` puede tener múltiples `AdoptionRequests` si es adoptante.
-- Un `User` (veterinario) puede crear múltiples `MedicalRecords`.
-- Un `User` puede realizar múltiples `CompatibilityTests`.
+### 1. Usuarios y Roles
 
-### 2. Gestión de Animales (Pets)
-La tabla `Pet` registra los datos del animal y utiliza el Enum `PetStatus` (`QUARANTINE`, `AVAILABLE`, `TREATMENT`, `ADOPTED`, `DECEASED`).
-- Un `Pet` tiene múltiples `MedicalRecords` que narran su historia clínica.
-- Un `Pet` puede tener múltiples `AdoptionRequests` a lo largo del tiempo (si intentos anteriores fallaron).
-- Un `Pet` tiene una relación con `CompatibilityScore` para emparejarlo con adoptantes.
+La tabla `User` usa el enum `Role`:
 
-### 3. Flujo de Adopción
-El corazón del prototipo.
-- **AdoptionRequest**: Relaciona a un `User` (Adoptante) con un `Pet`. Tiene estados (`RECEIVED`, `INTERVIEW`, `VISIT`, `APPROVED`, `REJECTED`).
-- Si una solicitud avanza, se le vinculan `Document`s (como comprobantes de domicilio o identificaciones).
-- Si se aprueba, se genera un **Contract**. El `Contract` tiene un estado (`GENERATED`, `SIGNED`) y guarda la firma digital en `signatureImageUrl`.
+- `ADMIN`
+- `VETERINARIAN`
+- `VOLUNTEER`
+- `ADOPTER`
 
-### 4. Evaluaciones de Compatibilidad
-Para facilitar el *match* entre adoptante y mascota:
-- **CompatibilityTest**: Formulario que llena el adoptante indicando su tipo de vivienda, tiempo, experiencia, etc.
-- **CompatibilityScore**: Un cálculo (que se implementará en la lógica de negocio) que califica de 0 a 100 qué tan buena es la coincidencia entre un `User` y un `Pet`.
+Relaciones principales:
 
-### 5. Trazabilidad
-- **Notification**: Notificaciones in-app simples para avisar al usuario sobre cambios en sus solicitudes o nuevos animales.
-- **AuditLog**: Registro de acciones importantes (quién cambió el estado de un animal, quién aprobó una adopción), crucial para la rendición de cuentas.
+- Un usuario adoptante puede tener multiples `AdoptionRequest`.
+- Un usuario veterinario puede crear multiples `MedicalRecord`.
+- Un usuario puede tener multiples `CompatibilityTest`, `CompatibilityScore`, `Notification` y `AuditLog`.
+
+### 2. Mascotas
+
+La tabla `Pet` usa el enum `PetStatus`:
+
+- `QUARANTINE`
+- `AVAILABLE`
+- `TREATMENT`
+- `ADOPTED`
+- `DECEASED`
+
+Relaciones principales:
+
+- Una mascota puede tener multiples historiales medicos.
+- Una mascota puede tener multiples solicitudes de adopcion en el tiempo.
+- Una mascota puede tener multiples puntajes de compatibilidad.
+
+### 3. Solicitudes de Adopcion
+
+`AdoptionRequest` relaciona un `User` adoptante con una `Pet`.
+
+Estados disponibles:
+
+- `RECEIVED`
+- `INTERVIEW`
+- `VISIT`
+- `APPROVED`
+- `REJECTED`
+
+Una solicitud puede tener documentos y un contrato asociado.
+
+### 4. Compatibilidad
+
+- `CompatibilityTest`: formulario del adoptante con vivienda, patio, disponibilidad, alergias y experiencia.
+- `CompatibilityScore`: puntaje de 0 a 100 entre adoptante y mascota, con una explicacion.
+
+### 5. Documentos y Contratos
+
+`Document` usa el enum `DocumentType`:
+
+- `ID_CARD`
+- `ADDRESS_PROOF`
+- `CONTRACT`
+
+`Contract` usa el enum `ContractStatus`:
+
+- `GENERATED`
+- `SIGNED`
+
+El contrato puede guardar `pdfUrl`, `signedPdfUrl`, `signatureImageUrl` y `signedAt`.
+
+### 6. Trazabilidad
+
+- `Notification`: avisos in-app con titulo, mensaje, tipo, estado de lectura y enlace.
+- `AuditLog`: accion, entidad, entidad afectada, usuario y detalles.
 
 ## Consideraciones del Prototipo
-- Se utilizan identificadores tipo **UUID** en lugar de auto-incrementables numéricos por seguridad y escalabilidad futura.
-- En este modelo inicial los archivos (`fileUrl`, `pdfUrl`, `signatureImageUrl`) apuntarán a rutas de almacenamiento local simulado, con un tipo de dato `String`, lo cual permite migrar fácilmente a Supabase Storage insertando directamente las URLs generadas por la nube sin necesidad de cambiar el esquema de la base de datos.
-- Las eliminaciones se manejarán lógicamente en la lógica de la aplicación usando el campo `isActive` de los usuarios o estados específicos, manteniendo la integridad referencial en `AdoptionRequest` y `AuditLog`.
+
+- Los IDs son UUID.
+- Los campos de archivos guardan rutas o URLs como `String`.
+- El almacenamiento local/simulado se podra migrar a Supabase Storage u otra solucion cloud sin cambiar el modelo principal.
+- Las eliminaciones sensibles deben manejarse de forma logica con estados como `isActive` o estados terminales.

@@ -1,69 +1,93 @@
 # Contexto del Proyecto: Rescue Pet (Prototipo Funcional)
 
-## 1. Objetivo del prototipo
-El objetivo principal de Rescue Pet es demostrar el flujo crítico de un sistema de adopción animal. Se busca validar la interacción entre los distintos actores (Administrador, Veterinario, Voluntario, Adoptante) durante el proceso de rescate, tratamiento y adopción de una mascota, sin necesidad de implementar un producto comercial completo en esta fase inicial. El enfoque está en la funcionalidad core, la arquitectura base y la experiencia de usuario esencial.
+## 1. Objetivo del Prototipo
+
+Rescue Pet demuestra el flujo critico de un sistema de adopcion animal. El objetivo es validar la interaccion entre Administrador, Veterinario, Voluntario y Adoptante durante el proceso de rescate, tratamiento y adopcion de una mascota.
+
+Esta fase no busca un producto comercial completo. El foco esta en la funcionalidad core, la arquitectura base y una experiencia de usuario clara para demos y validacion.
 
 ## 2. Stack Elegido
-**Frontend:**
-- **Framework:** React + Vite
-- **Lenguaje:** TypeScript
-- **Estilos y Componentes:** Tailwind CSS + shadcn/ui
-- **Generación de QR:** qrcode
-- **Firma digital:** react-signature-canvas
 
-**Backend:**
-- **Entorno:** Node.js
-- **Framework:** Express
-- **Lenguaje:** TypeScript
-- **Base de Datos:** PostgreSQL
-- **ORM:** Prisma
-- **Autenticación:** JWT + bcrypt
-- **Generación de PDF:** pdf-lib
+### Frontend
 
-**Otros:**
-- **Storage:** Local/Simulado (preparado para migración futura a Supabase Storage)
-- **Notificaciones:** In-app (simples)
+- Framework: React + Vite.
+- Lenguaje: TypeScript.
+- Estilos y componentes: Tailwind CSS + shadcn/ui.
+- Iconos: lucide-react.
+- QR: visualizacion de codigos generados por backend.
 
-## 3. Módulos a Implementar (Alcance del Prototipo)
-- **Autenticación y Autorización:** Registro, inicio de sesión y gestión de roles.
-- **Gestión de Animales:** Registro básico de una mascota rescatada, historial médico inicial y actualización de estado (Ej. En tratamiento, Disponible, Adoptado).
-- **Flujo de Adopción:** Solicitud de adopción, revisión por parte de voluntarios/administradores y aprobación/rechazo.
-- **Generación de Documentos:** Creación de un contrato de adopción en PDF.
-- **Firma Digital:** Captura de la firma del adoptante en el contrato.
-- **Identificación:** Generación de un código QR por mascota para acceso rápido a su perfil.
-- **Notificaciones Básicas:** Avisos in-app sobre cambios de estado en las solicitudes de adopción.
+### Backend
 
-## 4. Módulos Simulados (Fuera del Alcance Inicial)
-- **Pasarela de Pagos:** Simulación de donaciones o cuotas de adopción.
-- **Chat en Tiempo Real:** Las comunicaciones complejas se simularán con notas o actualizaciones de estado.
-- **Almacenamiento en la Nube Completo:** Las imágenes y archivos se guardarán localmente en el servidor inicialmente.
-- **Geolocalización Avanzada:** Búsqueda por mapa interactivo.
+- Entorno: Node.js.
+- Framework: Express.
+- Lenguaje: TypeScript.
+- Base de datos: PostgreSQL.
+- ORM: Prisma.
+- Autenticacion: JWT + bcrypt.
+- Validacion: Zod.
+
+### Otros
+
+- Storage: local/simulado en el prototipo.
+- Notificaciones: in-app simples.
+- Auditoria: registros en base de datos para acciones importantes.
+
+## 3. Modulos del Prototipo
+
+- Autenticacion y autorizacion: registro, inicio de sesion y roles.
+- Gestion de usuarios: consulta y actualizacion controlada por permisos.
+- Gestion de mascotas: registro, edicion, detalle, estado y QR.
+- Historial medico: modelo definido; API/UI pendientes.
+- Compatibilidad: test del adoptante y catalogo ordenado por afinidad.
+- Solicitudes de adopcion: creacion, revision, cambio de estado y rechazo con motivo.
+- Documentos: modelo definido; carga y almacenamiento pendientes.
+- Contratos: modelo definido; generacion PDF y firma pendientes.
+- Notificaciones: modelo y creacion parcial; UI/API de lectura pendientes.
+- Auditoria: registros para acciones core.
+
+## 4. Modulos Simulados o Fuera del Alcance Inicial
+
+- Pasarela de pagos.
+- Chat en tiempo real.
+- Almacenamiento cloud completo.
+- Geolocalizacion avanzada.
+- Automatizaciones externas de correo/SMS.
 
 ## 5. Flujo Principal del Sistema
-1. **Ingreso:** Un Voluntario o Admin registra un animal rescatado en el sistema (Genera QR).
-2. **Evaluación:** Un Veterinario actualiza el estado de salud y autoriza que el animal esté "Disponible para adopción".
-3. **Solicitud:** Un Adoptante (registrado) navega, ve al animal y envía una solicitud de adopción.
-4. **Revisión:** Un Voluntario o Admin revisa la solicitud y aprueba o rechaza al candidato.
-5. **Formalización:** Si se aprueba, se genera un PDF (Contrato de Adopción) que el Adoptante firma digitalmente.
-6. **Cierre:** El estado del animal cambia a "Adoptado" y se envía una notificación de confirmación al adoptante.
+
+1. Un Voluntario o Admin registra un animal rescatado.
+2. Un Veterinario actualiza el estado clinico y autoriza que la mascota pase a disponible.
+3. Un Adoptante registrado revisa el catalogo y crea una solicitud.
+4. Un Admin o responsable revisa la solicitud y la mueve por las fases definidas.
+5. Si se aprueba, se debe generar un contrato de adopcion.
+6. El adoptante firma digitalmente el contrato.
+7. La mascota pasa a adoptada y el sistema notifica el cierre.
 
 ## 6. Entidades Principales
-- **User:** Contiene credenciales, datos personales y rol.
-- **Animal:** Representa a la mascota (nombre, especie, raza, edad, estado, historial).
-- **AdoptionRequest:** Relaciona a un User (Adoptante) con un Animal, y rastrea el estado de la solicitud.
-- **MedicalRecord:** Registro clínico de un animal, gestionado por el Veterinario.
-- **Document (o Contract):** Almacena el enlace/referencia al contrato firmado.
-- **Notification:** Avisos para los usuarios del sistema.
+
+- `User`: credenciales, datos personales, rol y estado.
+- `Pet`: mascota, estado, caracteristicas, foto y QR.
+- `MedicalRecord`: historial clinico de una mascota.
+- `CompatibilityTest`: respuestas del adoptante para calcular afinidad.
+- `CompatibilityScore`: calificacion entre adoptante y mascota.
+- `AdoptionRequest`: solicitud de adopcion y estado del proceso.
+- `Document`: archivos asociados a adoptante o solicitud.
+- `Contract`: contrato generado y firmado.
+- `Notification`: avisos in-app para usuarios.
+- `AuditLog`: trazabilidad de acciones relevantes.
 
 ## 7. Roles y Permisos
-- **Administrador:** Control total. Puede gestionar usuarios, animales, solicitudes y configuraciones del sistema.
-- **Veterinario:** Acceso para actualizar historiales médicos (MedicalRecord) y cambiar el estado de salud de los animales.
-- **Voluntario:** Puede registrar nuevos animales, gestionar solicitudes de adopción y actualizar información básica.
-- **Adoptante:** Puede buscar animales, crear solicitudes de adopción, ver el estado de sus solicitudes, firmar contratos y recibir notificaciones.
 
-## 8. Decisiones Técnicas
-- **Arquitectura Monorepo Lógica:** Se usarán carpetas separadas (`frontend`, `backend`, `docs`) en un solo repositorio para facilitar el desarrollo inicial.
-- **Vite:** Elegido por su velocidad de compilación y excelente integración con React y TypeScript, ideal para prototipado rápido.
-- **Prisma + PostgreSQL:** Prisma proporciona tipado estricto end-to-end y migraciones de esquema sencillas, lo que acelera el desarrollo del backend.
-- **Local Storage Inicial:** Para evitar la complejidad de configurar buckets cloud (como AWS S3 o Supabase Storage) desde el día 1, los archivos (imágenes, PDFs) se guardarán en el sistema de archivos del servidor, encapsulando la lógica de guardado en un servicio que pueda ser refactorizado fácilmente después.
-- **Tailwind + shadcn/ui:** Permite construir interfaces consistentes, accesibles y estéticamente agradables con mucha rapidez sin escribir CSS personalizado extenso.
+- Administrador: control total del sistema.
+- Veterinario: actualiza historiales medicos y estado clinico/adopcion de mascotas.
+- Voluntario: registra mascotas y participa en gestion operativa.
+- Adoptante: consulta catalogo, completa test, crea solicitudes y firma contratos.
+
+## 8. Decisiones Tecnicas
+
+- Monorepo logico con carpetas `frontend`, `backend` y `docs`.
+- Prisma + PostgreSQL para un modelo relacional tipado.
+- JWT para autenticacion inicial del prototipo.
+- Tailwind CSS y componentes reutilizables para acelerar UI.
+- Storage local/simulado para no bloquear el prototipo con infraestructura cloud.
+- Auditoria y notificaciones desde etapas tempranas para mantener trazabilidad.

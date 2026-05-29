@@ -1,73 +1,112 @@
-# API - Autenticación y Usuarios
+# API - Autenticacion y Usuarios
 
-Esta documentación describe cómo interactuar con los endpoints base del backend para autenticación y gestión de usuarios.
+Esta documentacion describe los endpoints base de autenticacion y gestion de usuarios.
 
 ## Base URL
-Localmente el servidor corre en: `http://localhost:3000`
 
-## Autenticación (`/auth`)
+Servidor local:
 
-### 1. Registro de Adoptante
-**POST** `/auth/register-adopter`
+```text
+http://localhost:3000
+```
+
+## Autenticacion (`/auth`)
+
+### Registro de Adoptante
+
+`POST /auth/register-adopter`
+
 Permite a un nuevo usuario registrarse con rol `ADOPTER`.
 
-**Body (JSON):**
+Body:
+
 ```json
 {
-  "fullName": "Juan Pérez",
+  "fullName": "Juan Perez",
   "email": "juan@example.com",
   "password": "mypassword123",
-  "phone": "+1234567890" // Opcional
+  "phone": "+1234567890"
 }
 ```
 
-### 2. Inicio de Sesión (Login)
-**POST** `/auth/login`
+### Login
+
+`POST /auth/login`
+
 Autentica al usuario y devuelve un token JWT.
 
-**Body (JSON):**
+Body:
+
 ```json
 {
   "email": "admin@rescuepet.com",
   "password": "password123"
 }
 ```
-**Respuesta Exitosa:**
+
+Respuesta exitosa:
+
 ```json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": { ... }
+  "token": "jwt-token",
+  "user": {
+    "id": "uuid",
+    "fullName": "Admin Rescue Pet",
+    "email": "admin@rescuepet.com",
+    "role": "ADMIN"
+  }
 }
 ```
 
-### 3. Obtener mis datos (Me)
-**GET** `/auth/me`
-**Headers:** `Authorization: Bearer <tu_token_jwt>`
-Devuelve la información completa del usuario autenticado actual.
+### Obtener Usuario Actual
 
----
+`GET /auth/me`
+
+Header:
+
+```text
+Authorization: Bearer <token>
+```
+
+Devuelve la informacion del usuario autenticado.
 
 ## Usuarios (`/users`)
 
-Todas estas rutas requieren el header `Authorization: Bearer <token>`.
+Todas las rutas requieren:
 
-### 1. Listar Usuarios
-**GET** `/users`
-**Roles permitidos:** `ADMIN`
-Devuelve la lista de todos los usuarios en el sistema.
+```text
+Authorization: Bearer <token>
+```
 
-### 2. Ver Detalles de Usuario
-**GET** `/users/:id`
-**Roles permitidos:** `ADMIN` o el propio usuario (`:id` coincide con el del token).
+### Listar Usuarios
 
-### 3. Actualizar Usuario
-**PATCH** `/users/:id`
-**Roles permitidos:** `ADMIN` o el propio usuario.
-Permite modificar el perfil de un usuario.
-- **Nota de Seguridad:** Solo el rol `ADMIN` puede modificar los campos protegidos como `role` o `isActive`. Si un `ADOPTER` intenta enviar un cambio de rol, el sistema ignorará ese campo de forma segura.
+`GET /users`
 
-**Body (JSON):**
+Roles permitidos:
+
+- `ADMIN`
+
+### Ver Detalle de Usuario
+
+`GET /users/:id`
+
+Roles permitidos:
+
+- `ADMIN`
+- El propio usuario cuando `:id` coincide con el ID del token.
+
+### Actualizar Usuario
+
+`PATCH /users/:id`
+
+Roles permitidos:
+
+- `ADMIN`
+- El propio usuario.
+
+Body:
+
 ```json
 {
   "fullName": "Juan Nuevo",
@@ -75,18 +114,25 @@ Permite modificar el perfil de un usuario.
 }
 ```
 
-## Control de Errores y Validaciones
-Todos los errores devuelven un formato estructurado y el código HTTP adecuado (400, 401, 403, 404, 500).
+Nota de seguridad:
+
+- Solo `ADMIN` puede modificar `role` o `isActive`.
+- Si otro rol envia esos campos, el backend los ignora.
+
+## Formato de Errores
+
 ```json
 {
   "success": false,
   "error": "Mensaje descriptivo",
-  "details": [ /* Errores de validación Zod si aplica */ ]
+  "details": []
 }
 ```
 
-## Logs de Auditoría
-El sistema registra automáticamente en la tabla `AuditLog` las siguientes acciones:
-- Inicios de sesión exitosos (`LOGIN`).
-- Registros de nuevos adoptantes (`REGISTER`).
-- Modificaciones en perfiles de usuario (`UPDATE_USER`).
+## Auditoria
+
+El sistema registra automaticamente:
+
+- Login exitoso: `LOGIN`.
+- Registro de adoptante: `REGISTER`.
+- Actualizacion de perfil: `UPDATE_USER`.
