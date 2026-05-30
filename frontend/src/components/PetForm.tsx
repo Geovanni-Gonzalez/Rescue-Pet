@@ -13,6 +13,8 @@ export interface PetFormData {
   breed?: string;
   estimatedAge?: number;
   size?: string;
+  mainPhotoUrl?: string;
+  rescueLocationText?: string;
   energyLevel?: string;
   spaceNeed?: string;
 }
@@ -29,6 +31,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
     breed: initialData?.breed || '',
     estimatedAge: initialData?.estimatedAge || 0,
     size: initialData?.size || '',
+    mainPhotoUrl: initialData?.mainPhotoUrl || '',
+    rescueLocationText: initialData?.rescueLocationText || '',
     energyLevel: initialData?.energyLevel || '',
     spaceNeed: initialData?.spaceNeed || '',
   });
@@ -74,6 +78,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
         <FormField label="Raza" name="breed" value={formData.breed} onChange={handleChange} />
         <FormField label="Edad Estimada (meses)" name="estimatedAge" type="number" min={0} value={formData.estimatedAge} onChange={handleChange} />
         <FormField label="Tamaño" name="size" value={formData.size} onChange={handleChange} placeholder="Ej. Pequeño, Mediano" />
+        <FormField label="Fotografía principal (URL) *" name="mainPhotoUrl" value={formData.mainPhotoUrl} onChange={handleChange} placeholder="https://..." required />
+        <FormField label="Localización de rescate" name="rescueLocationText" value={formData.rescueLocationText} onChange={handleChange} placeholder="Dirección o referencia" />
         
         <div className="space-y-2">
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Nivel de Energía</label>

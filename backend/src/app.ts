@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { errorHandler } from './middlewares/errorHandler';
+import { requestLogger } from './middlewares/requestLogger';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import petRoutes from './routes/petRoutes';
@@ -12,6 +13,7 @@ const app = express();
 // Middlewares globales
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 // Rutas base
 app.use('/auth', authRoutes);

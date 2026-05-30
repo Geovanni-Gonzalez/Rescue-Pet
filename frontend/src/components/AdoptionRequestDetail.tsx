@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import type { FormEvent, PointerEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LoadingState } from './LoadingState';
@@ -68,19 +69,21 @@ export function AdoptionRequestDetail() {
   const [error, setError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [documentForm, setDocumentForm] = useState({ type: 'ID_CARD', fileName: '', fileUrl: '' });
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [isSigningContract, setIsSigningContract] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const fetchRequest = async () => {
+    const res = await axios.get(`http://localhost:3000/adoption-requests/${id}`);
+    setRequest(res.data.request);
+  };
 
   useEffect(() => {
-    const fetchRequest = async () => {
-      try {
-        const res = await axios.get(`http://localhost:3000/adoption-requests/${id}`);
-        setRequest(res.data.request);
-      } catch (err: unknown) {
-        setError(getApiErrorMessage(err, 'No se pudo cargar la solicitud'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchRequest();
+    fetchRequest()
+      .catch((err: unknown) => setError(getApiErrorMessage(err, 'No se pudo cargar la solicitud')))
+      .finally(() => setIsLoading(false));
   }, [id]);
 
   const handleStatusChange = async (newStatus: AdoptionRequestStatusType, rejectionReason?: string) => {
@@ -106,10 +109,86 @@ export function AdoptionRequestDetail() {
     }
   };
 
+  const handleDocumentSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!request) return;
+
+    setIsUploadingDocument(true);
+    setError('');
+    try {
+      await axios.post(`http://localhost:3000/adoption-requests/${request.id}/documents`, documentForm);
+      setDocumentForm({ type: 'ID_CARD', fileName: '', fileUrl: '' });
+      await fetchRequest();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error al cargar el documento'));
+    } finally {
+      setIsUploadingDocument(false);
+    }
+  };
+
+  const getCanvasPoint = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = event.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
+
+  const startDrawing = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+
+    const point = getCanvasPoint(event);
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+    context.lineWidth = 2;
+    context.lineCap = 'round';
+    context.strokeStyle = '#111827';
+    setIsDrawing(true);
+  };
+
+  const drawSignature = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const context = event.currentTarget.getContext('2d');
+    if (!context) return;
+
+    const point = getCanvasPoint(event);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const signContract = async () => {
+    if (!request || !canvasRef.current) return;
+
+    setIsSigningContract(true);
+    setError('');
+    try {
+      await axios.post(`http://localhost:3000/adoption-requests/${request.id}/contract/sign`, {
+        signatureImageUrl: canvasRef.current.toDataURL('image/png'),
+      });
+      await fetchRequest();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error al firmar el contrato'));
+    } finally {
+      setIsSigningContract(false);
+    }
+  };
+
   if (isLoading) return <LoadingState />;
   if (error || !request) return <div className="p-6 text-center text-red-500">{error || 'Solicitud no encontrada'}</div>;
 
   const isAdmin = role === 'ADMIN';
+  const canUploadDocuments = role === 'ADOPTER' && ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(request.status);
+  const canSignContract = role === 'ADOPTER' && request.status === 'APPROVED' && request.contract?.status !== 'SIGNED';
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -168,6 +247,44 @@ export function AdoptionRequestDetail() {
             </div>
           )}
 
+          {canUploadDocuments && (
+            <form onSubmit={handleDocumentSubmit} className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Cargar Documentos
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select
+                  value={documentForm.type}
+                  onChange={(event) => setDocumentForm((prev) => ({ ...prev, type: event.target.value }))}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                >
+                  <option value="ID_CARD">Cédula de identidad</option>
+                  <option value="ADDRESS_PROOF">Comprobante de domicilio</option>
+                  <option value="CONTRACT">Contrato</option>
+                </select>
+                <input
+                  value={documentForm.fileName}
+                  onChange={(event) => setDocumentForm((prev) => ({ ...prev, fileName: event.target.value }))}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  placeholder="Nombre del archivo"
+                  required
+                />
+                <input
+                  type="url"
+                  value={documentForm.fileUrl}
+                  onChange={(event) => setDocumentForm((prev) => ({ ...prev, fileUrl: event.target.value }))}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  placeholder="https://..."
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={isUploadingDocument}>
+                {isUploadingDocument ? 'Cargando...' : 'Guardar documento'}
+              </Button>
+            </form>
+          )}
+
           {request.documents.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -206,6 +323,28 @@ export function AdoptionRequestDetail() {
                       Ver Contrato
                     </a>
                   </Button>
+                )}
+                {canSignContract && (
+                  <div className="pt-4 space-y-3">
+                    <canvas
+                      ref={canvasRef}
+                      width={640}
+                      height={180}
+                      className="w-full h-44 touch-none rounded-lg border border-gray-300 bg-white"
+                      onPointerDown={startDrawing}
+                      onPointerMove={drawSignature}
+                      onPointerUp={() => setIsDrawing(false)}
+                      onPointerLeave={() => setIsDrawing(false)}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={clearSignature}>
+                        Limpiar firma
+                      </Button>
+                      <Button type="button" size="sm" onClick={signContract} disabled={isSigningContract}>
+                        {isSigningContract ? 'Firmando...' : 'Finalizar y firmar'}
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

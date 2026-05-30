@@ -2,16 +2,22 @@ import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
 import { PetStatus } from '@prisma/client';
-import qrcode from 'qrcode';
+import { writeAuditLog } from '../services/auditService';
+import { generatePetQrDataUrl } from '../services/qrService';
+import {
+  ACTIVE_ADOPTION_STATUSES,
+  canTransitionPetStatus,
+  getAllowedPetTransitions,
+  isTerminalPetStatus,
+} from '../domain/petRules';
 
-// Esquemas de validación
 const petCreateSchema = z.object({
   name: z.string().min(1),
   species: z.string().min(1),
   breed: z.string().optional(),
   estimatedAge: z.number().int().nonnegative().optional(),
   size: z.string().optional(),
-  mainPhotoUrl: z.string().optional(),
+  mainPhotoUrl: z.string().url(),
   rescueLocationText: z.string().optional(),
   energyLevel: z.string().optional(),
   spaceNeed: z.string().optional(),
@@ -27,20 +33,17 @@ const petStatusSchema = z.object({
 
 export const getPets = async (req: Request, res: Response) => {
   const role = req.user!.role;
-
   const query: Record<string, unknown> = {};
 
   if (role === 'ADOPTER') {
     query['status'] = 'AVAILABLE';
-  } else {
-    if (req.query['status']) {
-      query['status'] = req.query['status'] as string;
-    }
+  } else if (req.query['status']) {
+    query['status'] = req.query['status'] as string;
   }
 
   const pets = await prisma.pet.findMany({
     where: query as any,
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 
   res.json({ success: true, pets });
@@ -73,19 +76,28 @@ export const createPet = async (req: Request, res: Response) => {
     data: {
       ...parsed.data,
       status: 'QUARANTINE',
-    }
+    },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'CREATE_PET',
-      entity: 'Pet',
-      entityId: newPet.id,
-    }
+  let qrCodeUrl: string | null = null;
+  try {
+    qrCodeUrl = await generatePetQrDataUrl(newPet.id);
+    await prisma.pet.update({
+      where: { id: newPet.id },
+      data: { qrCodeUrl },
+    });
+  } catch (err) {
+    console.error(`QR generation failed for pet ${newPet.id}`, err);
+  }
+
+  await writeAuditLog({
+    userId: req.user!.id,
+    action: 'CREATE_PET',
+    entity: 'Pet',
+    entityId: newPet.id,
   });
 
-  res.status(201).json({ success: true, pet: newPet });
+  res.status(201).json({ success: true, pet: { ...newPet, qrCodeUrl } });
 };
 
 export const updatePet = async (req: Request, res: Response) => {
@@ -103,17 +115,15 @@ export const updatePet = async (req: Request, res: Response) => {
 
   const updatedPet = await prisma.pet.update({
     where: { id },
-    data: parsed.data
+    data: parsed.data,
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'UPDATE_PET',
-      entity: 'Pet',
-      entityId: id,
-      details: JSON.stringify(parsed.data),
-    }
+  await writeAuditLog({
+    userId: req.user!.id,
+    action: 'UPDATE_PET',
+    entity: 'Pet',
+    entityId: id,
+    details: JSON.stringify(parsed.data),
   });
 
   res.json({ success: true, pet: updatedPet });
@@ -136,39 +146,56 @@ export const updatePetStatus = async (req: Request, res: Response) => {
 
   const currentStatus = pet.status;
 
-  const isTerminal = (s: PetStatus) => ['ADOPTED', 'DECEASED'].includes(s);
-
-  if (isTerminal(currentStatus)) {
+  if (isTerminalPetStatus(currentStatus)) {
     return res.status(400).json({ success: false, error: `No se puede cambiar el estado de una mascota ${currentStatus}` });
   }
 
-  let isValidTransition = false;
-
-  if (currentStatus === 'QUARANTINE' && ['AVAILABLE', 'TREATMENT'].includes(newStatus)) {
-    isValidTransition = true;
-  } else if (currentStatus === 'AVAILABLE' && ['TREATMENT', 'ADOPTED'].includes(newStatus)) {
-    isValidTransition = true;
-  } else if (currentStatus === 'TREATMENT' && ['AVAILABLE', 'DECEASED'].includes(newStatus)) {
-    isValidTransition = true;
+  if (!canTransitionPetStatus(currentStatus, newStatus)) {
+    return res.status(400).json({
+      success: false,
+      error: `Transición inválida de ${currentStatus} a ${newStatus}. Transiciones permitidas: ${getAllowedPetTransitions(currentStatus).join(', ')}`,
+    });
   }
 
-  if (!isValidTransition) {
-    return res.status(400).json({ success: false, error: `Transición inválida de ${currentStatus} a ${newStatus}` });
+  if (newStatus === 'AVAILABLE') {
+    const medicalRecordCount = await prisma.medicalRecord.count({ where: { petId: id } });
+
+    if (!pet.mainPhotoUrl || medicalRecordCount === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Para marcar una mascota como Disponible debe tener fotografía principal e historial clínico básico.',
+      });
+    }
+  }
+
+  if (currentStatus === 'AVAILABLE' && newStatus !== 'ADOPTED') {
+    const activeRequest = await prisma.adoptionRequest.findFirst({
+      where: {
+        petId: id,
+        status: { in: ACTIVE_ADOPTION_STATUSES },
+      },
+    });
+
+    if (activeRequest) {
+      return res.status(409).json({
+        success: false,
+        error: 'Esta mascota tiene una solicitud de adopción en curso. Resuelve la solicitud antes de cambiar su estado.',
+        adoptionRequestId: activeRequest.id,
+      });
+    }
   }
 
   const updatedPet = await prisma.pet.update({
     where: { id },
-    data: { status: newStatus }
+    data: { status: newStatus },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'UPDATE_PET_STATUS',
-      entity: 'Pet',
-      entityId: id,
-      details: `Cambio de ${currentStatus} a ${newStatus}`,
-    }
+  await writeAuditLog({
+    userId: req.user!.id,
+    action: 'UPDATE_PET_STATUS',
+    entity: 'Pet',
+    entityId: id,
+    details: `Cambio de ${currentStatus} a ${newStatus}`,
   });
 
   res.json({ success: true, pet: updatedPet });
@@ -182,27 +209,19 @@ export const generatePetQR = async (req: Request, res: Response) => {
     return res.status(404).json({ success: false, error: 'Mascota no encontrada' });
   }
 
-  const profileUrl = `http://localhost:5173/pets/${id}`;
-
   try {
-    const qrDataUrl = await qrcode.toDataURL(profileUrl, {
-      width: 400,
-      margin: 2,
-      color: { dark: '#14532d', light: '#ffffff' }
-    });
+    const qrDataUrl = await generatePetQrDataUrl(id);
 
     const updatedPet = await prisma.pet.update({
       where: { id },
-      data: { qrCodeUrl: qrDataUrl }
+      data: { qrCodeUrl: qrDataUrl },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId: req.user!.id,
-        action: 'GENERATE_PET_QR',
-        entity: 'Pet',
-        entityId: id,
-      }
+    await writeAuditLog({
+      userId: req.user!.id,
+      action: 'GENERATE_PET_QR',
+      entity: 'Pet',
+      entityId: id,
     });
 
     res.json({ success: true, qrCodeUrl: qrDataUrl, pet: updatedPet });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LoadingState } from '../components/LoadingState';
@@ -20,6 +21,7 @@ interface Pet {
   size?: string;
   status: PetStatus;
   mainPhotoUrl?: string;
+  rescueLocationText?: string;
   qrCodeUrl?: string;
 }
 
@@ -27,6 +29,17 @@ interface AdoptionRequestSummary {
   id: string;
   petId: string;
   status: 'RECEIVED' | 'INTERVIEW' | 'VISIT' | 'APPROVED' | 'REJECTED';
+}
+
+interface ClinicalEntry {
+  id: string;
+  diagnosis: string;
+  treatment?: string;
+  notes?: string;
+  createdAt: string;
+  createdBy?: {
+    fullName: string;
+  };
 }
 
 export function PetDetail() {
@@ -38,6 +51,9 @@ export function PetDetail() {
   const [error, setError] = useState('');
   const [qrUrl, setQrUrl] = useState('');
   const [existingRequest, setExistingRequest] = useState<AdoptionRequestSummary | null>(null);
+  const [clinicalEntries, setClinicalEntries] = useState<ClinicalEntry[]>([]);
+  const [clinicalForm, setClinicalForm] = useState({ diagnosis: '', treatment: '', notes: '' });
+  const [isSavingClinicalEntry, setIsSavingClinicalEntry] = useState(false);
   const [showAdoptionConfirm, setShowAdoptionConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,6 +63,11 @@ export function PetDetail() {
         const res = await axios.get(`http://localhost:3000/pets/${id}`);
         setPet(res.data.pet);
         setQrUrl(res.data.pet.qrCodeUrl || '');
+
+        if (role === 'ADMIN' || role === 'VETERINARIAN') {
+          const clinicalRes = await axios.get(`http://localhost:3000/pets/${id}/clinical-record`);
+          setClinicalEntries(clinicalRes.data.entries || []);
+        }
 
         // Check for existing adoption request if user is ADOPTER
         if (role === 'ADOPTER') {
@@ -96,6 +117,22 @@ export function PetDetail() {
     }
   };
 
+  const handleClinicalSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setIsSavingClinicalEntry(true);
+    setError('');
+
+    try {
+      const res = await axios.post(`http://localhost:3000/pets/${id}/clinical-record/entries`, clinicalForm);
+      setClinicalEntries((entries) => [res.data.entry, ...entries]);
+      setClinicalForm({ diagnosis: '', treatment: '', notes: '' });
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error al guardar la entrada clínica'));
+    } finally {
+      setIsSavingClinicalEntry(false);
+    }
+  };
+
   if (isLoading) return <LoadingState />;
   if (error || !pet) return <div className="p-6 text-center text-red-500">{error || 'Mascota no encontrada'}</div>;
 
@@ -103,6 +140,7 @@ export function PetDetail() {
   const canChangeStatus = role === 'ADMIN' || role === 'VETERINARIAN';
   const canGenerateQR = role === 'ADMIN' || role === 'VOLUNTEER' || role === 'VETERINARIAN';
   const canRequestAdoption = role === 'ADOPTER' && pet.status === 'AVAILABLE';
+  const canManageClinicalRecord = role === 'ADMIN' || role === 'VETERINARIAN';
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -147,10 +185,71 @@ export function PetDetail() {
                     <p className="text-gray-500">Tamaño</p>
                     <p className="font-medium">{pet.size || 'No especificado'}</p>
                   </div>
+                  {pet.rescueLocationText && (
+                    <div className="col-span-2">
+                      <p className="text-gray-500">Localización de rescate</p>
+                      <p className="font-medium">{pet.rescueLocationText}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+
+          {canManageClinicalRecord && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Expediente Clínico</h2>
+                <span className="text-sm text-gray-500">{clinicalEntries.length} entradas</span>
+              </div>
+
+              <form onSubmit={handleClinicalSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input
+                  value={clinicalForm.diagnosis}
+                  onChange={(event) => setClinicalForm((prev) => ({ ...prev, diagnosis: event.target.value }))}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  placeholder="Diagnóstico"
+                  required
+                />
+                <input
+                  value={clinicalForm.treatment}
+                  onChange={(event) => setClinicalForm((prev) => ({ ...prev, treatment: event.target.value }))}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  placeholder="Tratamiento"
+                  required
+                />
+                <input
+                  value={clinicalForm.notes}
+                  onChange={(event) => setClinicalForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm md:col-span-2"
+                  placeholder="Observaciones"
+                />
+                <div className="md:col-span-2">
+                  <Button type="submit" disabled={isSavingClinicalEntry}>
+                    {isSavingClinicalEntry ? 'Guardando...' : 'Agregar entrada clínica'}
+                  </Button>
+                </div>
+              </form>
+
+              <div className="space-y-3">
+                {clinicalEntries.length === 0 ? (
+                  <p className="text-sm text-gray-500">Aún no hay entradas clínicas registradas.</p>
+                ) : (
+                  clinicalEntries.map((entry) => (
+                    <div key={entry.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-gray-900">{entry.diagnosis}</p>
+                        <p className="text-gray-500">{new Date(entry.createdAt).toLocaleString('es-ES')}</p>
+                      </div>
+                      <p className="mt-2 text-gray-700">{entry.treatment}</p>
+                      {entry.notes && <p className="mt-1 text-gray-500">{entry.notes}</p>}
+                      {entry.createdBy && <p className="mt-2 text-xs text-gray-500">Responsable: {entry.createdBy.fullName}</p>}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">

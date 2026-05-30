@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
+import { writeAccessDeniedLog } from '../services/auditService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
 
@@ -10,7 +11,6 @@ export interface JwtPayload {
   role: Role;
 }
 
-// Extendemos el Request de Express para que acepte 'user'
 declare global {
   namespace Express {
     interface Request {
@@ -32,7 +32,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch (_err) {
     res.status(403).json({ success: false, error: 'Token inválido o expirado.' });
   }
 };
@@ -45,6 +45,16 @@ export const authorizeRoles = (...roles: Role[]) => {
     }
 
     if (!roles.includes(req.user.role)) {
+      void writeAccessDeniedLog({
+        userId: req.user.id,
+        role: req.user.role,
+        resource: req.originalUrl,
+        method: req.method,
+        ip: req.ip,
+      }).catch((err) => {
+        console.error('Failed to write access denied audit log', err);
+      });
+
       res.status(403).json({ success: false, error: 'No tienes permisos para realizar esta acción.' });
       return;
     }

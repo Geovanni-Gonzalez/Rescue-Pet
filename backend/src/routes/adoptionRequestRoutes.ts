@@ -4,7 +4,9 @@ import {
   getAdoptionRequests,
   getAdoptionRequestById,
   getMyAdoptionRequests,
+  signAdoptionContract,
   updateAdoptionRequestStatus,
+  uploadAdoptionDocument,
 } from '../controllers/adoptionRequestController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 
@@ -27,5 +29,11 @@ router.get('/:id', getAdoptionRequestById);
 
 // Cambiar estado de solicitud (solo ADMIN)
 router.patch('/:id/status', authorizeRoles('ADMIN'), updateAdoptionRequestStatus);
+
+// Repositorio documental de la solicitud
+router.post('/:id/documents', authorizeRoles('ADOPTER', 'ADMIN'), uploadAdoptionDocument);
+
+// Firma del contrato por parte del adoptante
+router.post('/:id/contract/sign', authorizeRoles('ADOPTER'), signAdoptionContract);
 
 export default router;
