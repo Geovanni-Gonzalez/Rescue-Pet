@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { errorHandler } from './middlewares/errorHandler';
 import { requestLogger } from './middlewares/requestLogger';
 import authRoutes from './routes/authRoutes';
@@ -18,6 +19,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
+
+// Serve uploaded files (animal photos, gallery)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API routes — all under /api
 app.use('/api/auth', authRoutes);

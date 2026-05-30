@@ -7,27 +7,25 @@ import {
   updateAnimalStatus,
   getAnimalStatusHistory,
   updateRescueLocation,
+  getLocationHistory,
   regenerateQR,
   downloadQR,
 } from '../controllers/animalController';
-import { getGallery, addGalleryImage, deleteGalleryImage } from '../controllers/galleryController';
-import {
-  getClinicalRecord,
-  getMedicalSummary,
-  createClinicalEntry,
-} from '../controllers/clinicalController';
+import { addGalleryImages, deleteGalleryImage, getGallery } from '../controllers/galleryController';
+import { getClinicalRecord, getMedicalSummary, createClinicalEntry } from '../controllers/clinicalController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
+import { uploadAnimalPhoto, uploadGalleryPhotos } from '../middlewares/upload';
 
 const router = Router();
 router.use(authenticateToken);
 
 // List / create
 router.get('/', getAnimals);
-router.post('/', authorizeRoles('ADMIN', 'VOLUNTEER'), createAnimal);
+router.post('/', authorizeRoles('ADMIN', 'VOLUNTEER'), uploadAnimalPhoto.single('mainPhoto'), createAnimal);
 
 // Single animal
 router.get('/:id', getAnimalById);
-router.patch('/:id', authorizeRoles('ADMIN', 'VOLUNTEER'), updateAnimal);
+router.patch('/:id', authorizeRoles('ADMIN', 'VOLUNTEER'), uploadAnimalPhoto.single('mainPhoto'), updateAnimal);
 
 // Status
 router.patch('/:id/status', authorizeRoles('ADMIN', 'VETERINARIAN'), updateAnimalStatus);
@@ -35,6 +33,7 @@ router.get('/:id/status-history', getAnimalStatusHistory);
 
 // Location
 router.put('/:id/rescue-location', authorizeRoles('ADMIN', 'VOLUNTEER'), updateRescueLocation);
+router.get('/:id/location-history', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER'), getLocationHistory);
 
 // QR
 router.post('/:id/qr/regenerate', authorizeRoles('ADMIN', 'VOLUNTEER', 'VETERINARIAN'), regenerateQR);
@@ -42,7 +41,7 @@ router.get('/:id/qr/download', downloadQR);
 
 // Gallery
 router.get('/:id/gallery', getGallery);
-router.post('/:id/gallery', authorizeRoles('ADMIN', 'VOLUNTEER'), addGalleryImage);
+router.post('/:id/gallery', authorizeRoles('ADMIN', 'VOLUNTEER'), uploadGalleryPhotos.array('images', 10), addGalleryImages);
 router.delete('/:id/gallery/:imageId', authorizeRoles('ADMIN', 'VOLUNTEER'), deleteGalleryImage);
 
 // Clinical

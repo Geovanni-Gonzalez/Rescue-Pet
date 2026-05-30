@@ -2,10 +2,9 @@ import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
 import type { AnimalStatus } from '../types/enums';
-
-const ANIMAL_STATUSES = ['QUARANTINE', 'AVAILABLE', 'TREATMENT', 'ADOPTED', 'DECEASED'] as const;
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { generatePetQrDataUrl } from '../services/qrService';
+import { buildUploadUrl, cleanupUpload } from '../middlewares/upload';
 import {
   ACTIVE_ADOPTION_STATUSES,
   canTransitionAnimalStatus,
@@ -13,28 +12,66 @@ import {
   isTerminalAnimalStatus,
 } from '../domain/animalRules';
 
-const animalCreateSchema = z.object({
-  name: z.string().min(1),
-  species: z.string().min(1),
+const ANIMAL_STATUSES = ['QUARANTINE', 'AVAILABLE', 'TREATMENT', 'ADOPTED', 'DECEASED'] as const;
+
+// Schema for JSON body (edit without file)
+const animalBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  species: z.string().min(1).optional(),
   estimatedBreed: z.string().optional(),
-  estimatedAge: z.number().int().nonnegative().optional(),
+  estimatedAge: z.coerce.number().int().nonnegative().optional(),
   size: z.string().optional(),
-  mainPhotoUrl: z.string().url(),
+  mainPhotoUrl: z.string().url().optional(),
   rescueLocationText: z.string().optional(),
-  rescueLatitude: z.number().optional(),
-  rescueLongitude: z.number().optional(),
+  rescueLatitude: z.coerce.number().optional(),
+  rescueLongitude: z.coerce.number().optional(),
   energyLevel: z.string().optional(),
   spaceNeed: z.string().optional(),
-  goodWithChildren: z.boolean().optional(),
-  goodWithPets: z.boolean().optional(),
+  goodWithChildren: z.union([z.boolean(), z.enum(['true', 'false']).transform((v) => v === 'true')]).optional(),
+  goodWithPets: z.union([z.boolean(), z.enum(['true', 'false']).transform((v) => v === 'true')]).optional(),
 });
 
-const animalUpdateSchema = animalCreateSchema.partial();
+const animalCreateRequiredSchema = animalBodySchema.extend({
+  name: z.string().min(1),
+  species: z.string().min(1),
+});
 
 const animalStatusSchema = z.object({
   status: z.enum(ANIMAL_STATUSES),
   reason: z.string().optional(),
 });
+
+const rescueLocationSchema = z.object({
+  rescueLocationText: z.string().optional(),
+  rescueLatitude: z.coerce.number().optional(),
+  rescueLongitude: z.coerce.number().optional(),
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function buildAnimalPayload(
+  req: Request,
+  mainPhotoUrl?: string,
+): Record<string, unknown> {
+  const body = req.body as Record<string, string | boolean | number | undefined>;
+  return {
+    name: body['name'],
+    species: body['species'],
+    estimatedBreed: body['estimatedBreed'] || undefined,
+    estimatedAge: body['estimatedAge'] ? Number(body['estimatedAge']) : undefined,
+    size: body['size'] || undefined,
+    mainPhotoUrl: mainPhotoUrl ?? (body['mainPhotoUrl'] as string | undefined),
+    rescueLocationText: body['rescueLocationText'] || undefined,
+    rescueLatitude: body['rescueLatitude'] ? Number(body['rescueLatitude']) : undefined,
+    rescueLongitude: body['rescueLongitude'] ? Number(body['rescueLongitude']) : undefined,
+    energyLevel: body['energyLevel'] || undefined,
+    spaceNeed: body['spaceNeed'] || undefined,
+    goodWithChildren: body['goodWithChildren'] === 'true' || body['goodWithChildren'] === true,
+    goodWithPets: body['goodWithPets'] === 'true' || body['goodWithPets'] === true,
+  };
+}
+
+// ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const getAnimals = async (req: Request, res: Response) => {
   const role = req.user!.role;
@@ -47,11 +84,9 @@ export const getAnimals = async (req: Request, res: Response) => {
   }
 
   const animals = await prisma.animal.findMany({
-    where: where as any,
+    where: where as never,
     orderBy: { createdAt: 'desc' },
-    include: {
-      _count: { select: { gallery: true } },
-    },
+    include: { _count: { select: { gallery: true } } },
   });
 
   res.json({ success: true, animals });
@@ -63,12 +98,10 @@ export const getAnimalById = async (req: Request, res: Response) => {
 
   const animal = await prisma.animal.findUnique({
     where: { id },
-    include: { gallery: true },
+    include: { gallery: { orderBy: { createdAt: 'asc' } } },
   });
 
-  if (!animal) {
-    return res.status(404).json({ success: false, error: 'Animal no encontrado' });
-  }
+  if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
   if (role === 'ADOPTER' && animal.status !== 'AVAILABLE') {
     return res.status(403).json({ success: false, error: 'Este animal no está disponible para adopción.' });
@@ -78,9 +111,23 @@ export const getAnimalById = async (req: Request, res: Response) => {
 };
 
 export const createAnimal = async (req: Request, res: Response) => {
-  const parsed = animalCreateSchema.safeParse(req.body);
+  let mainPhotoUrl: string | undefined;
+
+  if (req.file) {
+    mainPhotoUrl = buildUploadUrl('animals', req.file.filename);
+  }
+
+  const payload = buildAnimalPayload(req, mainPhotoUrl);
+  const parsed = animalCreateRequiredSchema.safeParse(payload);
+
   if (!parsed.success) {
+    if (req.file) cleanupUpload(req.file.path);
     return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+  }
+
+  if (!parsed.data.mainPhotoUrl) {
+    if (req.file) cleanupUpload(req.file.path);
+    return res.status(400).json({ success: false, error: 'La fotografía principal es obligatoria.' });
   }
 
   const newAnimal = await prisma.animal.create({
@@ -91,8 +138,7 @@ export const createAnimal = async (req: Request, res: Response) => {
     },
   });
 
-  // Generate public profile URL
-  const publicProfileUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/catalog/animals/${newAnimal.id}`;
+  const publicProfileUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/pets/${newAnimal.id}`;
   let qrUrl: string | null = null;
 
   try {
@@ -120,14 +166,27 @@ export const createAnimal = async (req: Request, res: Response) => {
 export const updateAnimal = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const parsed = animalUpdateSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-  }
-
   const animal = await prisma.animal.findUnique({ where: { id } });
   if (!animal) {
+    if (req.file) cleanupUpload(req.file.path);
     return res.status(404).json({ success: false, error: 'Animal no encontrado' });
+  }
+
+  let mainPhotoUrl: string | undefined;
+  if (req.file) {
+    mainPhotoUrl = buildUploadUrl('animals', req.file.filename);
+  }
+
+  const payload = buildAnimalPayload(req, mainPhotoUrl);
+  // Remove undefined values so partial update works
+  const cleaned = Object.fromEntries(
+    Object.entries(payload).filter(([, v]) => v !== undefined),
+  );
+
+  const parsed = animalBodySchema.safeParse(cleaned);
+  if (!parsed.success) {
+    if (req.file) cleanupUpload(req.file.path);
+    return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
   }
 
   const updated = await prisma.animal.update({ where: { id }, data: parsed.data });
@@ -137,7 +196,7 @@ export const updateAnimal = async (req: Request, res: Response) => {
     action: 'UPDATE_ANIMAL',
     entityType: 'Animal',
     entityId: id,
-    metadata: parsed.data as Record<string, unknown>,
+    metadata: cleaned as Record<string, unknown>,
     ipAddress: getClientIp(req),
   });
 
@@ -148,27 +207,26 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
   const parsed = animalStatusSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ success: false, error: 'Estado inválido' });
-  }
+  if (!parsed.success) return res.status(400).json({ success: false, error: 'Estado inválido' });
 
   const { status: newStatus, reason } = parsed.data;
   const animal = await prisma.animal.findUnique({ where: { id } });
 
-  if (!animal) {
-    return res.status(404).json({ success: false, error: 'Animal no encontrado' });
-  }
+  if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
   const currentStatus = animal.status as AnimalStatus;
 
   if (isTerminalAnimalStatus(currentStatus)) {
-    return res.status(400).json({ success: false, error: `No se puede cambiar el estado de un animal ${currentStatus}` });
+    return res.status(400).json({
+      success: false,
+      error: `No se puede cambiar el estado de un animal en estado ${currentStatus}`,
+    });
   }
 
   if (!canTransitionAnimalStatus(currentStatus, newStatus)) {
     return res.status(400).json({
       success: false,
-      error: `Transición inválida de ${currentStatus} a ${newStatus}. Permitidas: ${getAllowedAnimalTransitions(currentStatus).join(', ')}`,
+      error: `Transición inválida: ${currentStatus} → ${newStatus}. Permitidas: ${getAllowedAnimalTransitions(currentStatus).join(', ')}`,
     });
   }
 
@@ -234,14 +292,33 @@ export const getAnimalStatusHistory = async (req: Request, res: Response) => {
 
 export const updateRescueLocation = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
-  const { rescueLocationText, rescueLatitude, rescueLongitude } = req.body;
 
-  if (!rescueLocationText && (!rescueLatitude || !rescueLongitude)) {
-    return res.status(400).json({ success: false, error: 'Se requiere texto de ubicación o coordenadas.' });
+  const parsed = rescueLocationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+  }
+
+  const { rescueLocationText, rescueLatitude, rescueLongitude } = parsed.data;
+
+  if (!rescueLocationText && (rescueLatitude === undefined || rescueLongitude === undefined)) {
+    return res.status(400).json({ success: false, error: 'Se requiere texto de ubicación o coordenadas completas.' });
   }
 
   const animal = await prisma.animal.findUnique({ where: { id } });
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
+
+  // Archive current location before overwriting
+  if (animal.rescueLocationText || animal.rescueLatitude !== null) {
+    await prisma.animalRescueLocationHistory.create({
+      data: {
+        animalId: id,
+        locationText: animal.rescueLocationText,
+        latitude: animal.rescueLatitude,
+        longitude: animal.rescueLongitude,
+        changedByUserId: req.user!.id,
+      },
+    });
+  }
 
   const updated = await prisma.animal.update({
     where: { id },
@@ -249,6 +326,18 @@ export const updateRescueLocation = async (req: Request, res: Response) => {
   });
 
   res.json({ success: true, animal: updated });
+};
+
+export const getLocationHistory = async (req: Request, res: Response) => {
+  const id = req.params['id'] as string;
+
+  const history = await prisma.animalRescueLocationHistory.findMany({
+    where: { animalId: id },
+    orderBy: { createdAt: 'desc' },
+    include: { changedBy: { select: { id: true, fullName: true } } },
+  });
+
+  res.json({ success: true, history });
 };
 
 export const regenerateQR = async (req: Request, res: Response) => {
@@ -271,7 +360,7 @@ export const regenerateQR = async (req: Request, res: Response) => {
 
     res.json({ success: true, qrUrl, animal: updated });
   } catch {
-    res.status(500).json({ success: false, error: 'Error al generar el código QR' });
+    res.status(500).json({ success: false, error: 'Error al generar el código QR. Se reintentará automáticamente.' });
   }
 };
 
@@ -280,7 +369,7 @@ export const downloadQR = async (req: Request, res: Response) => {
   const animal = await prisma.animal.findUnique({ where: { id }, select: { qrUrl: true, name: true } });
 
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
-  if (!animal.qrUrl) return res.status(404).json({ success: false, error: 'QR no disponible, regenerelo primero.' });
+  if (!animal.qrUrl) return res.status(404).json({ success: false, error: 'QR no disponible. Regeneralo primero.' });
 
-  res.json({ success: true, qrUrl: animal.qrUrl, fileName: `qr-${id}.png` });
+  res.json({ success: true, qrUrl: animal.qrUrl, fileName: `qr-${animal.name?.replace(/\s+/g, '-').toLowerCase()}.png` });
 };
