@@ -22,6 +22,7 @@ import { AdminAdoptionRequestDetail } from './pages/AdminAdoptionRequestDetail';
 import { AdminUsers } from './pages/AdminUsers';
 import { AdoptionRequestDetail } from './components/AdoptionRequestDetail';
 import { ImmunizationAlerts } from './pages/ImmunizationAlerts';
+import { AdminInterviewSlots } from './pages/AdminInterviewSlots';
 
 export const router = createBrowserRouter([
   // Public routes
@@ -81,6 +82,7 @@ export const router = createBrowserRouter([
               { path: 'pets/:id/edit', element: <PetEdit /> },
               { path: 'adoption-requests', element: <AdminAdoptionRequests /> },
               { path: 'adoption-requests/:id', element: <AdminAdoptionRequestDetail /> },
+              { path: 'interview-slots', element: <AdminInterviewSlots /> },
               {
                 path: 'users',
                 element: <ProtectedRoute allowedRoles={['ADMIN']} />,

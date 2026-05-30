@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PawPrint, HeartHandshake, Settings, Users, LogOut, Sparkles, ClipboardList, Syringe } from 'lucide-react';
+import { LayoutDashboard, PawPrint, HeartHandshake, Settings, Users, LogOut, Sparkles, ClipboardList, Syringe, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function Sidebar() {
@@ -12,6 +12,8 @@ export function Sidebar() {
     { to: '/pets', label: 'Gestión de Mascotas', icon: PawPrint, roles: ['ADMIN', 'VETERINARIAN', 'VOLUNTEER'] },
     // Alertas de inmunización (Fase 3)
     { to: '/immunization-alerts', label: 'Alertas de Vacunas', icon: Syringe, roles: ['ADMIN', 'VETERINARIAN', 'VOLUNTEER'] },
+    // Agenda de entrevistas (Fase 5)
+    { to: '/admin/interview-slots', label: 'Agenda Entrevistas', icon: Calendar, roles: ['ADMIN'] },
     // Catálogo inteligente (solo adoptantes)
     { to: '/catalog', label: 'Catálogo Inteligente', icon: Sparkles, roles: ['ADOPTER'] },
     // Test de afinidad (solo adoptantes)

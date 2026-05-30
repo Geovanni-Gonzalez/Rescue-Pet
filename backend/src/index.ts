@@ -1,3 +1,9 @@
+// dotenv MUST be loaded before any other import that reads process.env.
+// override: true ensures .env always wins over Windows/shell environment variables.
+// This prevents stale or incorrect system-level DATABASE_URL values from taking effect.
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+
 import app from './app';
 
 const PORT = process.env.PORT || 3000;

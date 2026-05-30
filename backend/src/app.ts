@@ -9,6 +9,7 @@ import animalRoutes from './routes/animalRoutes';
 import catalogRoutes from './routes/catalogRoutes';
 import matchmakingRoutes from './routes/matchmakingRoutes';
 import adoptionApplicationRoutes from './routes/adoptionApplicationRoutes';
+import interviewSlotRoutes from './routes/interviewSlotRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import taskRoutes from './routes/taskRoutes';
 import reportRoutes from './routes/reportRoutes';
@@ -20,7 +21,9 @@ app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
 
-// Serve uploaded files (animal photos, gallery)
+// Serve uploaded files (animal photos, gallery, documents, contracts)
+// Note: /uploads/documents and /uploads/contracts contain private files —
+// in production, replace with authenticated signed URLs.
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API routes — all under /api
@@ -30,6 +33,7 @@ app.use('/api/animals', animalRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/adopters', matchmakingRoutes);
 app.use('/api/adoption-applications', adoptionApplicationRoutes);
+app.use('/api/interview-slots', interviewSlotRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/reports', reportRoutes);

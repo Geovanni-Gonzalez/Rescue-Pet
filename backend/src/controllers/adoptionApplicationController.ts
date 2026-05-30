@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
 import type { AdoptionRequestStatus, DocumentType, AnimalStatus } from '../types/enums';
+import { writeAuditLog, getClientIp } from '../services/auditService';
+import { buildUploadUrl } from '../middlewares/upload';
+import { generateContractPdf, generateSignedContractPdf, buildContractUrl } from '../services/pdfService';
 
 const ADOPTION_REQUEST_STATUSES = ['RECEIVED', 'INTERVIEW', 'VISIT', 'APPROVED', 'REJECTED'] as const;
 const DOCUMENT_TYPES = ['ID_CARD', 'ADDRESS_PROOF'] as const;
-import { writeAuditLog, getClientIp } from '../services/auditService';
 
 const createApplicationSchema = z.object({
   animalId: z.string().uuid(),
@@ -16,15 +18,8 @@ const updateStatusSchema = z.object({
   rejectionReason: z.string().optional(),
 });
 
-const documentSchema = z.object({
-  documentType: z.enum(DOCUMENT_TYPES),
-  fileName: z.string().min(1),
-  fileUrl: z.string().url(),
-});
-
 const signContractSchema = z.object({
-  signatureImageUrl: z.string().min(1),
-  signedPdfUrl: z.string().url().optional(),
+  signatureImageUrl: z.string().min(1), // base64 data URL from canvas
 });
 
 const ACTIVE_STATUSES: AdoptionRequestStatus[] = ['RECEIVED', 'INTERVIEW', 'VISIT'];
@@ -36,6 +31,8 @@ const VALID_TRANSITIONS: Record<AdoptionRequestStatus, AdoptionRequestStatus[]> 
   REJECTED: [],
 };
 const REQUIRED_DOCUMENTS: DocumentType[] = ['ID_CARD', 'ADDRESS_PROOF'];
+
+// ─── CU-16: Solicitud de adopción ─────────────────────────────────────────────
 
 export const createApplication = async (req: Request, res: Response) => {
   const parsed = createApplicationSchema.safeParse(req.body);
@@ -61,7 +58,7 @@ export const createApplication = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       error: 'Ya tienes una solicitud activa para este animal',
-      existingApplicationId: existing.id,
+      existingRequestId: existing.id,
     });
   }
 
@@ -100,12 +97,16 @@ export const createApplication = async (req: Request, res: Response) => {
   res.status(201).json({ success: true, application });
 };
 
+// ─── CU-18: Tablero de seguimiento ────────────────────────────────────────────
+
 export const getApplications = async (req: Request, res: Response) => {
   const { role, id: userId } = req.user!;
-  const { status } = req.query;
+  const { status, animalId, adopterId: queryAdopterId } = req.query;
 
   const where: Record<string, unknown> = {};
   if (role === 'ADOPTER') where['adopterId'] = userId;
+  if (role === 'ADMIN' && queryAdopterId) where['adopterId'] = queryAdopterId;
+  if (animalId) where['animalId'] = animalId;
   if (status && ADOPTION_REQUEST_STATUSES.includes(status as AdoptionRequestStatus)) {
     where['status'] = status;
   }
@@ -115,6 +116,7 @@ export const getApplications = async (req: Request, res: Response) => {
     include: {
       animal: { select: { id: true, name: true, species: true, mainPhotoUrl: true, status: true } },
       adopter: { select: { id: true, fullName: true, email: true, phone: true } },
+      interviewSlot: { select: { id: true, startsAt: true, endsAt: true, status: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -129,10 +131,30 @@ export const getApplicationById = async (req: Request, res: Response) => {
   const application = await prisma.adoptionRequest.findUnique({
     where: { id },
     include: {
-      animal: { select: { id: true, name: true, species: true, estimatedBreed: true, mainPhotoUrl: true, status: true, energyLevel: true, spaceNeed: true, goodWithChildren: true, goodWithPets: true } },
+      animal: {
+        select: {
+          id: true, name: true, species: true, estimatedBreed: true,
+          mainPhotoUrl: true, status: true, energyLevel: true,
+          spaceNeed: true, goodWithChildren: true, goodWithPets: true,
+        },
+      },
       adopter: { select: { id: true, fullName: true, email: true, phone: true } },
-      documents: { where: { status: 'ACTIVE' }, select: { id: true, documentType: true, fileName: true, version: true, uploadedAt: true } },
-      contract: { select: { id: true, status: true, pdfUrl: true, signedPdfUrl: true, createdAt: true } },
+      documents: {
+        where: { status: 'ACTIVE' },
+        select: {
+          id: true,
+          documentType: true,
+          fileName: true,
+          version: true,
+          uploadedAt: true,
+          // fileUrl only exposed to ADMIN
+          fileUrl: role === 'ADMIN',
+          status: true,
+        },
+      },
+      contract: {
+        select: { id: true, status: true, pdfUrl: true, signedPdfUrl: true, createdAt: true, signedAt: true },
+      },
       interviewSlot: { select: { id: true, startsAt: true, endsAt: true, status: true } },
     },
   });
@@ -173,7 +195,10 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   }
 
   if (status === 'APPROVED') {
-    const docs = await prisma.adopterDocument.findMany({ where: { applicationId: id, status: 'ACTIVE' }, select: { documentType: true } });
+    const docs = await prisma.adopterDocument.findMany({
+      where: { applicationId: id, status: 'ACTIVE' },
+      select: { documentType: true },
+    });
     const uploaded = new Set(docs.map((d) => d.documentType));
     const missing = REQUIRED_DOCUMENTS.filter((t) => !uploaded.has(t));
     if (missing.length > 0) {
@@ -184,7 +209,13 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   const updated = await prisma.adoptionRequest.update({
     where: { id },
     data: { status, rejectionReason: status === 'REJECTED' ? rejectionReason : null },
-    include: { animal: true, adopter: true, documents: true, contract: true },
+    include: {
+      animal: true,
+      adopter: true,
+      documents: { where: { status: 'ACTIVE' } },
+      contract: true,
+      interviewSlot: true,
+    },
   });
 
   await writeAuditLog({
@@ -210,38 +241,73 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
         userId: application.adopterId,
         type: notif.type,
         title: notif.title,
-        message: `Tu solicitud para adoptar a ${application.animal.name} cambió a ${status}.`,
+        message: `Tu solicitud para adoptar a ${application.animal.name} cambió a estado: ${status}.`,
         resourceType: 'AdoptionRequest',
         resourceId: id,
       },
     });
   }
 
-  // Auto-generate contract on APPROVED
+  // CU-20: Auto-generate contract PDF on APPROVED
   if (status === 'APPROVED') {
-    await prisma.adoptionContract.upsert({
-      where: { applicationId: id },
-      update: {},
-      create: {
+    try {
+      const pdfFilename = await generateContractPdf({
         applicationId: id,
-        animalId: application.animalId,
-        adopterId: application.adopterId,
-        pdfUrl: `/contracts/adoption-${id}.pdf`,
-      },
-    });
+        animalName: application.animal.name,
+        animalSpecies: application.animal.species,
+        adopterName: application.adopter.fullName,
+        adopterEmail: application.adopter.email,
+        generatedAt: new Date(),
+      });
+      const pdfUrl = buildContractUrl(pdfFilename);
+
+      await prisma.adoptionContract.upsert({
+        where: { applicationId: id },
+        update: { pdfUrl },
+        create: {
+          applicationId: id,
+          animalId: application.animalId,
+          adopterId: application.adopterId,
+          pdfUrl,
+        },
+      });
+    } catch (err) {
+      // If PDF generation fails, contract record still created but without URL
+      console.error('[PDF] Contract generation failed:', err);
+      await prisma.adoptionContract.upsert({
+        where: { applicationId: id },
+        update: {},
+        create: {
+          applicationId: id,
+          animalId: application.animalId,
+          adopterId: application.adopterId,
+        },
+      });
+    }
   }
 
   res.json({ success: true, application: updated });
 };
 
+// ─── CU-19: Repositorio documental ────────────────────────────────────────────
+
 export const uploadDocument = async (req: Request, res: Response) => {
   const applicationId = req.params['id'] as string;
   const { role, id: userId } = req.user!;
 
-  const parsed = documentSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos' });
+  const file = req.file;
+  if (!file) return res.status(400).json({ success: false, error: 'No se recibió ningún archivo.' });
 
-  const application = await prisma.adoptionRequest.findUnique({ where: { id: applicationId }, include: { adopter: true, animal: true } });
+  const rawType = (req.body.documentType as string | undefined) ?? '';
+  if (!DOCUMENT_TYPES.includes(rawType as DocumentType)) {
+    return res.status(400).json({ success: false, error: `documentType debe ser uno de: ${DOCUMENT_TYPES.join(', ')}` });
+  }
+  const documentType = rawType as DocumentType;
+
+  const application = await prisma.adoptionRequest.findUnique({
+    where: { id: applicationId },
+    include: { adopter: true, animal: true },
+  });
   if (!application) return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
 
   if (role !== 'ADMIN' && application.adopterId !== userId) {
@@ -254,23 +320,23 @@ export const uploadDocument = async (req: Request, res: Response) => {
 
   // Archive previous version of same type
   const previous = await prisma.adopterDocument.findFirst({
-    where: { applicationId, documentType: parsed.data.documentType, status: 'ACTIVE' },
+    where: { applicationId, documentType, status: 'ACTIVE' },
     orderBy: { version: 'desc' },
   });
-
   const nextVersion = (previous?.version ?? 0) + 1;
-
   if (previous) {
     await prisma.adopterDocument.update({ where: { id: previous.id }, data: { status: 'ARCHIVED' } });
   }
+
+  const fileUrl = buildUploadUrl('documents', file.filename);
 
   const document = await prisma.adopterDocument.create({
     data: {
       adopterId: application.adopterId,
       applicationId,
-      documentType: parsed.data.documentType,
-      fileUrl: parsed.data.fileUrl,
-      fileName: parsed.data.fileName,
+      documentType,
+      fileUrl,
+      fileName: file.originalname,
       version: nextVersion,
     },
   });
@@ -314,7 +380,6 @@ export const getDocuments = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, error: 'Acceso denegado.' });
   }
 
-  // Adopter can only see metadata, not file URLs
   const documents = await prisma.adopterDocument.findMany({
     where: { applicationId },
     orderBy: { uploadedAt: 'desc' },
@@ -325,12 +390,14 @@ export const getDocuments = async (req: Request, res: Response) => {
       version: true,
       status: true,
       uploadedAt: true,
-      fileUrl: role === 'ADMIN' ? true : false,
+      fileUrl: role === 'ADMIN', // adoptante solo ve metadatos
     },
   });
 
   res.json({ success: true, documents });
 };
+
+// ─── CU-20: Contrato de adopción ──────────────────────────────────────────────
 
 export const generateContract = async (req: Request, res: Response) => {
   const applicationId = req.params['id'] as string;
@@ -345,18 +412,34 @@ export const generateContract = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Solo se puede generar contrato para solicitudes aprobadas.' });
   }
 
-  const contract = await prisma.adoptionContract.upsert({
-    where: { applicationId },
-    update: { pdfUrl: `/contracts/adoption-${applicationId}.pdf` },
-    create: {
+  try {
+    const pdfFilename = await generateContractPdf({
       applicationId,
-      animalId: application.animalId,
-      adopterId: application.adopterId,
-      pdfUrl: `/contracts/adoption-${applicationId}.pdf`,
-    },
-  });
+      animalName: application.animal.name,
+      animalSpecies: application.animal.species,
+      adopterName: application.adopter.fullName,
+      adopterEmail: application.adopter.email,
+      generatedAt: new Date(),
+    });
 
-  res.json({ success: true, contract });
+    const pdfUrl = buildContractUrl(pdfFilename);
+
+    const contract = await prisma.adoptionContract.upsert({
+      where: { applicationId },
+      update: { pdfUrl },
+      create: {
+        applicationId,
+        animalId: application.animalId,
+        adopterId: application.adopterId,
+        pdfUrl,
+      },
+    });
+
+    res.json({ success: true, contract });
+  } catch (err) {
+    console.error('[PDF] generateContract error:', err);
+    res.status(500).json({ success: false, error: 'Error al generar el contrato PDF.' });
+  }
 };
 
 export const getContract = async (req: Request, res: Response) => {
@@ -385,7 +468,7 @@ export const signContract = async (req: Request, res: Response) => {
 
   const application = await prisma.adoptionRequest.findUnique({
     where: { id: applicationId },
-    include: { animal: true, adopter: { select: { fullName: true } }, contract: true },
+    include: { animal: true, adopter: { select: { fullName: true, email: true } }, contract: true },
   });
 
   if (!application) return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
@@ -394,14 +477,37 @@ export const signContract = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'El contrato solo puede firmarse cuando la solicitud está aprobada.' });
   }
 
-  const signedPdfUrl = parsed.data.signedPdfUrl ?? `/contracts/adoption-${applicationId}-signed.pdf`;
+  // Generate signed PDF with embedded signature
+  let signedPdfUrl: string;
+  try {
+    const signedFilename = await generateSignedContractPdf({
+      applicationId,
+      animalName: application.animal.name,
+      animalSpecies: application.animal.species,
+      adopterName: application.adopter.fullName,
+      adopterEmail: application.adopter.email,
+      generatedAt: new Date(application.contract.createdAt),
+      signatureDataUrl: parsed.data.signatureImageUrl,
+      signedAt: new Date(),
+    });
+    signedPdfUrl = buildContractUrl(signedFilename);
+  } catch (err) {
+    console.error('[PDF] signContract error:', err);
+    // Fallback: still record the signature even if PDF generation fails
+    signedPdfUrl = `/contracts/adoption-${applicationId}-signed.pdf`;
+  }
 
   const [contract] = await prisma.$transaction([
     prisma.adoptionContract.update({
       where: { applicationId },
-      data: { signatureImageUrl: parsed.data.signatureImageUrl, signedPdfUrl, status: 'SIGNED', signedAt: new Date() },
+      data: {
+        signatureImageUrl: parsed.data.signatureImageUrl,
+        signedPdfUrl,
+        status: 'SIGNED',
+        signedAt: new Date(),
+      },
     }),
-    prisma.animal.update({ where: { id: application.animalId }, data: { status: 'ADOPTED' } }),
+    prisma.animal.update({ where: { id: application.animalId }, data: { status: 'ADOPTED' as AnimalStatus } }),
     prisma.animalStatusHistory.create({
       data: {
         animalId: application.animalId,
@@ -416,7 +522,7 @@ export const signContract = async (req: Request, res: Response) => {
         userId,
         action: 'SIGN_CONTRACT',
         entityType: 'AdoptionContract',
-        entityId: application.contract!.id,
+        entityId: application.contract.id,
         metadataJson: JSON.stringify({ applicationId }),
         ipAddress: getClientIp(req),
       },

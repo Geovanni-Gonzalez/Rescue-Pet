@@ -5,28 +5,35 @@ import fs from 'fs';
 import type { Request } from 'express';
 
 const UPLOADS_ROOT = path.join(__dirname, '../../uploads');
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;   // 5 MB
+const MAX_DOC_SIZE   = 10 * 1024 * 1024;  // 10 MB
 
-// Ensure directories exist on module load
-for (const dir of ['animals', 'gallery']) {
+const PHOTO_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+const DOC_MIME   = ['image/jpeg', 'image/png', 'application/pdf'];
+
+// Ensure all upload directories exist on module load
+for (const dir of ['animals', 'gallery', 'documents', 'contracts']) {
   const fullPath = path.join(UPLOADS_ROOT, dir);
   if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
 }
 
-const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  if (ALLOWED_MIME.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(Object.assign(new Error('Formato no permitido. Usa JPG, PNG o WEBP.'), { statusCode: 400 }));
-  }
-};
+function makeFilter(allowed: string[]) {
+  return (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(Object.assign(new Error(`Formato no permitido. Permitidos: ${allowed.join(', ')}`), { statusCode: 400 }));
+    }
+  };
+}
 
-function makeStorage(subdir: 'animals' | 'gallery') {
+type UploadSubdir = 'animals' | 'gallery' | 'documents' | 'contracts';
+
+function makeStorage(subdir: UploadSubdir) {
   return multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, path.join(UPLOADS_ROOT, subdir)),
     filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const ext = path.extname(file.originalname).toLowerCase() || '.bin';
       cb(null, `${crypto.randomBytes(16).toString('hex')}${ext}`);
     },
   });
@@ -34,18 +41,25 @@ function makeStorage(subdir: 'animals' | 'gallery') {
 
 export const uploadAnimalPhoto = multer({
   storage: makeStorage('animals'),
-  fileFilter,
-  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: makeFilter(PHOTO_MIME),
+  limits: { fileSize: MAX_PHOTO_SIZE },
 });
 
 export const uploadGalleryPhotos = multer({
   storage: makeStorage('gallery'),
-  fileFilter,
-  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: makeFilter(PHOTO_MIME),
+  limits: { fileSize: MAX_PHOTO_SIZE },
+});
+
+/** For adopter documents: PDF, JPG, PNG */
+export const uploadDocument = multer({
+  storage: makeStorage('documents'),
+  fileFilter: makeFilter(DOC_MIME),
+  limits: { fileSize: MAX_DOC_SIZE },
 });
 
 /** Build a publicly accessible URL for an uploaded file */
-export function buildUploadUrl(subdir: 'animals' | 'gallery', filename: string): string {
+export function buildUploadUrl(subdir: UploadSubdir, filename: string): string {
   const base = process.env.BACKEND_URL || 'http://localhost:3000';
   return `${base}/uploads/${subdir}/${filename}`;
 }
