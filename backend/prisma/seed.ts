@@ -2,8 +2,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// bcrypt hash for "password123"
-const DUMMY_HASH = '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjGgZqZgOu';
+// bcrypt hash for "password123" (rounds: 12)
+const DUMMY_HASH = '$2b$12$velfxLJDNk3URu.SvGZB2ubr6twcHjie24lEVg5iufVQmln8bJ9SO';
 
 async function findOrCreateUser(email: string, data: Parameters<typeof prisma.user.create>[0]['data']) {
   const existing = await prisma.user.findUnique({ where: { email } });
