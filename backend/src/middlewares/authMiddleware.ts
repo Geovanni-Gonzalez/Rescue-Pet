@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { Role } from '@prisma/client';
+import type { Role } from '../types/enums';
 import { writeAccessDeniedLog } from '../services/auditService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';

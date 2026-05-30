@@ -1,4 +1,4 @@
-import { AdoptionRequestStatus, AnimalStatus } from '@prisma/client';
+import type { AdoptionRequestStatus, AnimalStatus } from '../types/enums';
 
 export const ACTIVE_ADOPTION_STATUSES: AdoptionRequestStatus[] = ['RECEIVED', 'INTERVIEW', 'VISIT'];
 

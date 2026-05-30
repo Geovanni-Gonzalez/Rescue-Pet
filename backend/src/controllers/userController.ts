@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import type { Role } from '../types/enums';
+
+const ROLES = ['ADMIN', 'VETERINARIAN', 'VOLUNTEER', 'ADOPTER'] as const;
 
 const updateUserSchema = z.object({
   fullName: z.string().min(2).optional(),
   phone: z.string().optional(),
-  role: z.nativeEnum(Role).optional(),
+  role: z.enum(ROLES).optional(),
   isActive: z.boolean().optional(),
 });
 

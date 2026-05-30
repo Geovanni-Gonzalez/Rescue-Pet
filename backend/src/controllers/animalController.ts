@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
-import { AnimalStatus } from '@prisma/client';
+import type { AnimalStatus } from '../types/enums';
+
+const ANIMAL_STATUSES = ['QUARANTINE', 'AVAILABLE', 'TREATMENT', 'ADOPTED', 'DECEASED'] as const;
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { generatePetQrDataUrl } from '../services/qrService';
 import {
@@ -30,7 +32,7 @@ const animalCreateSchema = z.object({
 const animalUpdateSchema = animalCreateSchema.partial();
 
 const animalStatusSchema = z.object({
-  status: z.nativeEnum(AnimalStatus),
+  status: z.enum(ANIMAL_STATUSES),
   reason: z.string().optional(),
 });
 
@@ -157,7 +159,7 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
     return res.status(404).json({ success: false, error: 'Animal no encontrado' });
   }
 
-  const currentStatus = animal.status;
+  const currentStatus = animal.status as AnimalStatus;
 
   if (isTerminalAnimalStatus(currentStatus)) {
     return res.status(400).json({ success: false, error: `No se puede cambiar el estado de un animal ${currentStatus}` });

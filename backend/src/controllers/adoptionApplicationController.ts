@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
-import { AdoptionRequestStatus, DocumentType, AnimalStatus } from '@prisma/client';
+import type { AdoptionRequestStatus, DocumentType, AnimalStatus } from '../types/enums';
+
+const ADOPTION_REQUEST_STATUSES = ['RECEIVED', 'INTERVIEW', 'VISIT', 'APPROVED', 'REJECTED'] as const;
+const DOCUMENT_TYPES = ['ID_CARD', 'ADDRESS_PROOF'] as const;
 import { writeAuditLog, getClientIp } from '../services/auditService';
 
 const createApplicationSchema = z.object({
@@ -9,12 +12,12 @@ const createApplicationSchema = z.object({
 });
 
 const updateStatusSchema = z.object({
-  status: z.nativeEnum(AdoptionRequestStatus),
+  status: z.enum(ADOPTION_REQUEST_STATUSES),
   rejectionReason: z.string().optional(),
 });
 
 const documentSchema = z.object({
-  documentType: z.nativeEnum(DocumentType),
+  documentType: z.enum(DOCUMENT_TYPES),
   fileName: z.string().min(1),
   fileUrl: z.string().url(),
 });
@@ -46,7 +49,7 @@ export const createApplication = async (req: Request, res: Response) => {
   const animal = await prisma.animal.findUnique({ where: { id: animalId } });
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
-  if (animal.status !== AnimalStatus.AVAILABLE) {
+  if (animal.status !== 'AVAILABLE') {
     return res.status(400).json({ success: false, error: 'El animal no está disponible para adopción' });
   }
 
@@ -103,7 +106,7 @@ export const getApplications = async (req: Request, res: Response) => {
 
   const where: Record<string, unknown> = {};
   if (role === 'ADOPTER') where['adopterId'] = userId;
-  if (status && Object.values(AdoptionRequestStatus).includes(status as AdoptionRequestStatus)) {
+  if (status && ADOPTION_REQUEST_STATUSES.includes(status as AdoptionRequestStatus)) {
     where['status'] = status;
   }
 
@@ -157,7 +160,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   });
   if (!application) return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
 
-  const allowed = VALID_TRANSITIONS[application.status];
+  const allowed = VALID_TRANSITIONS[application.status as AdoptionRequestStatus];
   if (!allowed.includes(status)) {
     return res.status(400).json({
       success: false,
@@ -245,7 +248,7 @@ export const uploadDocument = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, error: 'Sin permiso para cargar documentos a esta solicitud.' });
   }
 
-  if (!ACTIVE_STATUSES.includes(application.status)) {
+  if (!ACTIVE_STATUSES.includes(application.status as AdoptionRequestStatus)) {
     return res.status(400).json({ success: false, error: 'Solo se pueden cargar documentos en solicitudes activas.' });
   }
 

@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
-import { TaskType } from '@prisma/client';
+import type { TaskType } from '../types/enums';
+
+const TASK_TYPES = ['HEALTH', 'MEDICATION', 'CLEANING', 'FEEDING', 'MAINTENANCE'] as const;
 import { writeAuditLog, getClientIp } from '../services/auditService';
 
 const createTaskSchema = z.object({
   animalId: z.string().uuid().optional(),
-  type: z.nativeEnum(TaskType),
+  type: z.enum(TASK_TYPES),
   assignedRole: z.enum(['VETERINARIAN', 'VOLUNTEER']),
   scheduledAt: z.string().datetime(),
   description: z.string().optional(),
