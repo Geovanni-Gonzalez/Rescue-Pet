@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { apiClient } from '../lib/api';
-import { Save, UserCircle } from 'lucide-react';
+import { Save, UserCircle, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -30,6 +30,14 @@ export function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Change password state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdError, setPwdError] = useState('');
+  const [pwdSuccess, setPwdSuccess] = useState('');
+  const [isSavingPwd, setIsSavingPwd] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,6 +79,28 @@ export function Profile() {
       setError(getApiErrorMessage(err, 'No se pudo actualizar tu perfil.'));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (event: FormEvent) => {
+    event.preventDefault();
+    setPwdError('');
+    setPwdSuccess('');
+    if (newPassword !== confirmPassword) {
+      setPwdError('Las contraseñas nuevas no coinciden.');
+      return;
+    }
+    setIsSavingPwd(true);
+    try {
+      await apiClient.put('/users/me/password', { currentPassword, newPassword });
+      setPwdSuccess('Contraseña actualizada correctamente.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: unknown) {
+      setPwdError(getApiErrorMessage(err, 'No se pudo actualizar la contraseña.'));
+    } finally {
+      setIsSavingPwd(false);
     }
   };
 
@@ -137,6 +167,62 @@ export function Profile() {
               <Button type="submit" disabled={isSaving}>
                 <Save className="w-4 h-4" />
                 {isSaving ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+      {/* Change password */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-gray-500" />
+            <CardTitle>Cambiar contraseña</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pwdError && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
+              {pwdError}
+            </div>
+          )}
+          {pwdSuccess && (
+            <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
+              {pwdSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <FormField
+              label="Contraseña actual"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                label="Nueva contraseña"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={8}
+                placeholder="Mínimo 8 caracteres"
+                required
+              />
+              <FormField
+                label="Confirmar contraseña"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </div>
+            <div className="pt-2 flex justify-end">
+              <Button type="submit" variant="outline" disabled={isSavingPwd}>
+                <Lock className="w-4 h-4" />
+                {isSavingPwd ? 'Guardando...' : 'Actualizar contraseña'}
               </Button>
             </div>
           </form>

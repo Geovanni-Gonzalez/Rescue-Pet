@@ -1,19 +1,28 @@
 import { Router } from 'express';
-import { getUsers, getUserById, updateUser } from '../controllers/userController';
+import {
+  getUsers,
+  getUserById,
+  createUser,
+  updateMe,
+  updateUserAdmin,
+  changePassword,
+  deactivateUser,
+} from '../controllers/userController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-// Todas las rutas de usuarios requieren autenticación
 router.use(authenticateToken);
 
-// Solo ADMIN puede obtener todos los usuarios
 router.get('/', authorizeRoles('ADMIN'), getUsers);
+router.post('/', authorizeRoles('ADMIN'), createUser);
 
-// ADMIN o el propio usuario pueden ver sus datos (la lógica de "propio usuario" está en el controlador)
-router.get('/:id', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER', 'ADOPTER'), getUserById);
+// /me routes must come before /:id to avoid Express matching "me" as an id param
+router.put('/me', updateMe);
+router.put('/me/password', changePassword);
 
-// ADMIN o el propio usuario pueden actualizar sus datos
-router.patch('/:id', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER', 'ADOPTER'), updateUser);
+router.get('/:id', getUserById);
+router.patch('/:id', authorizeRoles('ADMIN'), updateUserAdmin);
+router.patch('/:id/deactivate', authorizeRoles('ADMIN'), deactivateUser);
 
 export default router;

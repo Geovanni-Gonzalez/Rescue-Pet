@@ -26,9 +26,10 @@ model User {
   lastLoginAt         DateTime?
   failedLoginCount    Int       @default(0)
   lockedUntil         DateTime?
-  activationToken     String?   @unique
-  resetToken          String?   @unique
-  resetTokenExpiresAt DateTime?
+  activationToken          String?   @unique
+  activationTokenExpiresAt DateTime?
+  resetToken               String?   @unique
+  resetTokenExpiresAt      DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

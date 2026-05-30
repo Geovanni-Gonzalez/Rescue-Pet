@@ -5,10 +5,12 @@ import crypto from 'crypto';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
 import { writeAuditLog, getClientIp } from '../services/auditService';
+import { sendActivationEmail, sendPasswordResetEmail } from '../services/emailService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
-const LOCK_THRESHOLD = 5;   // failed attempts before lock
+const LOCK_THRESHOLD = 5;
 const LOCK_DURATION_MIN = 15;
+const ACTIVATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -22,7 +24,7 @@ const registerSchema = z.object({
   phone: z.string().optional(),
 });
 
-const forgotSchema = z.object({ email: z.string().email() });
+const emailSchema = z.object({ email: z.string().email() });
 
 const resetSchema = z.object({
   token: z.string().min(1),
@@ -37,11 +39,9 @@ export const login = async (req: Request, res: Response) => {
 
   const { email, password } = parsed.data;
   const ip = getClientIp(req);
+  const invalidMsg = 'Credenciales inválidas o cuenta inactiva';
 
   const user = await prisma.user.findUnique({ where: { email } });
-
-  // Generic error to prevent user enumeration
-  const invalidMsg = 'Credenciales inválidas o cuenta inactiva';
 
   if (!user || user.status === 'INACTIVE') {
     return res.status(401).json({ success: false, error: invalidMsg });
@@ -77,7 +77,6 @@ export const login = async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, error: invalidMsg });
   }
 
-  // Reset failed attempts on successful login
   await prisma.user.update({
     where: { id: user.id },
     data: {
@@ -106,7 +105,6 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  // With JWT the client discards the token; server records the event
   if (req.user) {
     await writeAuditLog({
       userId: req.user.id,
@@ -126,7 +124,16 @@ export const getMe = async (req: Request, res: Response) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { id: true, fullName: true, email: true, phone: true, photoUrl: true, role: true, status: true, createdAt: true },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      photoUrl: true,
+      role: true,
+      status: true,
+      createdAt: true,
+    },
   });
 
   if (!user) return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
@@ -142,14 +149,18 @@ export const registerAdopter = async (req: Request, res: Response) => {
 
   const { fullName, email, password, phone } = parsed.data;
 
-  // Don't reveal whether email is in use (security: CU-12)
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    return res.status(400).json({ success: false, error: 'Si el correo no está registrado, recibirás un enlace de activación.' });
+    // Generic message to prevent user enumeration
+    return res.status(400).json({
+      success: false,
+      error: 'Si el correo no está registrado, recibirás un enlace de activación.',
+    });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
   const activationToken = crypto.randomBytes(32).toString('hex');
+  const activationTokenExpiresAt = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
 
   const newUser = await prisma.user.create({
     data: {
@@ -160,12 +171,13 @@ export const registerAdopter = async (req: Request, res: Response) => {
       role: 'ADOPTER',
       status: 'PENDING_VERIFICATION',
       activationToken,
+      activationTokenExpiresAt,
     },
   });
 
-  // TODO: send email with activation link
-  // emailService.sendActivation(email, activationToken);
-  console.info(`[AUTH] Activation token for ${email}: ${activationToken}`);
+  sendActivationEmail(email, activationToken).catch((err) =>
+    console.error('[EMAIL] Failed to send activation email:', err)
+  );
 
   await writeAuditLog({
     userId: newUser.id,
@@ -178,7 +190,6 @@ export const registerAdopter = async (req: Request, res: Response) => {
   res.status(201).json({
     success: true,
     message: 'Cuenta creada. Revisa tu correo para activarla.',
-    // In dev expose token so it can be tested without email
     ...(process.env.NODE_ENV !== 'production' && { activationToken }),
   });
 };
@@ -188,48 +199,74 @@ export const activateAccount = async (req: Request, res: Response) => {
   if (!token) return res.status(400).json({ success: false, error: 'Token requerido' });
 
   const user = await prisma.user.findUnique({ where: { activationToken: token } });
+
   if (!user) {
-    // Record potential security event but return generic error
+    await writeAuditLog({
+      userId: 'unknown',
+      action: 'INVALID_ACTIVATION_TOKEN',
+      entityType: 'User',
+      entityId: token,
+      ipAddress: getClientIp(req),
+    }).catch(() => {});
     return res.status(400).json({ success: false, error: 'Token inválido o expirado.' });
+  }
+
+  if (user.activationTokenExpiresAt && user.activationTokenExpiresAt < new Date()) {
+    return res.status(400).json({
+      success: false,
+      error: 'El enlace de activación ha expirado. Solicita uno nuevo.',
+      code: 'TOKEN_EXPIRED',
+    });
   }
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { status: 'ACTIVE', emailVerifiedAt: new Date(), activationToken: null },
+    data: {
+      status: 'ACTIVE',
+      emailVerifiedAt: new Date(),
+      activationToken: null,
+      activationTokenExpiresAt: null,
+    },
   });
 
   res.json({ success: true, message: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' });
 };
 
 export const resendActivation = async (req: Request, res: Response) => {
-  const parsed = forgotSchema.safeParse(req.body);
+  const parsed = emailSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Email inválido' });
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-
-  // Always respond the same to prevent enumeration
   const genericMsg = 'Si la cuenta existe y está pendiente de activación, recibirás un nuevo correo.';
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
 
   if (!user || user.status !== 'PENDING_VERIFICATION') {
     return res.json({ success: true, message: genericMsg });
   }
 
   const activationToken = crypto.randomBytes(32).toString('hex');
-  await prisma.user.update({ where: { id: user.id }, data: { activationToken } });
+  const activationTokenExpiresAt = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
 
-  // TODO: send email
-  console.info(`[AUTH] Resent activation token for ${user.email}: ${activationToken}`);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { activationToken, activationTokenExpiresAt },
+  });
+
+  sendActivationEmail(user.email, activationToken).catch((err) =>
+    console.error('[EMAIL] Failed to resend activation email:', err)
+  );
 
   res.json({ success: true, message: genericMsg });
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {
-  const parsed = forgotSchema.safeParse(req.body);
+  const parsed = emailSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Email inválido' });
 
-  const genericMsg = 'Si el correo está registrado recibirás instrucciones para restablecer tu contraseña.';
+  const genericMsg = 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.';
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+
   if (!user || user.status === 'INACTIVE') {
     return res.json({ success: true, message: genericMsg });
   }
@@ -239,8 +276,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
   await prisma.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
 
-  // TODO: send email
-  console.info(`[AUTH] Password reset token for ${user.email}: ${resetToken}`);
+  sendPasswordResetEmail(user.email, resetToken).catch((err) =>
+    console.error('[EMAIL] Failed to send password reset email:', err)
+  );
 
   res.json({ success: true, message: genericMsg });
 };
@@ -252,6 +290,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   const { token, password } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { resetToken: token } });
+
   if (!user || !user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
     return res.status(400).json({ success: false, error: 'Token inválido o expirado.' });
   }
@@ -260,7 +299,13 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash, resetToken: null, resetTokenExpiresAt: null, failedLoginCount: 0, status: 'ACTIVE' },
+    data: {
+      passwordHash,
+      resetToken: null,
+      resetTokenExpiresAt: null,
+      failedLoginCount: 0,
+      status: 'ACTIVE',
+    },
   });
 
   await writeAuditLog({

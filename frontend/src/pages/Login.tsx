@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -17,6 +17,8 @@ export function Login() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const resetSuccess = searchParams.get('reset') === 'ok';
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -69,6 +71,11 @@ export function Login() {
 
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
+            {resetSuccess && (
+              <div className="p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
+                Contraseña restablecida correctamente. Ya puedes iniciar sesión.
+              </div>
+            )}
             {error && (
               <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
                 {error}
@@ -84,14 +91,21 @@ export function Login() {
               required
             />
 
-            <FormField
-              label="Contrasena"
-              type="password"
-              placeholder="********"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
+            <div className="space-y-1">
+              <FormField
+                label="Contraseña"
+                type="password"
+                placeholder="********"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs text-rescue-600 hover:underline">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+            </div>
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4 pt-2">
