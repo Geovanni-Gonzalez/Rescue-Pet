@@ -37,23 +37,26 @@ export const getCatalog = async (req: Request, res: Response) => {
   if (adopterId) {
     const scores = await prisma.compatibilityScore.findMany({
       where: { adopterId, animalId: { in: animals.map((a) => a.id) } },
-      select: { animalId: true, scorePercentage: true },
+      select: { animalId: true, scorePercentage: true, explanation: true },
     });
-    const scoreMap = Object.fromEntries(scores.map((s) => [s.animalId, s.scorePercentage]));
+    const scoreMap = Object.fromEntries(
+      scores.map((s) => [s.animalId, { score: s.scorePercentage, explanation: s.explanation }])
+    );
 
     const animalsWithScore = animals.map((a) => ({
       ...a,
-      compatibilityScore: scoreMap[a.id] ?? null,
+      compatibilityScore: scoreMap[a.id]?.score ?? null,
+      compatibilityExplanation: scoreMap[a.id]?.explanation ?? null,
     }));
 
     if (scores.length > 0) {
       animalsWithScore.sort((a, b) => (b.compatibilityScore ?? 0) - (a.compatibilityScore ?? 0));
     }
 
-    return res.json({ success: true, animals: animalsWithScore });
+    return res.json({ success: true, animals: animalsWithScore, sortedByCompatibility: scores.length > 0 });
   }
 
-  res.json({ success: true, animals: animals.map((a) => ({ ...a, compatibilityScore: null })) });
+  res.json({ success: true, animals: animals.map((a) => ({ ...a, compatibilityScore: null, compatibilityExplanation: null })), sortedByCompatibility: false });
 };
 
 export const getCatalogAnimalById = async (req: Request, res: Response) => {

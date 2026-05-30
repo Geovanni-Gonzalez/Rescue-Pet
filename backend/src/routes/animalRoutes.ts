@@ -13,6 +13,7 @@ import {
 } from '../controllers/animalController';
 import { addGalleryImages, deleteGalleryImage, getGallery } from '../controllers/galleryController';
 import { getClinicalRecord, getMedicalSummary, createClinicalEntry } from '../controllers/clinicalController';
+import { createVaccine, getAnimalVaccines } from '../controllers/vaccineController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 import { uploadAnimalPhoto, uploadGalleryPhotos } from '../middlewares/upload';
 
@@ -48,5 +49,9 @@ router.delete('/:id/gallery/:imageId', authorizeRoles('ADMIN', 'VOLUNTEER'), del
 router.get('/:id/medical-summary', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER'), getMedicalSummary);
 router.get('/:id/clinical-record', authorizeRoles('ADMIN', 'VETERINARIAN'), getClinicalRecord);
 router.post('/:id/clinical-record/entries', authorizeRoles('ADMIN', 'VETERINARIAN'), createClinicalEntry);
+
+// Vaccines
+router.get('/:id/vaccines', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER'), getAnimalVaccines);
+router.post('/:id/vaccines', authorizeRoles('ADMIN', 'VETERINARIAN'), createVaccine);
 
 export default router;

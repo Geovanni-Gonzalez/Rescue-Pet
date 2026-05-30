@@ -21,6 +21,7 @@ import { AdminAdoptionRequests } from './pages/AdminAdoptionRequests';
 import { AdminAdoptionRequestDetail } from './pages/AdminAdoptionRequestDetail';
 import { AdminUsers } from './pages/AdminUsers';
 import { AdoptionRequestDetail } from './components/AdoptionRequestDetail';
+import { ImmunizationAlerts } from './pages/ImmunizationAlerts';
 
 export const router = createBrowserRouter([
   // Public routes
@@ -44,6 +45,11 @@ export const router = createBrowserRouter([
           { path: 'profile', element: <Profile /> },
           { path: 'pets', element: <Pets /> },
           { path: 'pets/:id', element: <PetDetail /> },
+          {
+            path: 'immunization-alerts',
+            element: <ProtectedRoute allowedRoles={['ADMIN', 'VETERINARIAN', 'VOLUNTEER']} />,
+            children: [{ index: true, element: <ImmunizationAlerts /> }],
+          },
 
           // Adoptante
           {

@@ -112,6 +112,29 @@ export const saveTestAndRecalculate = async (req: Request, res: Response) => {
   res.json({ success: true, test, message: 'Test guardado y compatibilidad calculada.' });
 };
 
+export const recalculateCompatibility = async (req: Request, res: Response) => {
+  const adopterId = req.user!.id;
+
+  const test = await prisma.compatibilityTest.findUnique({ where: { adopterId } });
+  if (!test) {
+    return res.status(400).json({ success: false, error: 'No tienes un test guardado. Completa el test primero.' });
+  }
+
+  const availableAnimals = await prisma.animal.findMany({ where: { status: 'AVAILABLE' } });
+
+  for (const animal of availableAnimals) {
+    const testInput = { ...test, allergies: test.allergies ?? undefined };
+    const { score, explanation } = calculateCompatibility(testInput, animal);
+    await prisma.compatibilityScore.upsert({
+      where: { adopterId_animalId: { adopterId, animalId: animal.id } },
+      update: { scorePercentage: score, explanation, calculatedAt: new Date() },
+      create: { adopterId, animalId: animal.id, scorePercentage: score, explanation },
+    });
+  }
+
+  res.json({ success: true, recalculated: availableAnimals.length, message: 'Compatibilidad recalculada.' });
+};
+
 export const getCompatibilityResults = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
   const scores = await prisma.compatibilityScore.findMany({
