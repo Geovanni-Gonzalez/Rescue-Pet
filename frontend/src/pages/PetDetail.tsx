@@ -10,7 +10,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Button } from '../components/ui/button';
 import { Edit, QrCode as QrIcon, Heart } from 'lucide-react';
 import axios from 'axios';
-import { getApiErrorMessage } from '../lib/api';
+import { apiClient, getApiErrorMessage } from '../lib/api';
 
 interface Pet {
   id: string;
@@ -60,20 +60,20 @@ export function PetDetail() {
   useEffect(() => {
     const fetchPet = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/pets/${id}`);
-        setPet(res.data.pet);
-        setQrUrl(res.data.pet.qrCodeUrl || '');
+        const res = await apiClient.get(`/animals/${id}`);
+        setPet(res.data.animal);
+        setQrUrl(res.data.animal.qrUrl || '');
 
         if (role === 'ADMIN' || role === 'VETERINARIAN') {
-          const clinicalRes = await axios.get(`http://localhost:3000/pets/${id}/clinical-record`);
-          setClinicalEntries(clinicalRes.data.entries || []);
+          const clinicalRes = await apiClient.get(`/animals/${id}/clinical-record`);
+          setClinicalEntries(clinicalRes.data.clinicalRecord?.entries || []);
         }
 
         // Check for existing adoption request if user is ADOPTER
         if (role === 'ADOPTER') {
           try {
-            const myRequestsRes = await axios.get('http://localhost:3000/adoption-requests/me');
-            const existing = (myRequestsRes.data.requests as AdoptionRequestSummary[]).find(
+            const myRequestsRes = await apiClient.get('/adoption-applications');
+            const existing = (myRequestsRes.data.applications as AdoptionRequestSummary[]).find(
               (request) => request.petId === id && ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(request.status)
             );
             if (existing) {
@@ -94,8 +94,8 @@ export function PetDetail() {
 
   const generateQR = async () => {
     try {
-      const res = await axios.post(`http://localhost:3000/pets/${id}/generate-qr`);
-      setQrUrl(res.data.qrCodeUrl);
+      const res = await apiClient.post(`/animals/${id}/qr/regenerate`);
+      setQrUrl(res.data.qrUrl);
     } catch (err) {
       console.error(err);
     }
@@ -104,7 +104,7 @@ export function PetDetail() {
   const handleAdoptionRequest = async () => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post('http://localhost:3000/adoption-requests', { petId: id });
+      const res = await apiClient.post('/adoption-applications', { animalId: id });
       setExistingRequest(res.data.request);
       setShowAdoptionConfirm(false);
     } catch (err: unknown) {
@@ -123,7 +123,10 @@ export function PetDetail() {
     setError('');
 
     try {
-      const res = await axios.post(`http://localhost:3000/pets/${id}/clinical-record/entries`, clinicalForm);
+      const res = await apiClient.post(`/animals/${id}/clinical-record/entries`, {
+        ...clinicalForm,
+        datetime: new Date().toISOString(),
+      });
       setClinicalEntries((entries) => [res.data.entry, ...entries]);
       setClinicalForm({ diagnosis: '', treatment: '', notes: '' });
     } catch (err: unknown) {

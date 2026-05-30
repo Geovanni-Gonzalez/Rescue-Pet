@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Plus } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import type { PetStatus } from '../components/StatusBadge';
 
 interface Pet {
@@ -32,8 +32,8 @@ export function Pets() {
     const fetchPets = async () => {
       try {
         const query = statusFilter !== 'ALL' ? `?status=${statusFilter}` : '';
-        const res = await axios.get(`http://localhost:3000/pets${query}`);
-        setPets(res.data.pets || []);
+        const res = await apiClient.get(`/animals${query}`);
+        setPets(res.data.animals || []);
       } catch (err) {
         console.error('Error al cargar mascotas', err);
       } finally {

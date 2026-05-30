@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 enum Role {
   ADMIN
   VETERINARIAN
@@ -14,7 +16,14 @@ enum Role {
   ADOPTER
 }
 
-enum PetStatus {
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+  BLOCKED
+}
+
+enum AnimalStatus {
   QUARANTINE
   AVAILABLE
   TREATMENT
@@ -30,10 +39,14 @@ enum AdoptionRequestStatus {
   REJECTED
 }
 
+enum DocumentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 enum DocumentType {
   ID_CARD
   ADDRESS_PROOF
-  CONTRACT
 }
 
 enum ContractStatus {
@@ -41,68 +54,174 @@ enum ContractStatus {
   SIGNED
 }
 
+enum VaccineStatus {
+  PENDING
+  COMPLETED
+  POSTPONED
+}
+
+enum TaskType {
+  HEALTH
+  MEDICATION
+  CLEANING
+  FEEDING
+  MAINTENANCE
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
 model User {
+  id                 String     @id @default(uuid())
+  fullName           String
+  email              String     @unique
+  passwordHash       String
+  phone              String?
+  photoUrl           String?
+  role               Role       @default(ADOPTER)
+  status             UserStatus @default(ACTIVE)
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  failedLoginCount   Int        @default(0)
+  lockedUntil        DateTime?
+  activationToken    String?    @unique
+  resetToken         String?    @unique
+  resetTokenExpiresAt DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  // Relaciones
+  animalsCreated       Animal[]              @relation("AnimalCreatedBy")
+  statusHistoryChanges AnimalStatusHistory[]
+  adoptionRequests     AdoptionRequest[]
+  documents            AdopterDocument[]
+  compatibilityTests   CompatibilityTest[]
+  compatibilityScores  CompatibilityScore[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  clinicalEntries      ClinicalEntry[]
+  galleryUploads       AnimalGallery[]
+  taskCompletions      OperationalTask[]     @relation("TaskCompletedBy")
+  tasksCreated         OperationalTask[]     @relation("TaskCreatedBy")
+  interviewSlotsCreated InterviewSlot[]
+}
+
+model Animal {
+  id                  String       @id @default(uuid())
+  name                String
+  species             String
+  estimatedBreed      String?
+  estimatedAge        Int?         // en meses
+  size                String?
+  status              AnimalStatus @default(QUARANTINE)
+  mainPhotoUrl        String?
+  rescueLocationText  String?
+  rescueLatitude      Float?
+  rescueLongitude     Float?
+  publicProfileUrl    String?
+  qrUrl               String?
+  energyLevel         String?      // LOW, MEDIUM, HIGH
+  spaceNeed           String?      // SMALL, MEDIUM, LARGE
+  goodWithChildren    Boolean      @default(false)
+  goodWithPets        Boolean      @default(false)
+  createdByUserId     String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  // Relaciones
+  createdBy           User?                @relation("AnimalCreatedBy", fields: [createdByUserId], references: [id])
+  gallery             AnimalGallery[]
+  statusHistory       AnimalStatusHistory[]
+  clinicalRecord      ClinicalRecord?
+  adoptionRequests    AdoptionRequest[]
+  compatibilityScores CompatibilityScore[]
+  operationalTasks    OperationalTask[]
+  vaccines            Vaccine[]
+}
+
+model AnimalGallery {
   id               String   @id @default(uuid())
-  fullName         String
-  email            String   @unique
-  passwordHash     String
-  phone            String?
-  role             Role     @default(ADOPTER)
-  isActive         Boolean  @default(true)
+  animalId         String
+  fileUrl          String
+  fileType         String   // image/jpeg, image/png, image/webp
+  isMain           Boolean  @default(false)
+  uploadedByUserId String?
   createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 
-  // Relaciones
-  medicalRecords      MedicalRecord[]
-  adoptionRequests    AdoptionRequest[]
-  documents           Document[]
-  compatibilityTests  CompatibilityTest[]
-  compatibilityScores CompatibilityScore[]
-  notifications       Notification[]
-  auditLogs           AuditLog[]
+  animal     Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  uploadedBy User?  @relation(fields: [uploadedByUserId], references: [id])
 }
 
-model Pet {
-  id                 String    @id @default(uuid())
-  name               String
-  species            String
-  breed              String?
-  estimatedAge       Int?      // en meses
-  size               String?
-  status             PetStatus @default(QUARANTINE)
-  mainPhotoUrl       String?
-  rescueLocationText String?
-  qrCodeUrl          String?
-  energyLevel        String?   // LOW, MEDIUM, HIGH
-  spaceNeed          String?   // SMALL, MEDIUM, LARGE
-  goodWithChildren   Boolean   @default(false)
-  goodWithPets       Boolean   @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+model AnimalStatusHistory {
+  id               String       @id @default(uuid())
+  animalId         String
+  previousStatus   AnimalStatus
+  newStatus        AnimalStatus
+  changedByUserId  String
+  reason           String?
+  createdAt        DateTime     @default(now())
 
-  // Relaciones
-  medicalRecords      MedicalRecord[]
-  adoptionRequests    AdoptionRequest[]
-  compatibilityScores CompatibilityScore[]
+  animal    Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  changedBy User   @relation(fields: [changedByUserId], references: [id])
 }
 
-model MedicalRecord {
-  id          String   @id @default(uuid())
-  petId       String
-  diagnosis   String
-  treatment   String?
-  notes       String?
-  createdById String
-  createdAt   DateTime @default(now())
+// ─── Veterinaria ──────────────────────────────────────────────────────────────
 
-  // Relaciones
-  pet       Pet  @relation(fields: [petId], references: [id])
-  createdBy User @relation(fields: [createdById], references: [id])
+model ClinicalRecord {
+  id        String   @id @default(uuid())
+  animalId  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  animal  Animal          @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  entries ClinicalEntry[]
 }
+
+model ClinicalEntry {
+  id               String   @id @default(uuid())
+  clinicalRecordId String
+  animalId         String
+  veterinarianId   String
+  datetime         DateTime
+  diagnosis        String
+  treatment        String
+  medicine         String?
+  dose             String?
+  duration         String?
+  observations     String?
+  createdAt        DateTime @default(now())
+
+  clinicalRecord ClinicalRecord @relation(fields: [clinicalRecordId], references: [id], onDelete: Cascade)
+  veterinarian   User           @relation(fields: [veterinarianId], references: [id])
+
+  vaccines Vaccine[]
+}
+
+model Vaccine {
+  id              String        @id @default(uuid())
+  animalId        String
+  clinicalEntryId String?
+  vaccineType     String
+  appliedAt       DateTime
+  nextDueAt       DateTime?
+  status          VaccineStatus @default(PENDING)
+  postponedTo     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  animal        Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  clinicalEntry ClinicalEntry? @relation(fields: [clinicalEntryId], references: [id])
+}
+
+// ─── Matchmaking ──────────────────────────────────────────────────────────────
 
 model CompatibilityTest {
   id                 String   @id @default(uuid())
-  adopterId          String
+  adopterId          String   @unique
   housingType        String   // HOUSE, APARTMENT
   hasYard            Boolean  @default(false)
   childrenCount      Int      @default(0)
@@ -113,57 +232,75 @@ model CompatibilityTest {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  // Relaciones
   adopter User @relation(fields: [adopterId], references: [id])
 }
 
 model CompatibilityScore {
-  id          String   @id @default(uuid())
-  adopterId   String
-  petId       String
-  score       Float    // de 0 a 100
-  explanation String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  adopterId    String
+  animalId     String
+  scorePercentage Float   // de 0 a 100
+  explanation  String?
+  calculatedAt DateTime @default(now())
 
-  // Relaciones
-  adopter User @relation(fields: [adopterId], references: [id])
-  pet     Pet  @relation(fields: [petId], references: [id])
+  adopter User   @relation(fields: [adopterId], references: [id])
+  animal  Animal @relation(fields: [animalId], references: [id])
+
+  @@unique([adopterId, animalId])
 }
+
+// ─── Adopción ─────────────────────────────────────────────────────────────────
 
 model AdoptionRequest {
   id              String                @id @default(uuid())
   adopterId       String
-  petId           String
+  animalId        String
   status          AdoptionRequestStatus @default(RECEIVED)
   rejectionReason String?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
 
-  // Relaciones
-  adopter   User       @relation(fields: [adopterId], references: [id])
-  pet       Pet        @relation(fields: [petId], references: [id])
-  documents Document[]
-  contract  Contract?
+  adopter       User              @relation(fields: [adopterId], references: [id])
+  animal        Animal            @relation(fields: [animalId], references: [id])
+  documents     AdopterDocument[]
+  contract      AdoptionContract?
+  interviewSlot InterviewSlot?    @relation("SlotReservation")
 }
 
-model Document {
-  id                String       @id @default(uuid())
+model InterviewSlot {
+  id                    String   @id @default(uuid())
+  startsAt              DateTime
+  endsAt                DateTime
+  status                String   @default("available") // available, reserved, cancelled
+  reservedByApplicationId String? @unique
+  createdByAdminId      String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  createdBy   User             @relation(fields: [createdByAdminId], references: [id])
+  application AdoptionRequest? @relation("SlotReservation", fields: [reservedByApplicationId], references: [id])
+}
+
+model AdopterDocument {
+  id                String         @id @default(uuid())
   adopterId         String
-  adoptionRequestId String?
-  type              DocumentType
+  applicationId     String?
+  documentType      DocumentType
   fileUrl           String
   fileName          String
-  createdAt         DateTime     @default(now())
+  version           Int            @default(1)
+  status            DocumentStatus @default(ACTIVE)
+  uploadedAt        DateTime       @default(now())
 
-  // Relaciones
-  adopter         User             @relation(fields: [adopterId], references: [id])
-  adoptionRequest AdoptionRequest? @relation(fields: [adoptionRequestId], references: [id])
+  adopter      User             @relation(fields: [adopterId], references: [id])
+  application  AdoptionRequest? @relation(fields: [applicationId], references: [id])
 }
 
-model Contract {
+model AdoptionContract {
   id                String         @id @default(uuid())
-  adoptionRequestId String         @unique
+  applicationId     String         @unique
+  animalId          String?
+  adopterId         String?
   pdfUrl            String?
   signedPdfUrl      String?
   signatureImageUrl String?
@@ -171,33 +308,58 @@ model Contract {
   createdAt         DateTime       @default(now())
   signedAt          DateTime?
 
-  // Relaciones
-  adoptionRequest AdoptionRequest @relation(fields: [adoptionRequestId], references: [id])
+  application AdoptionRequest @relation(fields: [applicationId], references: [id])
 }
 
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String
-  message   String
-  type      String   // INFO, WARNING, SUCCESS, ERROR
-  isRead    Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
+// ─── Notificaciones ───────────────────────────────────────────────────────────
 
-  // Relaciones
+model Notification {
+  id           String    @id @default(uuid())
+  userId       String
+  type         String    // INFO, WARNING, SUCCESS, ERROR
+  title        String
+  message      String
+  resourceType String?
+  resourceId   String?
+  readAt       DateTime?
+  createdAt    DateTime  @default(now())
+
   user User @relation(fields: [userId], references: [id])
 }
 
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  action    String
-  entity    String
-  entityId  String
-  details   String?
-  createdAt DateTime @default(now())
+// ─── Tareas operativas ────────────────────────────────────────────────────────
 
-  // Relaciones
+model OperationalTask {
+  id            String     @id @default(uuid())
+  animalId      String?
+  type          TaskType
+  assignedRole  String     // VETERINARIAN, VOLUNTEER
+  scheduledAt   DateTime
+  status        TaskStatus @default(PENDING)
+  description   String?
+  completedAt   DateTime?
+  completedById String?
+  comment       String?
+  createdById   String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  animal      Animal? @relation(fields: [animalId], references: [id])
+  completedBy User?   @relation("TaskCompletedBy", fields: [completedById], references: [id])
+  createdBy   User?   @relation("TaskCreatedBy", fields: [createdById], references: [id])
+}
+
+// ─── Auditoría ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String
+  action       String
+  entityType   String
+  entityId     String
+  metadataJson String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
   user User @relation(fields: [userId], references: [id])
 }

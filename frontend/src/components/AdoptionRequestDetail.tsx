@@ -8,7 +8,7 @@ import { StatusTransitionActions } from './StatusTransitionActions';
 import { RejectionReasonDialog } from './RejectionReasonDialog';
 import { Button } from './ui/button';
 import { ArrowLeft, User, Calendar, FileText } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import type { AdoptionRequestStatusType } from './AdoptionRequestTable';
 import { getApiErrorMessage } from '../lib/api';
 
@@ -76,8 +76,8 @@ export function AdoptionRequestDetail() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const fetchRequest = async () => {
-    const res = await axios.get(`http://localhost:3000/adoption-requests/${id}`);
-    setRequest(res.data.request);
+    const res = await apiClient.get(`/adoption-applications/${id}`);
+    setRequest(res.data.application);
   };
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export function AdoptionRequestDetail() {
 
     setIsUpdating(true);
     try {
-      const res = await axios.patch(`http://localhost:3000/adoption-requests/${request.id}/status`, {
+      const res = await apiClient.patch(`/adoption-applications/${request.id}/status`, {
         status: newStatus,
         rejectionReason,
       });
@@ -116,7 +116,11 @@ export function AdoptionRequestDetail() {
     setIsUploadingDocument(true);
     setError('');
     try {
-      await axios.post(`http://localhost:3000/adoption-requests/${request.id}/documents`, documentForm);
+      await apiClient.post(`/adoption-applications/${request.id}/documents`, {
+        documentType: documentForm.type,
+        fileName: documentForm.fileName,
+        fileUrl: documentForm.fileUrl,
+      });
       setDocumentForm({ type: 'ID_CARD', fileName: '', fileUrl: '' });
       await fetchRequest();
     } catch (err: unknown) {
@@ -172,7 +176,7 @@ export function AdoptionRequestDetail() {
     setIsSigningContract(true);
     setError('');
     try {
-      await axios.post(`http://localhost:3000/adoption-requests/${request.id}/contract/sign`, {
+      await apiClient.post(`/adoption-applications/${request.id}/contract/sign`, {
         signatureImageUrl: canvasRef.current.toDataURL('image/png'),
       });
       await fetchRequest();

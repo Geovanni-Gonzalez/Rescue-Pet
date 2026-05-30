@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { FormField } from './FormField';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { getApiErrorMessage } from '../lib/api';
 
 export interface PetFormData {
@@ -55,11 +55,11 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
 
     try {
       if (isEdit && initialData) {
-        await axios.patch(`http://localhost:3000/pets/${initialData.id}`, formData);
+        await apiClient.patch(`/animals/${initialData.id}`, formData);
         navigate(`/pets/${initialData.id}`);
       } else {
-        const res = await axios.post('http://localhost:3000/pets', formData);
-        navigate(`/pets/${res.data.pet.id}`);
+        const res = await apiClient.post('/animals', formData);
+        navigate(`/pets/${res.data.animal.id}`);
       }
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Error al guardar la mascota'));

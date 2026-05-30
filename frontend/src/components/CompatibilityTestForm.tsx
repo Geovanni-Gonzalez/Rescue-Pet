@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Button } from './ui/button';
 import { FormField } from './FormField';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { getApiErrorMessage } from '../lib/api';
 
@@ -50,7 +50,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
     setError('');
 
     try {
-      await axios.post('http://localhost:3000/matchmaking/test', formData);
+      await apiClient.put('/adopters/me/compatibility-test', formData);
       if (onSubmitted) {
         onSubmitted();
       } else {

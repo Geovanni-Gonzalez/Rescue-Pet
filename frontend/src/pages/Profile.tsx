@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { Save, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
@@ -34,7 +34,7 @@ export function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get<MeResponse>('http://localhost:3000/auth/me');
+        const response = await apiClient.get<MeResponse>('/auth/me');
         setCurrentUser(response.data.user);
         setFullName(response.data.user.fullName);
         setPhone(response.data.user.phone || '');
@@ -58,7 +58,7 @@ export function Profile() {
     setIsSaving(true);
 
     try {
-      const response = await axios.patch<UpdateUserResponse>(`http://localhost:3000/users/${currentUser.id}`, {
+      const response = await apiClient.patch<UpdateUserResponse>(`/users/${currentUser.id}`, {
         fullName,
         phone: phone.trim() || undefined,
       });

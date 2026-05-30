@@ -2,13 +2,12 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import axios from 'axios';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
 import type { Role } from '../context/AuthContext';
-import { getApiErrorMessage, isNetworkError } from '../lib/api';
+import { apiClient, getApiErrorMessage, isNetworkError } from '../lib/api';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -25,7 +24,7 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', { email, password });
+      const response = await apiClient.post('/auth/login', { email, password });
 
       if (response.data.success) {
         login(response.data.token, response.data.user);

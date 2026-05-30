@@ -2,8 +2,7 @@ import { useState } from 'react';
 import type { PetStatus } from './StatusBadge';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
-import axios from 'axios';
-import { getApiErrorMessage } from '../lib/api';
+import { apiClient, getApiErrorMessage } from '../lib/api';
 
 interface PetStatusSelectorProps {
   petId: string;
@@ -41,7 +40,7 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
     setIsLoading(true);
     setError('');
     try {
-      await axios.patch(`http://localhost:3000/pets/${petId}/status`, { status: selectedStatus });
+      await apiClient.patch(`/animals/${petId}/status`, { status: selectedStatus });
       onStatusChanged(selectedStatus);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Error al actualizar el estado'));

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PawPrint, UserPlus } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FormField } from '../components/FormField';
@@ -56,14 +56,14 @@ export function Register() {
     setIsLoading(true);
 
     try {
-      await axios.post<RegisterResponse>('http://localhost:3000/auth/register-adopter', {
+      await apiClient.post<RegisterResponse>('/auth/register-adopter', {
         fullName,
         email,
         password,
         phone: phone.trim() || undefined,
       });
 
-      const loginResponse = await axios.post<LoginResponse>('http://localhost:3000/auth/login', {
+      const loginResponse = await apiClient.post<LoginResponse>('/auth/login', {
         email,
         password,
       });

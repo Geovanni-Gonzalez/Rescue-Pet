@@ -4,7 +4,7 @@ import { LoadingState } from '../components/LoadingState';
 import { ClipboardList, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import type { CompatibilityTestData } from '../components/CompatibilityTestForm';
 
 export function CompatibilityTestPage() {
@@ -16,7 +16,7 @@ export function CompatibilityTestPage() {
   useEffect(() => {
     const fetchTest = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/matchmaking/test/me');
+        const res = await apiClient.get('/adopters/me/compatibility-test');
         if (res.data.test) setInitialData(res.data.test);
       } catch {
         // Sin test previo

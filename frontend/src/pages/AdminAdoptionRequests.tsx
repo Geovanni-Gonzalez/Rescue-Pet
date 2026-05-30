@@ -4,7 +4,7 @@ import { LoadingState } from '../components/LoadingState';
 import { AdoptionRequestTable } from '../components/AdoptionRequestTable';
 import { Button } from '../components/ui/button';
 import type { AdoptionRequestStatusType } from '../components/AdoptionRequestTable';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { getApiErrorMessage } from '../lib/api';
 
 interface Pet {
@@ -42,11 +42,9 @@ export function AdminAdoptionRequests() {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const url = statusFilter === 'ALL'
-          ? 'http://localhost:3000/adoption-requests'
-          : `http://localhost:3000/adoption-requests?status=${statusFilter}`;
-        const res = await axios.get(url);
-        setRequests(res.data.requests);
+        const query = statusFilter !== 'ALL' ? `?status=${statusFilter}` : '';
+        const res = await apiClient.get(`/adoption-applications${query}`);
+        setRequests(res.data.applications);
       } catch (err: unknown) {
         setError(getApiErrorMessage(err, 'No se pudieron cargar las solicitudes'));
       } finally {

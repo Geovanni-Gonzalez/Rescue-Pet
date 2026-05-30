@@ -6,9 +6,8 @@ import { EmptyState } from '../components/EmptyState';
 import { CompatibilityScoreBadge } from '../components/CompatibilityScoreBadge';
 import { CompatibilityExplanation } from '../components/CompatibilityExplanation';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Button } from '../components/ui/button';
-import { isNetworkError } from '../lib/api';
+import { apiClient, isNetworkError } from '../lib/api';
 
 interface CatalogPet {
   id: string;
@@ -31,8 +30,8 @@ export function Catalog() {
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/matchmaking/catalog');
-        setCatalog(res.data.catalog || []);
+        const res = await apiClient.get('/catalog/animals');
+        setCatalog(res.data.animals || []);
       } catch (err: unknown) {
         // Fallback: si el backend no está disponible, mostrar mensaje
         if (isNetworkError(err)) {

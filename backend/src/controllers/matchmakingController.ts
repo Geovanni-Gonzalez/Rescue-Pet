@@ -7,29 +7,32 @@ const testSchema = z.object({
   hasYard: z.boolean(),
   childrenCount: z.number().int().min(0),
   hasOtherPets: z.boolean(),
-  dailyAvailableTime: z.number().min(0),  // Permite decimales (ej: 1.5 horas)
+  dailyAvailableTime: z.number().min(0),
   allergies: z.string().optional(),
   experienceLevel: z.string(),
 });
 
-function calculateCompatibility(test: any, pet: any): { score: number, explanation: string } {
+function calculateCompatibility(test: z.infer<typeof testSchema>, animal: {
+  spaceNeed: string | null;
+  goodWithChildren: boolean;
+  goodWithPets: boolean;
+  energyLevel: string | null;
+}): { score: number; explanation: string } {
   let score = 50;
-  let explanations: string[] = [];
+  const explanations: string[] = [];
 
-  // Espacio
-  if (pet.spaceNeed === 'LARGE') {
+  if (animal.spaceNeed === 'LARGE') {
     if (test.hasYard || test.housingType === 'HOUSE') {
       score += 15;
-      explanations.push('Tienes el espacio ideal para esta mascota.');
-    } else if (test.housingType === 'APARTMENT' && !test.hasYard) {
+      explanations.push('Tienes el espacio ideal para este animal.');
+    } else {
       score -= 15;
-      explanations.push('Esta mascota requiere mucho espacio (patio o casa grande).');
+      explanations.push('Este animal requiere mucho espacio.');
     }
   }
 
-  // Niños
   if (test.childrenCount > 0) {
-    if (pet.goodWithChildren) {
+    if (animal.goodWithChildren) {
       score += 15;
       explanations.push('Excelente opción para hogares con niños.');
     } else {
@@ -38,9 +41,8 @@ function calculateCompatibility(test: any, pet: any): { score: number, explanati
     }
   }
 
-  // Otras Mascotas
   if (test.hasOtherPets) {
-    if (pet.goodWithPets) {
+    if (animal.goodWithPets) {
       score += 10;
       explanations.push('Se lleva bien con otras mascotas.');
     } else {
@@ -49,53 +51,40 @@ function calculateCompatibility(test: any, pet: any): { score: number, explanati
     }
   }
 
-  // Tiempo y Energía
-  if (pet.energyLevel === 'HIGH') {
-    if (test.dailyAvailableTime < 2) {
-      score -= 10;
-      explanations.push('Requiere más tiempo diario del que dispones actualmente.');
-    } else {
+  if (animal.energyLevel === 'HIGH') {
+    if (test.dailyAvailableTime >= 2) {
       score += 10;
       explanations.push('Tu tiempo disponible se ajusta a su nivel de energía.');
+    } else {
+      score -= 10;
+      explanations.push('Requiere más tiempo diario del que dispones.');
     }
-    
     if (test.experienceLevel === 'EXPERIENCED') {
       score += 10;
       explanations.push('Tu experiencia te ayudará a manejar su energía.');
     }
-  } else if (pet.energyLevel === 'LOW' && test.dailyAvailableTime <= 2) {
+  } else if (animal.energyLevel === 'LOW' && test.dailyAvailableTime <= 2) {
     score += 10;
     explanations.push('Ideal para tu disponibilidad de tiempo.');
   }
 
-  // Alergias
   if (test.allergies && test.allergies.trim().length > 0) {
     score -= 20;
-    explanations.push('Advertencia: Revisa con el refugio sobre alergias antes de adoptar.');
+    explanations.push('Advertencia: Consulta al refugio sobre alergias antes de adoptar.');
   }
 
-  // Asegurar límites
-  if (score > 100) score = 100;
-  if (score < 0) score = 0;
-
-  const finalExplanation = explanations.length > 0 
-    ? explanations.join(' ') 
-    : 'Afinidad promedio.';
-
-  return { score, explanation: finalExplanation };
+  const scorePercentage = Math.max(0, Math.min(100, score));
+  const explanation = explanations.length > 0 ? explanations.join(' ') : 'Afinidad promedio.';
+  return { score: scorePercentage, explanation };
 }
 
 export const getMyTest = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
-  
-  const test = await prisma.compatibilityTest.findFirst({
-    where: { adopterId }
-  });
-
+  const test = await prisma.compatibilityTest.findUnique({ where: { adopterId } });
   res.json({ success: true, test });
 };
 
-export const saveTestAndCalculate = async (req: Request, res: Response) => {
+export const saveTestAndRecalculate = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
 
   const parsed = testSchema.safeParse(req.body);
@@ -103,92 +92,32 @@ export const saveTestAndCalculate = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Datos de test inválidos', details: parsed.error.issues });
   }
 
-  // Upsert test
-  let test = await prisma.compatibilityTest.findFirst({ where: { adopterId } });
-  
-  if (test) {
-    test = await prisma.compatibilityTest.update({
-      where: { id: test.id },
-      data: parsed.data
-    });
-  } else {
-    test = await prisma.compatibilityTest.create({
-      data: {
-        ...parsed.data,
-        adopterId
-      }
-    });
-  }
-
-  // Obtener todas las mascotas disponibles
-  const availablePets = await prisma.pet.findMany({
-    where: { status: 'AVAILABLE' }
+  const test = await prisma.compatibilityTest.upsert({
+    where: { adopterId },
+    update: parsed.data,
+    create: { ...parsed.data, adopterId },
   });
 
-  // Calcular score para cada mascota y guardar
-  for (const pet of availablePets) {
-    const { score, explanation } = calculateCompatibility(test, pet);
-    
-    // Upsert score
-    const existingScore = await prisma.compatibilityScore.findFirst({
-      where: { adopterId, petId: pet.id }
-    });
+  const availableAnimals = await prisma.animal.findMany({ where: { status: 'AVAILABLE' } });
 
-    if (existingScore) {
-      await prisma.compatibilityScore.update({
-        where: { id: existingScore.id },
-        data: { score, explanation }
-      });
-    } else {
-      await prisma.compatibilityScore.create({
-        data: {
-          adopterId,
-          petId: pet.id,
-          score,
-          explanation
-        }
-      });
-    }
+  for (const animal of availableAnimals) {
+    const { score, explanation } = calculateCompatibility(parsed.data, animal);
+    await prisma.compatibilityScore.upsert({
+      where: { adopterId_animalId: { adopterId, animalId: animal.id } },
+      update: { scorePercentage: score, explanation },
+      create: { adopterId, animalId: animal.id, scorePercentage: score, explanation },
+    });
   }
 
   res.json({ success: true, test, message: 'Test guardado y compatibilidad calculada.' });
 };
 
-export const getCatalog = async (req: Request, res: Response) => {
+export const getCompatibilityResults = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
-
-  // Obtener mascotas disponibles
-  const pets = await prisma.pet.findMany({
-    where: { status: 'AVAILABLE' }
-  });
-
-  // Obtener scores del adoptante
   const scores = await prisma.compatibilityScore.findMany({
-    where: { adopterId }
+    where: { adopterId },
+    include: { animal: { select: { id: true, name: true, species: true, mainPhotoUrl: true } } },
+    orderBy: { scorePercentage: 'desc' },
   });
-
-  const scoresMap = new Map();
-  scores.forEach(s => scoresMap.set(s.petId, { score: s.score, explanation: s.explanation }));
-
-  // Combinar y ordenar
-  const catalog = pets.map(pet => {
-    const s = scoresMap.get(pet.id);
-    return {
-      ...pet,
-      compatibilityScore: s ? s.score : null,
-      compatibilityExplanation: s ? s.explanation : null
-    };
-  });
-
-  // Ordenar por score de mayor a menor, si no hay score van al final
-  catalog.sort((a, b) => {
-    if (a.compatibilityScore !== null && b.compatibilityScore !== null) {
-      return b.compatibilityScore - a.compatibilityScore;
-    }
-    if (a.compatibilityScore !== null) return -1;
-    if (b.compatibilityScore !== null) return 1;
-    return 0;
-  });
-
-  res.json({ success: true, catalog });
+  res.json({ success: true, scores });
 };

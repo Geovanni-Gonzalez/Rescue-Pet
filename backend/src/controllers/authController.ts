@@ -1,10 +1,14 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
+import { writeAuditLog, getClientIp } from '../services/auditService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
+const LOCK_THRESHOLD = 5;   // failed attempts before lock
+const LOCK_DURATION_MIN = 15;
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -14,57 +18,105 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8),
   phone: z.string().optional(),
+});
+
+const forgotSchema = z.object({ email: z.string().email() });
+
+const resetSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8),
 });
 
 export const login = async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+    return res.status(400).json({ success: false, error: 'Datos inválidos' });
   }
 
   const { email, password } = parsed.data;
+  const ip = getClientIp(req);
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.isActive) {
-    return res.status(401).json({ success: false, error: 'Credenciales inválidas o cuenta inactiva' });
+
+  // Generic error to prevent user enumeration
+  const invalidMsg = 'Credenciales inválidas o cuenta inactiva';
+
+  if (!user || user.status === 'INACTIVE') {
+    return res.status(401).json({ success: false, error: invalidMsg });
+  }
+
+  if (user.status === 'PENDING_VERIFICATION') {
+    return res.status(401).json({
+      success: false,
+      error: 'Cuenta pendiente de verificación. Revisa tu correo.',
+      code: 'PENDING_VERIFICATION',
+    });
+  }
+
+  if (user.status === 'BLOCKED' && user.lockedUntil && user.lockedUntil > new Date()) {
+    return res.status(401).json({ success: false, error: 'Cuenta bloqueada temporalmente. Intenta más tarde.' });
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
   if (!isPasswordValid) {
-    return res.status(401).json({ success: false, error: 'Credenciales inválidas' });
+    const newCount = (user.failedLoginCount ?? 0) + 1;
+    const shouldLock = newCount >= LOCK_THRESHOLD;
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginCount: newCount,
+        status: shouldLock ? 'BLOCKED' : user.status,
+        lockedUntil: shouldLock ? new Date(Date.now() + LOCK_DURATION_MIN * 60 * 1000) : null,
+      },
+    });
+
+    return res.status(401).json({ success: false, error: invalidMsg });
   }
 
-  // Generar JWT
-  const payload = {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-  };
-
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
-
-  // Crear log de auditoría
-  await prisma.auditLog.create({
+  // Reset failed attempts on successful login
+  await prisma.user.update({
+    where: { id: user.id },
     data: {
-      userId: user.id,
-      action: 'LOGIN',
-      entity: 'User',
-      entityId: user.id,
-    }
+      failedLoginCount: 0,
+      status: user.status === 'BLOCKED' ? 'ACTIVE' : user.status,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
+    },
+  });
+
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+
+  await writeAuditLog({
+    userId: user.id,
+    action: 'LOGIN',
+    entityType: 'User',
+    entityId: user.id,
+    ipAddress: ip,
   });
 
   res.json({
     success: true,
     token,
-    user: {
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role
-    }
+    user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role },
   });
+};
+
+export const logout = async (req: Request, res: Response) => {
+  // With JWT the client discards the token; server records the event
+  if (req.user) {
+    await writeAuditLog({
+      userId: req.user.id,
+      action: 'LOGOUT',
+      entityType: 'User',
+      entityId: req.user.id,
+      ipAddress: getClientIp(req),
+    });
+  }
+  res.json({ success: true });
 };
 
 export const getMe = async (req: Request, res: Response) => {
@@ -74,12 +126,10 @@ export const getMe = async (req: Request, res: Response) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { id: true, fullName: true, email: true, phone: true, role: true, isActive: true, createdAt: true }
+    select: { id: true, fullName: true, email: true, phone: true, photoUrl: true, role: true, status: true, createdAt: true },
   });
 
-  if (!user) {
-    return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
-  }
+  if (!user) return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
 
   res.json({ success: true, user });
 };
@@ -92,13 +142,14 @@ export const registerAdopter = async (req: Request, res: Response) => {
 
   const { fullName, email, password, phone } = parsed.data;
 
+  // Don't reveal whether email is in use (security: CU-12)
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    return res.status(400).json({ success: false, error: 'El correo electrónico ya está en uso' });
+    return res.status(400).json({ success: false, error: 'Si el correo no está registrado, recibirás un enlace de activación.' });
   }
 
-  const saltRounds = 10;
-  const passwordHash = await bcrypt.hash(password, saltRounds);
+  const passwordHash = await bcrypt.hash(password, 12);
+  const activationToken = crypto.randomBytes(32).toString('hex');
 
   const newUser = await prisma.user.create({
     data: {
@@ -107,25 +158,118 @@ export const registerAdopter = async (req: Request, res: Response) => {
       passwordHash,
       phone,
       role: 'ADOPTER',
-    }
+      status: 'PENDING_VERIFICATION',
+      activationToken,
+    },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: newUser.id,
-      action: 'REGISTER',
-      entity: 'User',
-      entityId: newUser.id,
-    }
+  // TODO: send email with activation link
+  // emailService.sendActivation(email, activationToken);
+  console.info(`[AUTH] Activation token for ${email}: ${activationToken}`);
+
+  await writeAuditLog({
+    userId: newUser.id,
+    action: 'REGISTER',
+    entityType: 'User',
+    entityId: newUser.id,
+    ipAddress: getClientIp(req),
   });
 
   res.status(201).json({
     success: true,
-    user: {
-      id: newUser.id,
-      fullName: newUser.fullName,
-      email: newUser.email,
-      role: newUser.role
-    }
+    message: 'Cuenta creada. Revisa tu correo para activarla.',
+    // In dev expose token so it can be tested without email
+    ...(process.env.NODE_ENV !== 'production' && { activationToken }),
   });
+};
+
+export const activateAccount = async (req: Request, res: Response) => {
+  const token = req.query['token'] as string;
+  if (!token) return res.status(400).json({ success: false, error: 'Token requerido' });
+
+  const user = await prisma.user.findUnique({ where: { activationToken: token } });
+  if (!user) {
+    // Record potential security event but return generic error
+    return res.status(400).json({ success: false, error: 'Token inválido o expirado.' });
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { status: 'ACTIVE', emailVerifiedAt: new Date(), activationToken: null },
+  });
+
+  res.json({ success: true, message: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' });
+};
+
+export const resendActivation = async (req: Request, res: Response) => {
+  const parsed = forgotSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, error: 'Email inválido' });
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+
+  // Always respond the same to prevent enumeration
+  const genericMsg = 'Si la cuenta existe y está pendiente de activación, recibirás un nuevo correo.';
+
+  if (!user || user.status !== 'PENDING_VERIFICATION') {
+    return res.json({ success: true, message: genericMsg });
+  }
+
+  const activationToken = crypto.randomBytes(32).toString('hex');
+  await prisma.user.update({ where: { id: user.id }, data: { activationToken } });
+
+  // TODO: send email
+  console.info(`[AUTH] Resent activation token for ${user.email}: ${activationToken}`);
+
+  res.json({ success: true, message: genericMsg });
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  const parsed = forgotSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, error: 'Email inválido' });
+
+  const genericMsg = 'Si el correo está registrado recibirás instrucciones para restablecer tu contraseña.';
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (!user || user.status === 'INACTIVE') {
+    return res.json({ success: true, message: genericMsg });
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
+
+  // TODO: send email
+  console.info(`[AUTH] Password reset token for ${user.email}: ${resetToken}`);
+
+  res.json({ success: true, message: genericMsg });
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const parsed = resetSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos' });
+
+  const { token, password } = parsed.data;
+
+  const user = await prisma.user.findUnique({ where: { resetToken: token } });
+  if (!user || !user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
+    return res.status(400).json({ success: false, error: 'Token inválido o expirado.' });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash, resetToken: null, resetTokenExpiresAt: null, failedLoginCount: 0, status: 'ACTIVE' },
+  });
+
+  await writeAuditLog({
+    userId: user.id,
+    action: 'RESET_PASSWORD',
+    entityType: 'User',
+    entityId: user.id,
+    ipAddress: getClientIp(req),
+  });
+
+  res.json({ success: true, message: 'Contraseña restablecida. Ya puedes iniciar sesión.' });
 };

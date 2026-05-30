@@ -93,9 +93,9 @@ export const updateUser = async (req: Request, res: Response) => {
       data: {
         userId: req.user!.id,
         action: 'UPDATE_USER',
-        entity: 'User',
+        entityType: 'User',
         entityId: id,
-        details: JSON.stringify(dataToUpdate),
+        metadataJson: JSON.stringify(dataToUpdate),
       }
     });
 

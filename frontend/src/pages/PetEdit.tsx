@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { PetForm } from '../components/PetForm';
 import { LoadingState } from '../components/LoadingState';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import type { PetFormData } from '../components/PetForm';
 
 export function PetEdit() {
@@ -14,8 +14,8 @@ export function PetEdit() {
   useEffect(() => {
     const fetchPet = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/pets/${id}`);
-        setPet(res.data.pet);
+        const res = await apiClient.get(`/animals/${id}`);
+        setPet(res.data.animal);
       } catch {
         setError('No se pudo cargar la mascota');
       } finally {
