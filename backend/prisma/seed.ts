@@ -133,19 +133,6 @@ async function main() {
       goodWithChildren: false,
       goodWithPets: true,
     },
-    {
-      name: 'Coco',
-      species: 'Perro',
-      estimatedBreed: 'Poodle',
-      estimatedAge: 60,
-      size: 'Pequeño',
-      status: 'AVAILABLE',
-      mainPhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-      energyLevel: 'LOW',
-      spaceNeed: 'SMALL',
-      goodWithChildren: true,
-      goodWithPets: true,
-    },
   ];
 
   // Only create animals if table is empty
