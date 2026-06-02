@@ -58,5 +58,14 @@ export const deleteGalleryImage = async (req: Request, res: Response) => {
   }
 
   await prisma.animalGallery.delete({ where: { id: imageId } });
+
+  // Clean up physical file
+  try {
+    const url = new URL(image.fileUrl);
+    const filepath = url.pathname.replace(/^\/uploads\//, '');
+    const { join } = await import('path');
+    cleanupUpload(join(__dirname, '../../uploads', filepath));
+  } catch { /* best-effort cleanup */ }
+
   res.json({ success: true, message: 'Imagen eliminada' });
 };

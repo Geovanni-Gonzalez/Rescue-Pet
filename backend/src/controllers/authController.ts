@@ -6,6 +6,7 @@ import prisma from '../utils/prisma';
 import { z } from 'zod';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { sendActivationEmail, sendPasswordResetEmail } from '../services/emailService';
+import { logger } from '../utils/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
 const LOCK_THRESHOLD = 5;
@@ -176,7 +177,7 @@ export const registerAdopter = async (req: Request, res: Response) => {
   });
 
   sendActivationEmail(email, activationToken).catch((err) =>
-    console.error('[EMAIL] Failed to send activation email:', err)
+    logger.error('Failed to send activation email', { error: (err as Error).message })
   );
 
   await writeAuditLog({
@@ -253,7 +254,7 @@ export const resendActivation = async (req: Request, res: Response) => {
   });
 
   sendActivationEmail(user.email, activationToken).catch((err) =>
-    console.error('[EMAIL] Failed to resend activation email:', err)
+    logger.error('Failed to resend activation email', { error: (err as Error).message })
   );
 
   res.json({ success: true, message: genericMsg });
@@ -277,7 +278,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   await prisma.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
 
   sendPasswordResetEmail(user.email, resetToken).catch((err) =>
-    console.error('[EMAIL] Failed to send password reset email:', err)
+    logger.error('Failed to send password reset email', { error: (err as Error).message })
   );
 
   res.json({ success: true, message: genericMsg });

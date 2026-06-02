@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { TaskType } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { notifyByRole } from '../services/notificationService';
+import { logger } from '../utils/logger';
 
 const TASK_TYPES = ['HEALTH', 'MEDICATION', 'CLEANING', 'FEEDING', 'MAINTENANCE'] as const;
 const ASSIGNED_ROLES = ['VETERINARIAN', 'VOLUNTEER'] as const;
@@ -98,7 +99,7 @@ export const createTask = async (req: Request, res: Response) => {
     type: 'INFO',
     resourceType: 'OperationalTask',
     resourceId: task.id,
-  }).catch((err) => console.error('[Notification] Failed to notify role:', err));
+  }).catch((err) => logger.error('Failed to notify role on task creation', { taskId: task.id, error: (err as Error).message }));
 
   res.status(201).json({ success: true, task });
 };

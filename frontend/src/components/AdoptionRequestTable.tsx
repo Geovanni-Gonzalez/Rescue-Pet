@@ -9,11 +9,11 @@ interface AdoptionRequest {
   status: AdoptionRequestStatusType;
   createdAt: string;
   rejectionReason?: string;
-  pet: {
+  animal: {
     id: string;
     name: string;
     species: string;
-    breed?: string;
+    estimatedBreed?: string;
     mainPhotoUrl?: string;
   };
   adopter?: {
@@ -64,16 +64,17 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
             <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
               <td className="py-3 px-4">
                 <div className="flex items-center gap-3">
-                  {request.pet.mainPhotoUrl && (
+                  {request.animal.mainPhotoUrl && (
                     <img
-                      src={request.pet.mainPhotoUrl}
-                      alt={request.pet.name}
+                      src={request.animal.mainPhotoUrl}
+                      alt={request.animal.name}
+                      loading="lazy"
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900">{request.pet.name}</p>
-                    <p className="text-sm text-gray-500">{request.pet.species} {request.pet.breed || ''}</p>
+                    <p className="font-medium text-gray-900">{request.animal.name}</p>
+                    <p className="text-sm text-gray-500">{request.animal.species} {request.animal.estimatedBreed || ''}</p>
                   </div>
                 </div>
               </td>
@@ -94,7 +95,7 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
                 )}
               </td>
               <td className="py-3 px-4 text-sm text-gray-600">
-                {new Date(request.createdAt).toLocaleDateString('es-ES')}
+                {new Date(request.createdAt).toLocaleDateString('es-CR')}
               </td>
               <td className="py-3 px-4">
                 <Button

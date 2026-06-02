@@ -52,7 +52,7 @@ interface LocationHistoryEntry {
 
 interface AdoptionRequestSummary {
   id: string;
-  petId: string;
+  animalId: string;
   status: 'RECEIVED' | 'INTERVIEW' | 'VISIT' | 'APPROVED' | 'REJECTED';
 }
 
@@ -166,7 +166,7 @@ export function PetDetail() {
           try {
             const myReqs = await apiClient.get('/adoption-applications');
             const existing = (myReqs.data.applications as AdoptionRequestSummary[]).find(
-              (r) => r.petId === id && ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(r.status),
+              (r) => r.animalId === id && ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(r.status),
             );
             if (existing) setExistingRequest(existing);
           } catch { /* ignore */ }
@@ -189,7 +189,7 @@ export function PetDetail() {
       setShowAdoptionConfirm(false);
     } catch (err: unknown) {
       if (axios.isAxiosError<{ existingRequestId?: string }>(err) && err.response?.data?.existingRequestId) {
-        setExistingRequest({ id: err.response.data.existingRequestId, petId: id ?? '', status: 'RECEIVED' });
+        setExistingRequest({ id: err.response.data.existingRequestId, animalId: id ?? '', status: 'RECEIVED' });
       }
       setError(getApiErrorMessage(err, 'Error al crear la solicitud'));
     } finally {

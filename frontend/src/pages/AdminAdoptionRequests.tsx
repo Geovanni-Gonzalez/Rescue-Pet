@@ -7,11 +7,11 @@ import type { AdoptionRequestStatusType } from '../components/AdoptionRequestTab
 import { apiClient } from '../lib/api';
 import { getApiErrorMessage } from '../lib/api';
 
-interface Pet {
+interface Animal {
   id: string;
   name: string;
   species: string;
-  breed?: string;
+  estimatedBreed?: string;
   mainPhotoUrl?: string;
   status: string;
 }
@@ -28,7 +28,7 @@ interface AdoptionRequest {
   status: AdoptionRequestStatusType;
   rejectionReason?: string;
   createdAt: string;
-  pet: Pet;
+  animal: Animal;
   adopter: Adopter;
 }
 

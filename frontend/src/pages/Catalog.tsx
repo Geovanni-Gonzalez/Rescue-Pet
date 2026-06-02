@@ -8,7 +8,7 @@ import { EmptyState } from '../components/EmptyState';
 import { CompatibilityScoreBadge } from '../components/CompatibilityScoreBadge';
 import { CompatibilityExplanation } from '../components/CompatibilityExplanation';
 import { Button } from '../components/ui/button';
-import { Sparkles, Clock, RefreshCw } from 'lucide-react';
+import { Sparkles, Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
 interface CatalogPet {
@@ -25,11 +25,14 @@ interface CatalogPet {
 }
 
 const EMPTY_FILTERS: CatalogFilters = { species: '', size: '', minAge: '', maxAge: '' };
+const PAGE_SIZE = 20;
 
 export function Catalog() {
   const navigate = useNavigate();
 
   const [catalog, setCatalog] = useState<CatalogPet[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [error, setError] = useState('');
@@ -37,11 +40,11 @@ export function Catalog() {
   const [catalogFilters, setCatalogFilters] = useState<CatalogFilters>(EMPTY_FILTERS);
   const [sortedByCompatibility, setSortedByCompatibility] = useState(false);
 
-  const fetchCatalog = useCallback(async (filters: CatalogFilters) => {
+  const fetchCatalog = useCallback(async (filters: CatalogFilters, p: number) => {
     setIsLoading(true);
     setError('');
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string> = { page: String(p), limit: String(PAGE_SIZE) };
       if (filters.species) params['species'] = filters.species;
       if (filters.size) params['size'] = filters.size;
       if (filters.minAge) params['minAge'] = filters.minAge;
@@ -49,6 +52,7 @@ export function Catalog() {
 
       const res = await apiClient.get('/catalog/animals', { params });
       setCatalog(res.data.animals ?? []);
+      setTotal(res.data.total ?? 0);
       setSortedByCompatibility(res.data.sortedByCompatibility ?? false);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Error al cargar el catálogo'));
@@ -59,19 +63,24 @@ export function Catalog() {
   }, []);
 
   useEffect(() => {
-    fetchCatalog(catalogFilters);
-  }, [catalogFilters, fetchCatalog]);
+    fetchCatalog(catalogFilters, page);
+  }, [catalogFilters, page, fetchCatalog]);
 
   const handleRecalculate = async () => {
     setIsRecalculating(true);
     try {
       await apiClient.post('/adopters/me/compatibility/recalculate');
-      await fetchCatalog(catalogFilters);
+      await fetchCatalog(catalogFilters, page);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Completa el test de afinidad primero.'));
     } finally {
       setIsRecalculating(false);
     }
+  };
+
+  const handleFilterChange = (f: CatalogFilters) => {
+    setCatalogFilters(f);
+    setPage(1);
   };
 
   const filteredCatalog = catalog.filter((p) => {
@@ -86,6 +95,8 @@ export function Catalog() {
 
   const hasActiveFilters =
     catalogFilters.species || catalogFilters.size || catalogFilters.minAge || catalogFilters.maxAge;
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -131,7 +142,7 @@ export function Catalog() {
             </>
           )}
           <span className="ml-auto text-gray-400">
-            {filteredCatalog.length} {filteredCatalog.length === 1 ? 'mascota' : 'mascotas'}
+            {total} {total === 1 ? 'mascota' : 'mascotas'}
             {hasActiveFilters ? ' filtradas' : ' disponibles'}
           </span>
         </div>
@@ -148,7 +159,7 @@ export function Catalog() {
         showStatusFilter={false}
         showCatalogFilters
         catalogFilters={catalogFilters}
-        onCatalogFilterChange={setCatalogFilters}
+        onCatalogFilterChange={handleFilterChange}
       />
 
       {/* Reset filters */}
@@ -156,7 +167,7 @@ export function Catalog() {
         <button
           type="button"
           className="text-xs text-rescue-600 hover:underline"
-          onClick={() => setCatalogFilters(EMPTY_FILTERS)}
+          onClick={() => handleFilterChange(EMPTY_FILTERS)}
         >
           Limpiar filtros
         </button>
@@ -201,6 +212,31 @@ export function Catalog() {
               : 'Actualmente no hay mascotas listas para adopción.'
           }
         />
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-sm text-gray-600">
+            Página {page} de {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
       )}
     </div>
   );

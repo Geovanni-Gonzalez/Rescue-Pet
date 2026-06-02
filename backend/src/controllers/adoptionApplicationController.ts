@@ -5,6 +5,7 @@ import type { AdoptionRequestStatus, DocumentType, AnimalStatus } from '../types
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { buildUploadUrl } from '../middlewares/upload';
 import { generateContractPdf, generateSignedContractPdf, buildContractUrl } from '../services/pdfService';
+import { logger } from '../utils/logger';
 
 const ADOPTION_REQUEST_STATUSES = ['RECEIVED', 'INTERVIEW', 'VISIT', 'APPROVED', 'REJECTED'] as const;
 const DOCUMENT_TYPES = ['ID_CARD', 'ADDRESS_PROOF'] as const;
@@ -273,7 +274,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
       });
     } catch (err) {
       // If PDF generation fails, contract record still created but without URL
-      console.error('[PDF] Contract generation failed:', err);
+      logger.error('PDF contract generation failed', { applicationId: id, error: (err as Error).message });
       await prisma.adoptionContract.upsert({
         where: { applicationId: id },
         update: {},
@@ -437,7 +438,7 @@ export const generateContract = async (req: Request, res: Response) => {
 
     res.json({ success: true, contract });
   } catch (err) {
-    console.error('[PDF] generateContract error:', err);
+    logger.error('PDF generateContract error', { applicationId, error: (err as Error).message });
     res.status(500).json({ success: false, error: 'Error al generar el contrato PDF.' });
   }
 };
@@ -492,7 +493,7 @@ export const signContract = async (req: Request, res: Response) => {
     });
     signedPdfUrl = buildContractUrl(signedFilename);
   } catch (err) {
-    console.error('[PDF] signContract error:', err);
+    logger.error('PDF sign contract error', { applicationId, error: (err as Error).message });
     // Fallback: still record the signature even if PDF generation fails
     signedPdfUrl = `/contracts/adoption-${applicationId}-signed.pdf`;
   }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { AnimalStatus } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { generatePetQrDataUrl } from '../services/qrService';
+import { logger } from '../utils/logger';
 import { buildUploadUrl, cleanupUpload } from '../middlewares/upload';
 import {
   ACTIVE_ADOPTION_STATUSES,
@@ -144,7 +145,7 @@ export const createAnimal = async (req: Request, res: Response) => {
   try {
     qrUrl = await generatePetQrDataUrl(newAnimal.id);
   } catch (err) {
-    console.error(`QR generation failed for animal ${newAnimal.id}`, err);
+    logger.error('QR generation failed', { animalId: newAnimal.id, error: (err as Error).message });
   }
 
   const updated = await prisma.animal.update({

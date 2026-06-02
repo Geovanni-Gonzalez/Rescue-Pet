@@ -5,6 +5,7 @@ import prisma from '../utils/prisma';
 import { z } from 'zod';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { sendInternalUserCredentials } from '../services/emailService';
+import { logger } from '../utils/logger';
 
 const INTERNAL_ROLES = ['VETERINARIAN', 'VOLUNTEER'] as const;
 const ALL_STATUSES = ['ACTIVE', 'INACTIVE', 'BLOCKED', 'PENDING_VERIFICATION'] as const;
@@ -83,7 +84,7 @@ export const createUser = async (req: Request, res: Response) => {
   });
 
   sendInternalUserCredentials(email, tempPassword).catch((err) =>
-    console.error('[EMAIL] Failed to send credentials:', err)
+    logger.error('Failed to send internal user credentials', { error: (err as Error).message })
   );
 
   await writeAuditLog({

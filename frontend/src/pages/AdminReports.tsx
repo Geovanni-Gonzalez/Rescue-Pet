@@ -50,9 +50,13 @@ export function AdminReports() {
   const [speciesList, setSpeciesList] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Shared filters
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  // Shared filters — default to last 30 days per CU-24
+  const [from, setFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [species, setSpecies] = useState('');
 
   // Adoption-specific

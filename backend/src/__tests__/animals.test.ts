@@ -40,6 +40,7 @@ jest.mock('../middlewares/upload', () => {
   return {
     uploadAnimalPhoto: m,
     uploadGalleryPhotos: m,
+    uploadDocument: m,
     buildUploadUrl: jest.fn((sub: string, name: string) => `http://localhost:3000/uploads/${sub}/${name}`),
     cleanupUpload: jest.fn(),
   };

@@ -15,6 +15,28 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto logout on 401/403 (expired or invalid token)
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      axios.isAxiosError(error) &&
+      (error.response?.status === 401 || error.response?.status === 403) &&
+      // Only auto-logout for token issues, not RBAC denials
+      (error.response?.data?.error?.includes('Token') ||
+       error.response?.data?.error?.includes('Acceso denegado. Token'))
+    ) {
+      localStorage.removeItem('rescue_pet_token');
+      localStorage.removeItem('rescue_pet_user');
+      // Redirect to login without full page reload if possible
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError<{ error?: string }>(error)) {
     return error.response?.data?.error || fallback;

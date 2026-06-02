@@ -24,6 +24,8 @@ export interface PetFormData {
   rescueLongitude?: number;
   energyLevel?: string;
   spaceNeed?: string;
+  goodWithChildren?: boolean;
+  goodWithPets?: boolean;
 }
 
 interface PetFormProps {
@@ -41,6 +43,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
     rescueLocationText: initialData?.rescueLocationText ?? '',
     energyLevel: initialData?.energyLevel ?? '',
     spaceNeed: initialData?.spaceNeed ?? '',
+    goodWithChildren: initialData?.goodWithChildren ?? false,
+    goodWithPets: initialData?.goodWithPets ?? false,
     rescueLatitude: initialData?.rescueLatitude,
     rescueLongitude: initialData?.rescueLongitude,
   });
@@ -103,6 +107,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
       if (formData.rescueLongitude !== undefined) form.append('rescueLongitude', String(formData.rescueLongitude));
       if (formData.energyLevel) form.append('energyLevel', formData.energyLevel);
       if (formData.spaceNeed) form.append('spaceNeed', formData.spaceNeed);
+      form.append('goodWithChildren', String(formData.goodWithChildren));
+      form.append('goodWithPets', String(formData.goodWithPets));
       if (photoFile) form.append('mainPhoto', photoFile);
 
       if (isEdit && initialData) {
@@ -249,6 +255,28 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
             <option value="MEDIUM">Mediano</option>
             <option value="LARGE">Grande</option>
           </select>
+        </div>
+        <div className="space-y-2 flex items-end">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.goodWithChildren}
+              onChange={(e) => setFormData((prev) => ({ ...prev, goodWithChildren: e.target.checked }))}
+              className="rounded border-gray-300 text-rescue-600 focus:ring-rescue-500"
+            />
+            Compatible con niños
+          </label>
+        </div>
+        <div className="space-y-2 flex items-end">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.goodWithPets}
+              onChange={(e) => setFormData((prev) => ({ ...prev, goodWithPets: e.target.checked }))}
+              className="rounded border-gray-300 text-rescue-600 focus:ring-rescue-500"
+            />
+            Compatible con otras mascotas
+          </label>
         </div>
       </div>
 
