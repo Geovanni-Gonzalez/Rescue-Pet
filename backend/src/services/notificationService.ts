@@ -5,26 +5,28 @@ interface NotificationInput {
   title: string;
   message: string;
   type?: string;
-  link?: string;
+  resourceType?: string;
+  resourceId?: string;
 }
 
-export async function notifyUser({ userId, title, message, type = 'INFO', link }: NotificationInput) {
+export async function notifyUser({ userId, title, message, type = 'INFO', resourceType, resourceId }: NotificationInput) {
   return prisma.notification.create({
-    data: {
-      userId,
-      title,
-      message,
-      type,
-      link,
-    },
+    data: { userId, title, message, type, resourceType, resourceId },
   });
 }
 
 export async function notifyActiveAdmins(input: Omit<NotificationInput, 'userId'>) {
   const admins = await prisma.user.findMany({
-    where: { role: 'ADMIN', isActive: true },
+    where: { role: 'ADMIN', status: 'ACTIVE' },
     select: { id: true },
   });
-
   return Promise.all(admins.map((admin) => notifyUser({ ...input, userId: admin.id })));
+}
+
+export async function notifyByRole(role: 'VETERINARIAN' | 'VOLUNTEER', input: Omit<NotificationInput, 'userId'>) {
+  const users = await prisma.user.findMany({
+    where: { role, status: 'ACTIVE' },
+    select: { id: true },
+  });
+  return Promise.all(users.map((u) => notifyUser({ ...input, userId: u.id })));
 }

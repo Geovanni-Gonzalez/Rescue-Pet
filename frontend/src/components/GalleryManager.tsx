@@ -176,7 +176,7 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
                 idx === currentIndex ? 'border-rescue-500' : 'border-transparent hover:border-gray-300'
               }`}
             >
-              <img src={img.fileUrl} alt="" className="w-full h-full object-cover" />
+              <img src={img.fileUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

@@ -23,6 +23,10 @@ import { AdminUsers } from './pages/AdminUsers';
 import { AdoptionRequestDetail } from './components/AdoptionRequestDetail';
 import { ImmunizationAlerts } from './pages/ImmunizationAlerts';
 import { AdminInterviewSlots } from './pages/AdminInterviewSlots';
+import { NotificationCenter } from './pages/NotificationCenter';
+import { TaskManagement } from './pages/TaskManagement';
+import { AuditLog } from './pages/AuditLog';
+import { AdminReports } from './pages/AdminReports';
 
 export const router = createBrowserRouter([
   // Public routes
@@ -46,10 +50,16 @@ export const router = createBrowserRouter([
           { path: 'profile', element: <Profile /> },
           { path: 'pets', element: <Pets /> },
           { path: 'pets/:id', element: <PetDetail /> },
+          { path: 'notifications', element: <NotificationCenter /> },
           {
             path: 'immunization-alerts',
             element: <ProtectedRoute allowedRoles={['ADMIN', 'VETERINARIAN', 'VOLUNTEER']} />,
             children: [{ index: true, element: <ImmunizationAlerts /> }],
+          },
+          {
+            path: 'tasks',
+            element: <ProtectedRoute allowedRoles={['ADMIN', 'VETERINARIAN', 'VOLUNTEER']} />,
+            children: [{ index: true, element: <TaskManagement /> }],
           },
 
           // Adoptante
@@ -87,6 +97,16 @@ export const router = createBrowserRouter([
                 path: 'users',
                 element: <ProtectedRoute allowedRoles={['ADMIN']} />,
                 children: [{ index: true, element: <AdminUsers /> }],
+              },
+              {
+                path: 'reports',
+                element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                children: [{ index: true, element: <AdminReports /> }],
+              },
+              {
+                path: 'audit',
+                element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                children: [{ index: true, element: <AuditLog /> }],
               },
             ],
           },

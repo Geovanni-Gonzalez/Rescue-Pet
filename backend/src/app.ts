@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { errorHandler } from './middlewares/errorHandler';
 import { requestLogger } from './middlewares/requestLogger';
+import { servePrivateUpload } from './middlewares/privateUploads';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import animalRoutes from './routes/animalRoutes';
@@ -14,17 +15,22 @@ import notificationRoutes from './routes/notificationRoutes';
 import taskRoutes from './routes/taskRoutes';
 import reportRoutes from './routes/reportRoutes';
 import roleRoutes from './routes/roleRoutes';
+import auditRoutes from './routes/auditRoutes';
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 app.use(requestLogger);
 
-// Serve uploaded files (animal photos, gallery, documents, contracts)
-// Note: /uploads/documents and /uploads/contracts contain private files —
-// in production, replace with authenticated signed URLs.
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// ─── Static uploads ──────────────────────────────────────────────────────────
+// Public directories: animal photos and gallery images
+app.use('/uploads/animals', express.static(path.join(__dirname, '../uploads/animals')));
+app.use('/uploads/gallery', express.static(path.join(__dirname, '../uploads/gallery')));
+
+// Private directories: require authentication via JWT
+app.get('/uploads/documents/:filename', servePrivateUpload('documents'));
+app.get('/uploads/contracts/:filename', servePrivateUpload('contracts'));
 
 // API routes — all under /api
 app.use('/api/auth', authRoutes);
@@ -38,6 +44,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/audit', auditRoutes);
 
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date() });

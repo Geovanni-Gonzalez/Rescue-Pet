@@ -5,6 +5,10 @@ export const getCatalog = async (req: Request, res: Response) => {
   const adopterId = req.user?.id;
   const { species, size, minAge, maxAge } = req.query;
 
+  const page = Math.max(1, parseInt(req.query['page'] as string) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query['limit'] as string) || 20));
+  const skip = (page - 1) * limit;
+
   const where: Record<string, unknown> = { status: 'AVAILABLE' };
   if (species) where['species'] = species;
   if (size) where['size'] = size;
@@ -14,24 +18,29 @@ export const getCatalog = async (req: Request, res: Response) => {
     if (maxAge) (where['estimatedAge'] as Record<string, unknown>)['lte'] = Number(maxAge);
   }
 
-  const animals = await prisma.animal.findMany({
-    where: where as any,
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      name: true,
-      species: true,
-      estimatedBreed: true,
-      estimatedAge: true,
-      size: true,
-      mainPhotoUrl: true,
-      energyLevel: true,
-      spaceNeed: true,
-      goodWithChildren: true,
-      goodWithPets: true,
-      createdAt: true,
-    },
-  });
+  const [animals, total] = await Promise.all([
+    prisma.animal.findMany({
+      where: where as any,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip,
+      select: {
+        id: true,
+        name: true,
+        species: true,
+        estimatedBreed: true,
+        estimatedAge: true,
+        size: true,
+        mainPhotoUrl: true,
+        energyLevel: true,
+        spaceNeed: true,
+        goodWithChildren: true,
+        goodWithPets: true,
+        createdAt: true,
+      },
+    }),
+    prisma.animal.count({ where: where as any }),
+  ]);
 
   // If adopter has compatibility scores, attach them
   if (adopterId) {
@@ -53,10 +62,17 @@ export const getCatalog = async (req: Request, res: Response) => {
       animalsWithScore.sort((a, b) => (b.compatibilityScore ?? 0) - (a.compatibilityScore ?? 0));
     }
 
-    return res.json({ success: true, animals: animalsWithScore, sortedByCompatibility: scores.length > 0 });
+    return res.json({ success: true, animals: animalsWithScore, sortedByCompatibility: scores.length > 0, total, page, limit });
   }
 
-  res.json({ success: true, animals: animals.map((a) => ({ ...a, compatibilityScore: null, compatibilityExplanation: null })), sortedByCompatibility: false });
+  res.json({
+    success: true,
+    animals: animals.map((a) => ({ ...a, compatibilityScore: null, compatibilityExplanation: null })),
+    sortedByCompatibility: false,
+    total,
+    page,
+    limit,
+  });
 };
 
 export const getCatalogAnimalById = async (req: Request, res: Response) => {

@@ -2,14 +2,16 @@ import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
 import type { TaskType } from '../types/enums';
+import { writeAuditLog, getClientIp } from '../services/auditService';
+import { notifyByRole } from '../services/notificationService';
 
 const TASK_TYPES = ['HEALTH', 'MEDICATION', 'CLEANING', 'FEEDING', 'MAINTENANCE'] as const;
-import { writeAuditLog, getClientIp } from '../services/auditService';
+const ASSIGNED_ROLES = ['VETERINARIAN', 'VOLUNTEER'] as const;
 
 const createTaskSchema = z.object({
   animalId: z.string().uuid().optional(),
   type: z.enum(TASK_TYPES),
-  assignedRole: z.enum(['VETERINARIAN', 'VOLUNTEER']),
+  assignedRole: z.enum(ASSIGNED_ROLES),
   scheduledAt: z.string().datetime(),
   description: z.string().optional(),
 });
@@ -18,8 +20,34 @@ const completeTaskSchema = z.object({
   comment: z.string().optional(),
 });
 
+export const getTasks = async (req: Request, res: Response) => {
+  const { role } = req.user!;
+  const statusFilter = req.query['status'] as string | undefined;
+  const typeFilter = req.query['type'] as string | undefined;
+
+  const where: Record<string, unknown> = {};
+
+  if (role === 'VETERINARIAN') where['assignedRole'] = 'VETERINARIAN';
+  else if (role === 'VOLUNTEER') where['assignedRole'] = 'VOLUNTEER';
+
+  if (statusFilter === 'PENDING' || statusFilter === 'COMPLETED') where['status'] = statusFilter;
+  if (typeFilter && TASK_TYPES.includes(typeFilter as TaskType)) where['type'] = typeFilter;
+
+  const tasks = await prisma.operationalTask.findMany({
+    where: where as any,
+    include: {
+      animal: { select: { id: true, name: true, species: true } },
+      createdBy: { select: { id: true, fullName: true } },
+      completedBy: { select: { id: true, fullName: true } },
+    },
+    orderBy: { scheduledAt: 'desc' },
+  });
+
+  res.json({ success: true, tasks });
+};
+
 export const getTaskAlerts = async (req: Request, res: Response) => {
-  const { role, id: userId } = req.user!;
+  const { role } = req.user!;
   const now = new Date();
 
   const where: Record<string, unknown> = {
@@ -27,7 +55,6 @@ export const getTaskAlerts = async (req: Request, res: Response) => {
     scheduledAt: { lte: now },
   };
 
-  // Filter tasks by role
   if (role === 'VETERINARIAN') where['assignedRole'] = 'VETERINARIAN';
   else if (role === 'VOLUNTEER') where['assignedRole'] = 'VOLUNTEER';
 
@@ -50,7 +77,28 @@ export const createTask = async (req: Request, res: Response) => {
       scheduledAt: new Date(parsed.data.scheduledAt),
       createdById: req.user!.id,
     },
+    include: {
+      animal: { select: { id: true, name: true } },
+    },
   });
+
+  await writeAuditLog({
+    userId: req.user!.id,
+    action: 'CREATE_TASK',
+    entityType: 'OperationalTask',
+    entityId: task.id,
+    metadata: { type: task.type, assignedRole: task.assignedRole },
+    ipAddress: getClientIp(req),
+  });
+
+  const animalName = task.animal?.name ?? 'N/A';
+  notifyByRole(parsed.data.assignedRole, {
+    title: 'Nueva tarea asignada',
+    message: `Tarea de ${task.type} para ${animalName} programada para ${new Date(task.scheduledAt).toLocaleDateString('es-CR')}`,
+    type: 'INFO',
+    resourceType: 'OperationalTask',
+    resourceId: task.id,
+  }).catch((err) => console.error('[Notification] Failed to notify role:', err));
 
   res.status(201).json({ success: true, task });
 };
@@ -58,6 +106,7 @@ export const createTask = async (req: Request, res: Response) => {
 export const completeTask = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
   const userId = req.user!.id;
+  const idempotencyKey = req.headers['x-idempotency-key'] as string | undefined;
 
   const parsed = completeTaskSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos' });
@@ -65,10 +114,19 @@ export const completeTask = async (req: Request, res: Response) => {
   const task = await prisma.operationalTask.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
   if (task.status === 'COMPLETED') {
-    return res.status(400).json({ success: false, error: 'La tarea ya fue completada.' });
+    return res.status(409).json({ success: false, error: 'La tarea ya fue completada.', alreadyCompleted: true });
   }
 
-  // Atomic: audit must succeed or task stays pending
+  if (idempotencyKey) {
+    const existing = await prisma.auditLog.findFirst({
+      where: { action: 'COMPLETE_TASK', entityId: id, metadataJson: { contains: idempotencyKey } },
+    });
+    if (existing) {
+      const alreadyDone = await prisma.operationalTask.findUnique({ where: { id } });
+      return res.json({ success: true, task: alreadyDone, idempotent: true });
+    }
+  }
+
   const [updated] = await prisma.$transaction([
     prisma.operationalTask.update({
       where: { id },
@@ -80,7 +138,7 @@ export const completeTask = async (req: Request, res: Response) => {
         action: 'COMPLETE_TASK',
         entityType: 'OperationalTask',
         entityId: id,
-        metadataJson: JSON.stringify({ comment: parsed.data.comment }),
+        metadataJson: JSON.stringify({ comment: parsed.data.comment, idempotencyKey }),
         ipAddress: getClientIp(req),
       },
     }),

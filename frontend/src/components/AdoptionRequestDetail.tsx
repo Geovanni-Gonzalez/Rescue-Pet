@@ -463,7 +463,8 @@ export function AdoptionRequestDetail() {
                     </select>
                     <input
                       type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
+                      accept=".pdf,.jpg,.jpeg,.png,image/*"
+                      capture="environment"
                       onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
                       className="h-10 rounded-md border border-gray-300 px-3 text-sm file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-rescue-50 file:text-rescue-700"
                       required

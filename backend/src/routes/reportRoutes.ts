@@ -1,19 +1,27 @@
 import { Router } from 'express';
-import { getAdoptionReport, getHealthReport } from '../controllers/reportController';
+import {
+  getAdoptionReport,
+  getHealthReport,
+  getSpeciesList,
+  exportAdoptionPdf,
+  exportHealthPdf,
+  exportAdoptionCsv,
+  exportHealthCsv,
+} from '../controllers/reportController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 
 const router = Router();
 router.use(authenticateToken);
 router.use(authorizeRoles('ADMIN'));
 
+router.get('/species', getSpeciesList);
+
 router.get('/adoptions', getAdoptionReport);
+router.get('/adoptions/export/pdf', exportAdoptionPdf);
+router.get('/adoptions/export/csv', exportAdoptionCsv);
+
 router.get('/health', getHealthReport);
-// Export endpoints placeholder — actual PDF/Excel generation requires additional libraries
-router.get('/adoptions/export', (req, res) => {
-  res.json({ success: false, error: 'Exportación PDF/Excel no implementada aún. Use el endpoint base para obtener los datos.' });
-});
-router.get('/health/export', (req, res) => {
-  res.json({ success: false, error: 'Exportación PDF/Excel no implementada aún. Use el endpoint base para obtener los datos.' });
-});
+router.get('/health/export/pdf', exportHealthPdf);
+router.get('/health/export/csv', exportHealthCsv);
 
 export default router;

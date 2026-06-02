@@ -5,7 +5,7 @@ import app from '../app';
 jest.mock('../utils/prisma', () => ({
   __esModule: true,
   default: {
-    animal: { findMany: jest.fn(), findUnique: jest.fn() },
+    animal: { findMany: jest.fn(), findUnique: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     compatibilityTest: { findUnique: jest.fn(), upsert: jest.fn() },
     compatibilityScore: {
       findMany: jest.fn(),
@@ -60,6 +60,7 @@ beforeEach(() => {
 describe('GET /api/catalog/animals', () => {
   it('devuelve solo mascotas AVAILABLE y requiere auth', async () => {
     prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    prismaMock.animal.count.mockResolvedValue(1);
     prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/catalog/animals').set(auth('ADOPTER'));
@@ -74,6 +75,7 @@ describe('GET /api/catalog/animals', () => {
 
   it('filtra por especie cuando se pasa query param', async () => {
     prismaMock.animal.findMany.mockResolvedValue([]);
+    prismaMock.animal.count.mockResolvedValue(0);
     prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/catalog/animals?species=Gato').set(auth('ADOPTER'));
@@ -84,6 +86,7 @@ describe('GET /api/catalog/animals', () => {
 
   it('filtra por tamaño', async () => {
     prismaMock.animal.findMany.mockResolvedValue([]);
+    prismaMock.animal.count.mockResolvedValue(0);
     prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/catalog/animals?size=SMALL').set(auth('ADOPTER'));
@@ -94,6 +97,7 @@ describe('GET /api/catalog/animals', () => {
 
   it('filtra por rango de edad', async () => {
     prismaMock.animal.findMany.mockResolvedValue([]);
+    prismaMock.animal.count.mockResolvedValue(0);
     prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/catalog/animals?minAge=6&maxAge=24').set(auth('ADOPTER'));
@@ -107,6 +111,7 @@ describe('GET /api/catalog/animals', () => {
   it('adjunta puntaje de compatibilidad si existe y ordena desc', async () => {
     const animal2 = { ...ANIMAL_FIXTURE, id: 'animal-2', name: 'Toby' };
     prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE, animal2]);
+    prismaMock.animal.count.mockResolvedValue(2);
     prismaMock.compatibilityScore.findMany.mockResolvedValue([
       { animalId: 'animal-1', scorePercentage: 80, explanation: 'Buen espacio.' },
       { animalId: 'animal-2', scorePercentage: 45, explanation: 'Espacio limitado.' },
@@ -123,6 +128,7 @@ describe('GET /api/catalog/animals', () => {
 
   it('retorna sortedByCompatibility=false si no hay scores', async () => {
     prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    prismaMock.animal.count.mockResolvedValue(1);
     prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/catalog/animals').set(auth('ADOPTER'));

@@ -26,7 +26,7 @@ router.post('/', authorizeRoles('ADMIN', 'VOLUNTEER'), uploadAnimalPhoto.single(
 
 // Single animal
 router.get('/:id', getAnimalById);
-router.patch('/:id', authorizeRoles('ADMIN', 'VOLUNTEER'), uploadAnimalPhoto.single('mainPhoto'), updateAnimal);
+router.patch('/:id', authorizeRoles('ADMIN', 'VOLUNTEER', 'VETERINARIAN'), uploadAnimalPhoto.single('mainPhoto'), updateAnimal);
 
 // Status
 router.patch('/:id/status', authorizeRoles('ADMIN', 'VETERINARIAN'), updateAnimalStatus);

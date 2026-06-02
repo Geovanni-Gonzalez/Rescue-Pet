@@ -23,7 +23,7 @@ export function PetCard({ id, name, species, breed, age, status, photoUrl, onAct
     <Card className="overflow-hidden border-gray-200 transition-all hover:shadow-md">
       <div className="aspect-square bg-gray-100 relative overflow-hidden">
         {photoUrl ? (
-          <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+          <img src={photoUrl} alt={name} loading="lazy" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 bg-rescue-50/50">
             Sin foto

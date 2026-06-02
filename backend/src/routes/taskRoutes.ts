@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTaskAlerts, createTask, completeTask, getTaskCompletions } from '../controllers/taskController';
+import { getTasks, getTaskAlerts, createTask, completeTask, getTaskCompletions } from '../controllers/taskController';
 import { getImmunizationAlerts, completeImmunization, postponeImmunization } from '../controllers/vaccineController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 
@@ -7,9 +7,10 @@ const router = Router();
 router.use(authenticateToken);
 
 // Operational tasks
-router.get('/alerts', getTaskAlerts);
+router.get('/', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER'), getTasks);
+router.get('/alerts', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER'), getTaskAlerts);
 router.post('/', authorizeRoles('ADMIN', 'VETERINARIAN'), createTask);
-router.post('/:id/complete', completeTask);
+router.post('/:id/complete', authorizeRoles('ADMIN', 'VETERINARIAN', 'VOLUNTEER'), completeTask);
 router.get('/completions', authorizeRoles('ADMIN'), getTaskCompletions);
 
 // Immunization alerts (CU-07)
