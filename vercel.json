@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "if [ -d scripts ]; then node scripts/build-vercel-output.cjs; else node ../scripts/build-vercel-output.cjs; fi",
-  "installCommand": "if [ -d frontend ]; then npm install --prefix frontend --include=dev && npm install --prefix backend --include=dev; else npm install --prefix ../frontend --include=dev && npm install --prefix . --include=dev; fi"
+  "installCommand": "if [ -d frontend ] && [ -d backend ]; then npm install --prefix frontend --include=dev && npm install --prefix backend --include=dev; elif [ -d ../frontend ] && [ -d ../backend ]; then npm install --prefix ../frontend --include=dev && npm install --prefix ../backend --include=dev; else npm install --include=dev; fi"
 }

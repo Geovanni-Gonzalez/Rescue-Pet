@@ -3,13 +3,31 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const cwd = process.cwd();
-const cwdHasFrontend = fs.existsSync(path.join(cwd, 'frontend', 'package.json'));
-const cwdHasBackend = fs.existsSync(path.join(cwd, 'backend', 'package.json'));
 
-const repoRoot = cwdHasFrontend && cwdHasBackend ? cwd : path.resolve(cwd, '..');
+function findRepoRoot(start) {
+  let current = path.resolve(start);
+
+  while (true) {
+    const hasFrontend = fs.existsSync(path.join(current, 'frontend', 'package.json'));
+    const hasBackend = fs.existsSync(path.join(current, 'backend', 'package.json'));
+    const hasBuildScript = fs.existsSync(path.join(current, 'scripts', 'build-vercel-output.cjs'));
+
+    if (hasFrontend && hasBackend && hasBuildScript) {
+      return current;
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) {
+      throw new Error(`Could not find repo root from ${start}`);
+    }
+    current = parent;
+  }
+}
+
+const repoRoot = findRepoRoot(cwd);
 const projectRoot = cwd;
 const frontendDir = path.join(repoRoot, 'frontend');
-const backendDir = cwdHasBackend ? path.join(cwd, 'backend') : cwd;
+const backendDir = path.join(repoRoot, 'backend');
 const outputRoot = path.join(projectRoot, '.vercel', 'output');
 const staticRoot = path.join(outputRoot, 'static');
 const functionRoot = path.join(outputRoot, 'functions', 'api', 'index.func');
@@ -29,6 +47,17 @@ function copyDir(from, to) {
   if (!fs.existsSync(from)) {
     throw new Error(`Required path does not exist: ${from}`);
   }
+  const resolvedFrom = path.resolve(from);
+  const resolvedTo = path.resolve(to);
+
+  if (resolvedFrom === resolvedTo) {
+    return;
+  }
+
+  if (resolvedTo.startsWith(`${resolvedFrom}${path.sep}`)) {
+    throw new Error(`Cannot copy ${resolvedFrom} into its own subdirectory ${resolvedTo}`);
+  }
+
   fs.rmSync(to, { recursive: true, force: true });
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.cpSync(from, to, { recursive: true });
@@ -90,9 +119,7 @@ fs.writeFileSync(
   ].join('\n')
 );
 
-if (projectRoot !== repoRoot) {
-  copyDir(path.join(frontendDir, 'dist'), path.join(projectRoot, 'frontend', 'dist'));
-}
+copyDir(path.join(frontendDir, 'dist'), path.join(projectRoot, 'frontend', 'dist'));
 
 writeJson(path.join(functionRoot, '.vc-config.json'), {
   runtime: 'nodejs22.x',
