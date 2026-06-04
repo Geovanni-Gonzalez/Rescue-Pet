@@ -1,6 +1,13 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
-import { buildUploadUrl, cleanupUpload } from '../middlewares/upload';
+import { uploadsRoot } from '../utils/uploadsRoot';
+import * as uploadStorage from '../middlewares/upload';
+
+async function persistGalleryPhoto(file: Express.Multer.File) {
+  return uploadStorage.persistUploadedFile
+    ? uploadStorage.persistUploadedFile('gallery', file)
+    : uploadStorage.buildUploadUrl('gallery', file.filename);
+}
 
 export const getGallery = async (req: Request, res: Response) => {
   const animalId = req.params['id'] as string;
@@ -18,7 +25,7 @@ export const addGalleryImages = async (req: Request, res: Response) => {
   if (!animal) {
     // Clean up any uploaded files
     const files = (req.files as Express.Multer.File[]) ?? [];
-    files.forEach((f) => cleanupUpload(f.path));
+    files.forEach((f) => uploadStorage.cleanupUpload(f.path));
     return res.status(404).json({ success: false, error: 'Animal no encontrado' });
   }
 
@@ -28,11 +35,11 @@ export const addGalleryImages = async (req: Request, res: Response) => {
   }
 
   const created = await Promise.all(
-    files.map((file) =>
+    files.map(async (file) =>
       prisma.animalGallery.create({
         data: {
           animalId,
-          fileUrl: buildUploadUrl('gallery', file.filename),
+          fileUrl: await persistGalleryPhoto(file),
           fileType: file.mimetype,
           isMain: false,
           uploadedByUserId: req.user!.id,
@@ -61,10 +68,14 @@ export const deleteGalleryImage = async (req: Request, res: Response) => {
 
   // Clean up physical file
   try {
-    const url = new URL(image.fileUrl);
-    const filepath = url.pathname.replace(/^\/uploads\//, '');
-    const { join } = await import('path');
-    cleanupUpload(join(__dirname, '../../uploads', filepath));
+    if (/^https?:\/\//.test(image.fileUrl) && !image.fileUrl.includes('/uploads/')) {
+      uploadStorage.cleanupUpload(image.fileUrl);
+    } else {
+      const url = new URL(image.fileUrl);
+      const filepath = url.pathname.replace(/^\/uploads\//, '');
+      const { join } = await import('path');
+      uploadStorage.cleanupUpload(join(uploadsRoot, filepath));
+    }
   } catch { /* best-effort cleanup */ }
 
   res.json({ success: true, message: 'Imagen eliminada' });

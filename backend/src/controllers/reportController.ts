@@ -115,8 +115,8 @@ async function fetchHealthData(query: Record<string, unknown>) {
 
 function buildHealthSummary(animals: Awaited<ReturnType<typeof fetchHealthData>>) {
   const inTreatment = animals.filter((a) => a.status === 'TREATMENT').length;
-  const withPendingVaccines = animals.filter((a) => a.vaccines.some((v) => v.status === 'PENDING')).length;
-  const totalVaccinesPending = animals.reduce((sum, a) => sum + a.vaccines.filter((v) => v.status === 'PENDING').length, 0);
+  const withPendingVaccines = animals.filter((a) => a.vaccines.some((v: { status: string }) => v.status === 'PENDING')).length;
+  const totalVaccinesPending = animals.reduce((sum, a) => sum + a.vaccines.filter((v: { status: string }) => v.status === 'PENDING').length, 0);
   return {
     totalAnimals: animals.length,
     inTreatment,
@@ -244,7 +244,7 @@ export const exportHealthPdf = async (req: Request, res: Response) => {
       y = 50;
       y = drawTableHeader(doc, y, cols, widths, x0);
     }
-    const pendingCount = animal.vaccines.filter((v) => v.status === 'PENDING').length;
+    const pendingCount = animal.vaccines.filter((v: { status: string }) => v.status === 'PENDING').length;
     const lastEntry = animal.clinicalRecord?.entries?.[0];
     const row = [
       animal.name,
@@ -318,7 +318,7 @@ export const exportHealthCsv = async (req: Request, res: Response) => {
 
   const header = toCsvRow(['Animal', 'Especie', 'Estado', 'Vacunas pendientes', 'Último diagnóstico', 'Último tratamiento']);
   const rows = animals.map((a) => {
-    const pending = a.vaccines.filter((v) => v.status === 'PENDING').length;
+    const pending = a.vaccines.filter((v: { status: string }) => v.status === 'PENDING').length;
     const lastEntry = a.clinicalRecord?.entries?.[0];
     return toCsvRow([
       a.name,

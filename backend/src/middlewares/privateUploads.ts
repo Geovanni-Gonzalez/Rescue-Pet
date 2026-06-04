@@ -3,9 +3,48 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 import type { JwtPayload } from './authMiddleware';
+import { uploadsRoot } from '../utils/uploadsRoot';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
-const UPLOADS_ROOT = path.join(__dirname, '../../uploads');
+const UPLOADS_ROOT = uploadsRoot;
+
+function isBlobEnabled() {
+  return Boolean(process.env['BLOB_READ_WRITE_TOKEN']);
+}
+
+function loadBlobSdk(): {
+  list: (options: Record<string, unknown>) => Promise<{ blobs: { url: string; uploadedAt?: Date | string }[] }>;
+  get: (url: string) => Promise<{
+    arrayBuffer: () => Promise<ArrayBuffer>;
+    contentType?: string;
+  }>;
+} {
+  try {
+    return require('@vercel/blob');
+  } catch {
+    throw new Error(
+      'BLOB_READ_WRITE_TOKEN esta definido, pero falta @vercel/blob. Ejecuta npm install en el proyecto antes de desplegar.',
+    );
+  }
+}
+
+async function sendPrivateBlob(subdir: 'documents' | 'contracts', filename: string, res: Response) {
+  const { list, get } = loadBlobSdk();
+  const pathname = `uploads/${subdir}/${filename}`;
+  const { blobs } = await list({ prefix: pathname, limit: 1 });
+  const blob = blobs
+    .filter((item) => item.url)
+    .sort((a, b) => new Date(b.uploadedAt ?? 0).getTime() - new Date(a.uploadedAt ?? 0).getTime())[0];
+
+  if (!blob) {
+    return res.status(404).json({ success: false, error: 'Archivo no encontrado.' });
+  }
+
+  const response = await get(blob.url);
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (response.contentType) res.type(response.contentType);
+  return res.send(buffer);
+}
 
 /**
  * Route handler that guards access to /uploads/documents and /uploads/contracts.
@@ -14,7 +53,7 @@ const UPLOADS_ROOT = path.join(__dirname, '../../uploads');
  * Public directories (animals, gallery) are served normally by express.static.
  */
 export const servePrivateUpload = (subdir: 'documents' | 'contracts') => {
-  return (req: Request, res: Response) => {
+  return async (req: Request, res: Response) => {
     // Accept token from header or query parameter (for <a href> downloads)
     const authHeader = req.headers['authorization'];
     const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -54,6 +93,10 @@ export const servePrivateUpload = (subdir: 'documents' | 'contracts') => {
     const resolved = path.resolve(filePath);
     if (!resolved.startsWith(path.resolve(UPLOADS_ROOT, subdir))) {
       return res.status(400).json({ success: false, error: 'Ruta inválida.' });
+    }
+
+    if (isBlobEnabled()) {
+      return sendPrivateBlob(subdir, filename, res);
     }
 
     if (!fs.existsSync(resolved)) {

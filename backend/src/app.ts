@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { uploadsRoot } from './utils/uploadsRoot';
 import { errorHandler } from './middlewares/errorHandler';
 import { requestLogger } from './middlewares/requestLogger';
 import { servePrivateUpload } from './middlewares/privateUploads';
@@ -29,8 +30,8 @@ app.use(requestLogger);
 
 // ─── Static uploads ──────────────────────────────────────────────────────────
 // Public directories: animal photos and gallery images
-app.use('/uploads/animals', express.static(path.join(__dirname, '../uploads/animals')));
-app.use('/uploads/gallery', express.static(path.join(__dirname, '../uploads/gallery')));
+app.use('/uploads/animals', express.static(path.join(uploadsRoot, 'animals')));
+app.use('/uploads/gallery', express.static(path.join(uploadsRoot, 'gallery')));
 
 // Private directories: require authentication via JWT
 app.get('/uploads/documents/:filename', servePrivateUpload('documents'));

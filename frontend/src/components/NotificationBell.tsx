@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
-import { apiClient, getApiErrorMessage } from '../lib/api';
+import { apiClient } from '../lib/api';
 
 interface Notification {
   id: string;

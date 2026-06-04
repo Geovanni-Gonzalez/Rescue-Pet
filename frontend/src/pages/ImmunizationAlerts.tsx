@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Syringe, AlertTriangle, CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 

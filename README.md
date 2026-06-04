@@ -6,7 +6,7 @@ Sistema integral de gestion de adopcion de animales rescatados. Permite a refugi
 
 ```
 Rescue-Pet/
-  backend/    Express + TypeScript + Prisma + SQL Server
+  backend/    Express + TypeScript + JSON local
   frontend/   React 19 + Vite + TypeScript + Tailwind CSS
   docs/       Documentacion funcional y tecnica
 ```
@@ -14,14 +14,13 @@ Rescue-Pet/
 | Capa | Tecnologias |
 |------|-------------|
 | **Frontend** | React 19, Vite 8, TypeScript, Tailwind CSS, Radix UI, Leaflet, Axios, React Router 7 |
-| **Backend** | Node.js, Express 5, TypeScript, Prisma 6, Zod 4, JWT, bcrypt, PDFKit, QRCode, Nodemailer |
-| **Base de datos** | SQL Server (via Prisma) |
+| **Backend** | Node.js, Express 5, TypeScript, Zod 4, JWT, bcrypt, PDFKit, QRCode, Nodemailer |
+| **Datos** | JSON local en desarrollo y Vercel Blob para persistencia en despliegue |
 | **Autenticacion** | JWT con rotacion, bloqueo por intentos fallidos, activacion por email |
 
 ## Requisitos previos
 
 - **Node.js** >= 18
-- **SQL Server** (local o remoto) — se recomienda SQL Server Express para desarrollo
 - **npm** >= 9
 
 ## Instalacion rapida
@@ -39,14 +38,10 @@ cd Rescue-Pet
 cd backend
 npm install
 cp .env.example .env
-# Editar .env con tu cadena de conexion SQL Server (ver seccion Variables de entorno)
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
 npm run dev
 ```
 
-El backend se ejecuta en `http://localhost:3000`.
+El backend se ejecuta en `http://localhost:3000`. En el primer arranque crea automaticamente `backend/data/db.json` con usuarios de prueba.
 
 ### 3. Frontend
 
@@ -65,7 +60,9 @@ El frontend se ejecuta en `http://localhost:5173`.
 
 | Variable | Descripcion | Valor por defecto |
 |----------|-------------|-------------------|
-| `DATABASE_URL` | Cadena de conexion SQL Server (formato JDBC con `;`) | `sqlserver://localhost:1433;database=rescue_pet;integratedSecurity=true;trustServerCertificate=true` |
+| `JSON_DATA_DIR` | Directorio opcional donde guardar `db.json` en desarrollo | `backend/data` |
+| `BLOB_READ_WRITE_TOKEN` | Token de Vercel Blob para persistir `db.json`, fotos y documentos | _(vacio = modo local)_ |
+| `JSON_BLOB_PATH` | Ruta del archivo de datos dentro de Blob | `rescue-pet/db.json` |
 | `JWT_SECRET` | Clave secreta para firmar tokens JWT | `cambia-esta-clave-en-produccion` |
 | `PORT` | Puerto del servidor API | `3000` |
 | `FRONTEND_URL` | URL del frontend (para CORS y QR) | `http://localhost:5173` |
@@ -83,24 +80,17 @@ El frontend se ejecuta en `http://localhost:5173`.
 |----------|-------------|-------------------|
 | `VITE_API_URL` | URL base de la API backend | `http://localhost:3000` |
 
-## Migraciones y datos de prueba
+## Datos persistentes
 
-```bash
-cd backend
+En desarrollo, el backend usa `backend/data/db.json` como almacenamiento local. Si el archivo no existe, se crea con usuarios iniciales. El archivo esta ignorado por Git para no versionar datos de ejecucion.
 
-# Generar el cliente Prisma
-npm run prisma:generate
+Para reiniciar los datos en desarrollo, detén el servidor y elimina `backend/data/db.json`; se generara de nuevo al arrancar.
 
-# Ejecutar migraciones (crea/actualiza tablas en SQL Server)
-npm run prisma:migrate
-
-# Poblar con datos de prueba
-npm run prisma:seed
-```
+En Vercel, conecta Vercel Blob al proyecto. Cuando exista `BLOB_READ_WRITE_TOKEN`, el backend guarda `db.json` en Blob usando `JSON_BLOB_PATH`, sube fotos/galeria como blobs publicos y guarda documentos/contratos como blobs privados servidos por `/uploads/documents/:filename` y `/uploads/contracts/:filename`.
 
 ## Usuarios de prueba
 
-La semilla crea usuarios con contrasena `password123`:
+El primer arranque crea usuarios con contrasena `password123`:
 
 | Email | Rol | Permisos |
 |-------|-----|----------|
@@ -108,7 +98,6 @@ La semilla crea usuarios con contrasena `password123`:
 | `vet@rescuepet.com` | VETERINARIAN | Expedientes clinicos, vacunas, cambio de estado medico |
 | `volunteer@rescuepet.com` | VOLUNTEER | Registro de mascotas, gestion de galeria, solicitudes |
 | `adopter1@gmail.com` | ADOPTER | Catalogo, test de afinidad, solicitudes de adopcion |
-| `adopter2@gmail.com` | ADOPTER | Catalogo, test de afinidad, solicitudes de adopcion |
 
 ## Comandos de verificacion
 
@@ -272,7 +261,7 @@ El proyecto incluye **170+ tests** organizados en las siguientes categorias:
 - **RBAC**: middleware `authorizeRoles()` en cada ruta protegida
 - **Auditoria**: registro inmutable de acciones criticas (login, cambios de estado, denegaciones)
 - **Archivos**: validacion de MIME type y tamano maximo (5MB fotos, 10MB documentos)
-- **SQL Injection**: prevenida por Prisma (consultas parametrizadas)
+- **Persistencia local**: acceso a datos encapsulado en un adaptador JSON; no se construyen consultas SQL
 - **XSS**: datos almacenados tal cual; sanitizacion en el frontend (React escapa por defecto)
 - **Enumeracion de usuarios**: mensajes genericos en registro y recuperacion de contrasena
 
@@ -288,12 +277,10 @@ backend/
     routes/          Definicion de rutas Express
     services/        Servicios: email, PDF, QR, notificaciones, auditoria
     types/           Enums y tipos de dominio
-    utils/           Prisma client, logger
+    utils/           Adaptador JSON, logger
     __tests__/       Suite completa de tests
-  prisma/
-    schema.prisma    Esquema de base de datos
-    seed.ts          Datos de prueba
-    migrations/      Migraciones SQL
+  data/
+    db.json          Datos locales generados en ejecucion (ignorado por Git)
 
 frontend/
   src/
@@ -304,6 +291,38 @@ frontend/
 ```
 
 ## Despliegue
+
+### Vercel
+
+El repositorio incluye configuracion para desplegar en Vercel desde la raiz:
+
+- `vercel.json` construye `frontend/dist` y enruta `/api/*`, `/health` y `/uploads/*` al backend Express como Function.
+- `api/index.ts` exporta la app Express para Vercel.
+- `package.json` raiz usa workspaces para instalar dependencias y construir el frontend.
+
+En Vercel configura el proyecto con estos valores:
+
+| Campo | Valor |
+|-------|-------|
+| Root Directory | `.` |
+| Install Command | `npm install` |
+| Build Command | `npm run vercel-build` |
+| Output Directory | `frontend/dist` |
+
+Variables requeridas en Vercel:
+
+```env
+NODE_ENV=production
+JWT_SECRET=<clave-aleatoria-de-64-caracteres>
+FRONTEND_URL=https://<tu-proyecto>.vercel.app
+BACKEND_URL=https://<tu-proyecto>.vercel.app
+BLOB_READ_WRITE_TOKEN=<inyectado-por-vercel-blob>
+JSON_BLOB_PATH=rescue-pet/db.json
+```
+
+`VITE_API_URL` es opcional cuando frontend y API viven en el mismo despliegue de Vercel; si no se define, el frontend llama a `/api` en el mismo dominio. Para SMTP, agrega `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` y `SMTP_FROM` si quieres enviar correos reales.
+
+Importante: Vercel Functions no ofrecen filesystem persistente. Sin `BLOB_READ_WRITE_TOKEN`, el backend usa fallback local temporal en `/tmp` dentro de Vercel. Con Vercel Blob conectado, `db.json`, fotos, documentos y contratos quedan persistidos en Blob.
 
 ### Build de produccion
 
@@ -324,9 +343,10 @@ npm run build
 ```env
 NODE_ENV=production
 JWT_SECRET=<clave-aleatoria-de-64-caracteres>
-DATABASE_URL=sqlserver://<host>:<port>;database=rescue_pet;user=<user>;password=<pass>;encrypt=true
 FRONTEND_URL=https://tudominio.com
 BACKEND_URL=https://api.tudominio.com
+BLOB_READ_WRITE_TOKEN=<token-de-vercel-blob>
+JSON_BLOB_PATH=rescue-pet/db.json
 SMTP_HOST=smtp.tuproveedor.com
 SMTP_USER=noreply@tudominio.com
 SMTP_PASS=<password>
@@ -352,8 +372,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY dist/ ./dist/
-COPY prisma/ ./prisma/
-RUN npx prisma generate
+COPY data/ ./data/
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
 ```

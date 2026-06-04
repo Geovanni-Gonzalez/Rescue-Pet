@@ -1,6 +1,8 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import { uploadsRoot } from '../utils/uploadsRoot';
+import { persistGeneratedFile } from '../middlewares/upload';
 
 interface ContractData {
   applicationId: string;
@@ -16,7 +18,7 @@ interface SignedContractData extends ContractData {
   signedAt: Date;
 }
 
-const CONTRACTS_DIR = path.join(__dirname, '../../uploads/contracts');
+const CONTRACTS_DIR = path.join(uploadsRoot, 'contracts');
 
 export function buildContractUrl(filename: string): string {
   const base = process.env.BACKEND_URL || 'http://localhost:3000';
@@ -105,7 +107,11 @@ export async function generateContractPdf(data: ContractData): Promise<string> {
     doc.fontSize(9).fillColor('#6b7280').text(`Documento generado el ${data.generatedAt.toISOString()} — Rescue Pet`, { align: 'center' });
 
     doc.end();
-    stream.on('finish', () => resolve(filename));
+    stream.on('finish', () => {
+      persistGeneratedFile('contracts', filePath, filename, 'application/pdf')
+        .then(() => resolve(filename))
+        .catch(reject);
+    });
     stream.on('error', reject);
   });
 }
@@ -185,7 +191,11 @@ export async function generateSignedContractPdf(data: SignedContractData): Promi
     doc.fontSize(9).fillColor('#6b7280').text(`Documento generado el ${data.generatedAt.toISOString()} — Rescue Pet`, { align: 'center' });
 
     doc.end();
-    stream.on('finish', () => resolve(filename));
+    stream.on('finish', () => {
+      persistGeneratedFile('contracts', filePath, filename, 'application/pdf')
+        .then(() => resolve(filename))
+        .catch(reject);
+    });
     stream.on('error', reject);
   });
 }

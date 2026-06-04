@@ -10,7 +10,7 @@ import { GalleryManager } from '../components/GalleryManager';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Edit, QrCode as QrIcon, Heart, MapPin, Clock, History, Syringe, Stethoscope, Plus, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Edit, QrCode as QrIcon, Heart, MapPin, Clock, History, Syringe, Stethoscope, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 

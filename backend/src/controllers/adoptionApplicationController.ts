@@ -3,7 +3,7 @@ import prisma from '../utils/prisma';
 import { z } from 'zod';
 import type { AdoptionRequestStatus, DocumentType, AnimalStatus } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
-import { buildUploadUrl } from '../middlewares/upload';
+import * as uploadStorage from '../middlewares/upload';
 import { generateContractPdf, generateSignedContractPdf, buildContractUrl } from '../services/pdfService';
 import { logger } from '../utils/logger';
 
@@ -32,6 +32,12 @@ const VALID_TRANSITIONS: Record<AdoptionRequestStatus, AdoptionRequestStatus[]> 
   REJECTED: [],
 };
 const REQUIRED_DOCUMENTS: DocumentType[] = ['ID_CARD', 'ADDRESS_PROOF'];
+
+async function persistDocument(file: Express.Multer.File) {
+  return uploadStorage.persistUploadedFile
+    ? uploadStorage.persistUploadedFile('documents', file)
+    : uploadStorage.buildUploadUrl('documents', file.filename);
+}
 
 // ─── CU-16: Solicitud de adopción ─────────────────────────────────────────────
 
@@ -329,7 +335,7 @@ export const uploadDocument = async (req: Request, res: Response) => {
     await prisma.adopterDocument.update({ where: { id: previous.id }, data: { status: 'ARCHIVED' } });
   }
 
-  const fileUrl = buildUploadUrl('documents', file.filename);
+  const fileUrl = await persistDocument(file);
 
   const document = await prisma.adopterDocument.create({
     data: {

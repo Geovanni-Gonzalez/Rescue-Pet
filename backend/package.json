@@ -7,9 +7,6 @@
     "dev": "nodemon src/index.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -19,7 +16,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^1.1.1",
     "@types/pdfkit": "^0.17.6",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
@@ -30,8 +27,6 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.10",
     "pdfkit": "^0.18.0",
-    "pg": "^8.21.0",
-    "prisma": "^6.19.3",
     "qrcode": "^1.5.4",
     "zod": "^4.4.3"
   },
@@ -52,8 +47,5 @@
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

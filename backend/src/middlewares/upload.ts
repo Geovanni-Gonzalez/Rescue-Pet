@@ -3,8 +3,10 @@ import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
 import type { Request } from 'express';
+import { uploadsRoot } from '../utils/uploadsRoot';
+import { logger } from '../utils/logger';
 
-const UPLOADS_ROOT = path.join(__dirname, '../../uploads');
+const UPLOADS_ROOT = uploadsRoot;
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024;   // 5 MB
 const MAX_DOC_SIZE   = 10 * 1024 * 1024;  // 10 MB
 
@@ -28,6 +30,28 @@ function makeFilter(allowed: string[]) {
 }
 
 type UploadSubdir = 'animals' | 'gallery' | 'documents' | 'contracts';
+
+function isBlobEnabled() {
+  return Boolean(process.env['BLOB_READ_WRITE_TOKEN']);
+}
+
+function loadBlobSdk(): {
+  put: (pathname: string, body: Buffer, options: Record<string, unknown>) => Promise<{ url: string }>;
+  del: (urlOrPathname: string) => Promise<void>;
+} {
+  try {
+    return require('@vercel/blob');
+  } catch {
+    throw new Error(
+      'BLOB_READ_WRITE_TOKEN esta definido, pero falta @vercel/blob. Ejecuta npm install en el proyecto antes de desplegar.',
+    );
+  }
+}
+
+function localUploadUrl(subdir: UploadSubdir, filename: string): string {
+  const base = process.env.BACKEND_URL || 'http://localhost:3000';
+  return `${base}/uploads/${subdir}/${filename}`;
+}
 
 function makeStorage(subdir: UploadSubdir) {
   return multer.diskStorage({
@@ -60,15 +84,72 @@ export const uploadDocument = multer({
 
 /** Build a publicly accessible URL for an uploaded file */
 export function buildUploadUrl(subdir: UploadSubdir, filename: string): string {
-  const base = process.env.BACKEND_URL || 'http://localhost:3000';
-  return `${base}/uploads/${subdir}/${filename}`;
+  return localUploadUrl(subdir, filename);
+}
+
+export async function persistUploadedFile(subdir: UploadSubdir, file: Express.Multer.File): Promise<string> {
+  if (!isBlobEnabled()) return buildUploadUrl(subdir, file.filename);
+
+  const { put } = loadBlobSdk();
+  const pathname = `uploads/${subdir}/${file.filename}`;
+  const access = subdir === 'animals' || subdir === 'gallery' ? 'public' : 'private';
+  const blob = await put(pathname, fs.readFileSync(file.path), {
+    access,
+    allowOverwrite: true,
+    contentType: file.mimetype,
+  });
+
+  cleanupLocalFile(file.path);
+  return access === 'public' ? blob.url : localUploadUrl(subdir, file.filename);
+}
+
+export async function persistGeneratedFile(
+  subdir: UploadSubdir,
+  filePath: string,
+  filename: string,
+  contentType: string,
+): Promise<void> {
+  if (!isBlobEnabled()) return;
+
+  const { put } = loadBlobSdk();
+  await put(`uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
+    access: subdir === 'animals' || subdir === 'gallery' ? 'public' : 'private',
+    allowOverwrite: true,
+    contentType,
+  });
+  cleanupLocalFile(filePath);
 }
 
 /** Delete a file from uploads if it exists (fire-and-forget) */
 export function cleanupUpload(filePath: string): void {
+  if (isBlobEnabled()) {
+    cleanupBlob(filePath).catch((err) => {
+      logger.error('Failed to clean up blob upload', { target: filePath, error: (err as Error).message });
+    });
+    return;
+  }
+
+  cleanupLocalFile(filePath);
+}
+
+function cleanupLocalFile(filePath: string): void {
   fs.unlink(filePath, (err) => {
     if (err && err.code !== 'ENOENT') {
       console.error('[UPLOAD] Failed to clean up file:', filePath, err.message);
     }
   });
+}
+
+async function cleanupBlob(target: string): Promise<void> {
+  const { del } = loadBlobSdk();
+  if (/^https?:\/\//.test(target)) {
+    await del(target);
+    return;
+  }
+
+  const normalized = target.replace(/\\/g, '/');
+  const uploadsIndex = normalized.lastIndexOf('/uploads/');
+  if (uploadsIndex >= 0) {
+    await del(normalized.slice(uploadsIndex + 1));
+  }
 }

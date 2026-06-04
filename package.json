@@ -1,0 +1,13 @@
+{
+  "name": "rescue-pet",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "vercel-build": "npm run build --workspace frontend",
+    "build": "npm run vercel-build",
+    "typecheck": "npm run typecheck --workspace backend && npm run typecheck --workspace frontend"
+  }
+}

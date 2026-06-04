@@ -1,5 +1,4 @@
-// Constantes de dominio — reemplazan los enums de Prisma
-// (SQL Server no soporta enum nativo en Prisma; se almacenan como String)
+// Constantes de dominio usadas por la capa JSON y los controladores.
 
 export type Role = 'ADMIN' | 'VETERINARIAN' | 'VOLUNTEER' | 'ADOPTER';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION' | 'BLOCKED';

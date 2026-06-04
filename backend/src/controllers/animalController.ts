@@ -5,7 +5,7 @@ import type { AnimalStatus } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { generatePetQrDataUrl } from '../services/qrService';
 import { logger } from '../utils/logger';
-import { buildUploadUrl, cleanupUpload } from '../middlewares/upload';
+import * as uploadStorage from '../middlewares/upload';
 import {
   ACTIVE_ADOPTION_STATUSES,
   canTransitionAnimalStatus,
@@ -14,6 +14,12 @@ import {
 } from '../domain/animalRules';
 
 const ANIMAL_STATUSES = ['QUARANTINE', 'AVAILABLE', 'TREATMENT', 'ADOPTED', 'DECEASED'] as const;
+
+async function persistAnimalPhoto(file: Express.Multer.File) {
+  return uploadStorage.persistUploadedFile
+    ? uploadStorage.persistUploadedFile('animals', file)
+    : uploadStorage.buildUploadUrl('animals', file.filename);
+}
 
 // Schema for JSON body (edit without file)
 const animalBodySchema = z.object({
@@ -115,19 +121,19 @@ export const createAnimal = async (req: Request, res: Response) => {
   let mainPhotoUrl: string | undefined;
 
   if (req.file) {
-    mainPhotoUrl = buildUploadUrl('animals', req.file.filename);
+    mainPhotoUrl = await persistAnimalPhoto(req.file);
   }
 
   const payload = buildAnimalPayload(req, mainPhotoUrl);
   const parsed = animalCreateRequiredSchema.safeParse(payload);
 
   if (!parsed.success) {
-    if (req.file) cleanupUpload(req.file.path);
+    if (req.file) uploadStorage.cleanupUpload(req.file.path);
     return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
   }
 
   if (!parsed.data.mainPhotoUrl) {
-    if (req.file) cleanupUpload(req.file.path);
+    if (req.file) uploadStorage.cleanupUpload(req.file.path);
     return res.status(400).json({ success: false, error: 'La fotografía principal es obligatoria.' });
   }
 
@@ -169,13 +175,13 @@ export const updateAnimal = async (req: Request, res: Response) => {
 
   const animal = await prisma.animal.findUnique({ where: { id } });
   if (!animal) {
-    if (req.file) cleanupUpload(req.file.path);
+    if (req.file) uploadStorage.cleanupUpload(req.file.path);
     return res.status(404).json({ success: false, error: 'Animal no encontrado' });
   }
 
   let mainPhotoUrl: string | undefined;
   if (req.file) {
-    mainPhotoUrl = buildUploadUrl('animals', req.file.filename);
+    mainPhotoUrl = await persistAnimalPhoto(req.file);
   }
 
   const payload = buildAnimalPayload(req, mainPhotoUrl);
@@ -186,7 +192,7 @@ export const updateAnimal = async (req: Request, res: Response) => {
 
   const parsed = animalBodySchema.safeParse(cleaned);
   if (!parsed.success) {
-    if (req.file) cleanupUpload(req.file.path);
+    if (req.file) uploadStorage.cleanupUpload(req.file.path);
     return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
   }
 
