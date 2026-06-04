@@ -14,6 +14,7 @@ const outputRoot = path.join(projectRoot, '.vercel', 'output');
 const staticRoot = path.join(outputRoot, 'static');
 const functionRoot = path.join(outputRoot, 'functions', 'api', 'index.func');
 const legacyServerRoot = path.join(frontendDir, 'dist', 'server');
+const legacyNodeModulesRoot = path.join(frontendDir, 'dist', 'node_modules');
 
 function run(command, args, options = {}) {
   console.log(`$ ${command} ${args.join(' ')}`);
@@ -50,9 +51,11 @@ copyDir(path.join(backendDir, 'dist'), path.join(functionRoot, 'dist'));
 copyDir(path.join(backendDir, 'node_modules'), path.join(functionRoot, 'node_modules'));
 
 fs.rmSync(legacyServerRoot, { recursive: true, force: true });
+fs.rmSync(legacyNodeModulesRoot, { recursive: true, force: true });
 fs.mkdirSync(legacyServerRoot, { recursive: true });
 copyDir(path.join(backendDir, 'dist'), path.join(legacyServerRoot, 'dist'));
 copyDir(path.join(backendDir, 'node_modules'), path.join(legacyServerRoot, 'node_modules'));
+copyDir(path.join(backendDir, 'node_modules'), legacyNodeModulesRoot);
 
 if (fs.existsSync(path.join(backendDir, 'data'))) {
   copyDir(path.join(backendDir, 'data'), path.join(functionRoot, 'data'));
@@ -73,7 +76,7 @@ fs.writeFileSync(
   path.join(frontendDir, 'dist', 'index.js'),
   [
     "const path = require('path');",
-    "const express = require('./server/node_modules/express');",
+    "const express = require('express');",
     "const appModule = require('./server/dist/app');",
     'const app = appModule.default || appModule;',
     '',
