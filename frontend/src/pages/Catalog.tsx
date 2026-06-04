@@ -8,7 +8,7 @@ import { EmptyState } from '../components/EmptyState';
 import { CompatibilityScoreBadge } from '../components/CompatibilityScoreBadge';
 import { CompatibilityExplanation } from '../components/CompatibilityExplanation';
 import { Button } from '../components/ui/button';
-import { Sparkles, Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
 interface CatalogPet {
@@ -99,16 +99,16 @@ export function Catalog() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-rescue-50 p-6 rounded-xl border border-rescue-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-rescue-900">Catálogo Inteligente</h1>
-          <p className="text-rescue-700 text-sm">
-            Descubre a tu compañero ideal. Completa el test para que ordenemos los candidatos por afinidad.
+          <h1 className="text-2xl font-bold text-gray-900">Catálogo Inteligente</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Descubre a tu compañero ideal. Completa el test para orden por afinidad.
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-shrink-0">
           <Button
             onClick={handleRecalculate}
             variant="outline"
@@ -120,36 +120,44 @@ export function Catalog() {
           </Button>
           <Button
             onClick={() => navigate('/compatibility-test')}
-            className="bg-rescue-600 hover:bg-rescue-700"
+            size="sm"
           >
-            Hacer / Actualizar Test
+            Hacer Test
           </Button>
         </div>
       </div>
 
-      {/* Sort indicator */}
+      {/* Onboarding banner or sort indicator */}
+      {!isLoading && !sortedByCompatibility && total > 0 && (
+        <div className="flex items-start gap-4 p-4 mb-4 rounded-xl bg-warm-50 border border-warm-100">
+          <div className="w-9 h-9 rounded-lg bg-warm-100 text-warm-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Encuentra tu compañero ideal</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Completa el test de afinidad y ordenaremos las mascotas por compatibilidad contigo.</p>
+          </div>
+          <Button
+            onClick={() => navigate('/compatibility-test')}
+            size="sm"
+            className="bg-warm-600 text-white hover:bg-warm-700 flex-shrink-0"
+          >
+            Hacer test
+          </Button>
+        </div>
+      )}
       {!isLoading && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          {sortedByCompatibility ? (
-            <>
-              <Sparkles className="w-4 h-4 text-rescue-500" />
-              <span>Ordenado por tu afinidad personal</span>
-            </>
-          ) : (
-            <>
-              <Clock className="w-4 h-4" />
-              <span>Ordenado por fecha de ingreso (completa el test para orden personalizado)</span>
-            </>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+          {sortedByCompatibility && <Sparkles className="w-3.5 h-3.5 text-rescue-500" />}
+          <span>{sortedByCompatibility ? 'Ordenado por afinidad' : `${total} ${total === 1 ? 'mascota' : 'mascotas'}`}</span>
+          {sortedByCompatibility && (
+            <span className="ml-auto">{total} {total === 1 ? 'mascota' : 'mascotas'}{hasActiveFilters ? ' filtradas' : ''}</span>
           )}
-          <span className="ml-auto text-gray-400">
-            {total} {total === 1 ? 'mascota' : 'mascotas'}
-            {hasActiveFilters ? ' filtradas' : ' disponibles'}
-          </span>
         </div>
       )}
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <div className="p-3 mb-4 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
       )}
 
       {/* Filters */}
@@ -166,7 +174,7 @@ export function Catalog() {
       {hasActiveFilters && (
         <button
           type="button"
-          className="text-xs text-rescue-600 hover:underline"
+          className="text-xs text-rescue-600 hover:underline mb-2"
           onClick={() => handleFilterChange(EMPTY_FILTERS)}
         >
           Limpiar filtros
@@ -177,7 +185,7 @@ export function Catalog() {
       {isLoading ? (
         <LoadingState message="Analizando afinidad..." />
       ) : filteredCatalog.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
           {filteredCatalog.map((pet) => (
             <div key={pet.id} className="flex flex-col">
               <div className="relative group">
@@ -205,11 +213,18 @@ export function Catalog() {
         </div>
       ) : (
         <EmptyState
-          title="No hay mascotas disponibles"
+          title={searchTerm || hasActiveFilters ? 'Sin resultados' : 'No hay mascotas disponibles'}
           description={
             searchTerm || hasActiveFilters
-              ? 'Ninguna mascota coincide con los filtros seleccionados.'
+              ? 'Ninguna mascota coincide con los filtros.'
               : 'Actualmente no hay mascotas listas para adopción.'
+          }
+          action={
+            hasActiveFilters ? (
+              <Button variant="outline" size="sm" onClick={() => handleFilterChange(EMPTY_FILTERS)}>
+                Limpiar filtros
+              </Button>
+            ) : undefined
           }
         />
       )}

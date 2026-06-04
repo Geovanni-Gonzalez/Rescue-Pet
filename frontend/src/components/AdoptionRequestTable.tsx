@@ -41,8 +41,13 @@ const statusConfig: Record<AdoptionRequestStatusType, { label: string; className
 export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }: AdoptionRequestTableProps) {
   if (requests.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg">No hay solicitudes de adopción</p>
+      <div className="text-center py-12 px-4">
+        <p className="text-sm font-medium text-foreground">Sin solicitudes</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {isAdmin
+            ? 'Las solicitudes de los adoptantes aparecerán aquí.'
+            : 'Cuando solicites adoptar una mascota, podrás seguir el proceso aquí.'}
+        </p>
       </div>
     );
   }

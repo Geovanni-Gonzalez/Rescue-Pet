@@ -35,13 +35,13 @@ export function ActivateAccount() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-rescue-100 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm shadow-lg border-gray-200/80 text-center">
         <CardHeader className="pb-4">
-          <div className="mx-auto w-12 h-12 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-4">
-            <PawPrint className="w-7 h-7" />
+          <div className="mx-auto w-11 h-11 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-3">
+            <PawPrint className="w-6 h-6" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Activación de cuenta</CardTitle>
+          <CardTitle className="text-xl font-bold text-foreground">Activación de cuenta</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4 pb-6">

@@ -2,11 +2,9 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
-import type { Role } from '../context/AuthContext';
 import { apiClient, getApiErrorMessage, isNetworkError } from '../lib/api';
 
 export function Login() {
@@ -33,25 +31,10 @@ export function Login() {
         navigate('/', { replace: true });
       }
     } catch (err: unknown) {
-      console.error(err);
-
       if (isNetworkError(err)) {
-        const mockUser = {
-          id: 'mock-1',
-          fullName: 'Usuario Demo (Mock)',
-          email,
-          role: email.includes('admin')
-            ? 'ADMIN'
-            : email.includes('vet')
-              ? 'VETERINARIAN'
-              : email.includes('vol')
-                ? 'VOLUNTEER'
-                : 'ADOPTER' as Role,
-        };
-        login('mock-token-123', mockUser);
-        navigate('/', { replace: true });
+        setError('No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.');
       } else {
-        setError(getApiErrorMessage(err, 'Error al iniciar sesion. Verifica tus credenciales.'));
+        setError(getApiErrorMessage(err, 'Correo o contraseña incorrectos.'));
       }
     } finally {
       setIsLoading(false);
@@ -59,21 +42,45 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-rescue-100">
-        <CardHeader className="text-center pb-6">
-          <div className="mx-auto w-12 h-12 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-4">
-            <PawPrint className="w-7 h-7" />
+    <div className="min-h-screen flex bg-background">
+      {/* Brand panel */}
+      <div className="hidden lg:flex lg:w-[45%] bg-primary items-end p-12 relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-primary-foreground/20 rounded-xl flex items-center justify-center">
+              <PawPrint className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold text-primary-foreground">Rescue Pet</span>
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Rescue Pet</CardTitle>
-          <CardDescription>Inicia sesion para acceder al sistema</CardDescription>
-        </CardHeader>
+          <p className="text-2xl font-bold text-primary-foreground leading-snug max-w-xs">
+            Cada adopción cambia dos vidas.
+          </p>
+          <p className="text-sm text-primary-foreground/70 mt-3 max-w-xs">
+            Conectamos refugios con familias que buscan un compañero.
+          </p>
+        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary-foreground/5 -translate-y-1/3 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-primary-foreground/5 translate-y-1/4 -translate-x-1/4" />
+      </div>
 
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+      {/* Form panel */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-sm">
+          {/* Mobile brand mark */}
+          <div className="lg:hidden flex items-center gap-2.5 mb-8">
+            <div className="w-9 h-9 bg-rescue-100 text-rescue-600 rounded-xl flex items-center justify-center">
+              <PawPrint className="w-5 h-5" />
+            </div>
+            <span className="text-lg font-bold text-foreground">Rescue Pet</span>
+          </div>
+
+          <h1 className="text-2xl font-bold text-foreground">Iniciar sesión</h1>
+          <p className="text-sm text-muted-foreground mt-1 mb-6">Ingresa tus credenciales para continuar.</p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
             {resetSuccess && (
               <div className="p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
-                Contraseña restablecida correctamente. Ya puedes iniciar sesión.
+                Contraseña restablecida. Ya puedes iniciar sesión.
               </div>
             )}
             {error && (
@@ -83,7 +90,7 @@ export function Login() {
             )}
 
             <FormField
-              label="Correo electronico"
+              label="Correo electrónico"
               type="email"
               placeholder="ejemplo@correo.com"
               value={email}
@@ -106,25 +113,20 @@ export function Login() {
                 </Link>
               </div>
             </div>
-          </CardContent>
 
-          <CardFooter className="flex flex-col gap-4 pt-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Iniciando sesion...' : 'Ingresar'}
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
 
-            <div className="text-center text-sm text-gray-500">
-              No tienes cuenta?{' '}
+            <p className="text-center text-sm text-muted-foreground">
+              ¿No tienes cuenta?{' '}
               <Link to="/register" className="text-rescue-600 font-medium hover:underline">
-                Registrate como adoptante
+                Regístrate
               </Link>
-            </div>
-            <div className="text-center text-xs text-gray-400 mt-4 border-t pt-4">
-              Tip (Prototipo): Usa 'admin@...', 'vet@...', 'vol@...' para probar distintos roles si el backend esta apagado.
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
+            </p>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

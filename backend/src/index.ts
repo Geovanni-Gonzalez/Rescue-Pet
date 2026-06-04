@@ -5,9 +5,11 @@ import dotenv from 'dotenv';
 dotenv.config({ override: true });
 
 import app from './app';
+import { startImmunizationScheduler } from './services/immunizationScheduler';
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`[Server]: API running at http://localhost:${PORT}`);
+  startImmunizationScheduler();
 });

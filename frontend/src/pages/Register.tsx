@@ -49,7 +49,7 @@ export function Register() {
     setSuccessMessage('');
 
     if (password !== confirmPassword) {
-      setError('Las contrasenas no coinciden.');
+      setError('Las contraseñas no coinciden.');
       return;
     }
 
@@ -81,14 +81,14 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <Card className="w-full max-w-lg shadow-lg border-rescue-100">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-lg shadow-lg border-gray-200/80">
         <CardHeader className="text-center pb-6">
-          <div className="mx-auto w-12 h-12 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-4">
-            <PawPrint className="w-7 h-7" />
+          <div className="mx-auto w-11 h-11 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-3">
+            <PawPrint className="w-6 h-6" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Crear cuenta adoptante</CardTitle>
-          <CardDescription>Registra tus datos para solicitar adopciones y consultar tu proceso.</CardDescription>
+          <CardTitle className="text-xl font-bold text-foreground">Crear cuenta</CardTitle>
+          <CardDescription>Registra tus datos para solicitar adopciones.</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -112,7 +112,7 @@ export function Register() {
               required
             />
             <FormField
-              label="Correo electronico"
+              label="Correo electrónico"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -120,13 +120,13 @@ export function Register() {
               required
             />
             <FormField
-              label="Telefono"
+              label="Teléfono (opcional)"
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               placeholder="+506 8888 8888"
             />
             <FormField
-              label="Contrasena"
+              label="Contraseña"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -134,7 +134,7 @@ export function Register() {
               required
             />
             <FormField
-              label="Confirmar contrasena"
+              label="Confirmar contraseña"
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
@@ -149,9 +149,9 @@ export function Register() {
               {isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
             </Button>
             <p className="text-center text-sm text-gray-500">
-              Ya tienes cuenta?{' '}
+              ¿Ya tienes cuenta?{' '}
               <Link to="/login" className="text-rescue-600 font-medium hover:underline">
-                Inicia sesion
+                Inicia sesión
               </Link>
             </p>
           </CardFooter>

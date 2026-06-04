@@ -49,14 +49,14 @@ export function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-rescue-100">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm shadow-lg border-gray-200/80">
         <CardHeader className="text-center pb-6">
-          <div className="mx-auto w-12 h-12 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-4">
-            <PawPrint className="w-7 h-7" />
+          <div className="mx-auto w-11 h-11 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-3">
+            <PawPrint className="w-6 h-6" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Nueva contraseña</CardTitle>
-          <CardDescription>Elige una contraseña segura de al menos 8 caracteres.</CardDescription>
+          <CardTitle className="text-xl font-bold text-foreground">Nueva contraseña</CardTitle>
+          <CardDescription>Mínimo 8 caracteres.</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>

@@ -10,7 +10,7 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, role } = useAuth();
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return null;
   }
 
   if (!isAuthenticated) {

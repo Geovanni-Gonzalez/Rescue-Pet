@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, UserX, RefreshCw, Users } from 'lucide-react';
+import { Plus, UserX, RefreshCw } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -106,16 +106,11 @@ export function AdminUsers() {
   if (isLoading) return <LoadingState message="Cargando usuarios..." />;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-rescue-100 text-rescue-600 rounded-xl flex items-center justify-center">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
-            <p className="text-gray-500 text-sm">{users.length} usuarios registrados</p>
-          </div>
+    <div className="max-w-5xl mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{users.length} usuarios registrados</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={fetchUsers} title="Actualizar">
@@ -129,7 +124,7 @@ export function AdminUsers() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <div className="p-3 mb-4 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
       )}
 
       {showForm && (
@@ -188,8 +183,17 @@ export function AdminUsers() {
         </Card>
       )}
 
+      <div className="mt-4">
       {users.length === 0 ? (
-        <EmptyState title="Sin usuarios" description="No hay usuarios registrados todavía." />
+        <EmptyState
+          title="Sin usuarios"
+          description="Crea el primer usuario del equipo para comenzar."
+          action={
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nuevo usuario
+            </Button>
+          }
+        />
       ) : (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
@@ -241,6 +245,7 @@ export function AdminUsers() {
           </CardContent>
         </Card>
       )}
+      </div>
 
       <ConfirmDialog
         open={deactivateTarget !== null}

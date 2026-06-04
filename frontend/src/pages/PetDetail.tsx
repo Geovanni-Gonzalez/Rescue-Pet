@@ -308,10 +308,10 @@ export function PetDetail() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">{pet.name}</h1>
+      <div className="flex justify-between items-center mb-5">
+        <h1 className="text-2xl font-bold text-gray-900">{pet.name}</h1>
         {canEdit && (
           <Button variant="outline" onClick={() => navigate(`/admin/pets/${id}/edit`)}>
             <Edit className="w-4 h-4 mr-2" /> Editar Perfil
@@ -320,12 +320,27 @@ export function PetDetail() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <div className="p-3 mb-4 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Mobile CTA: adoption button visible before scroll */}
+      {canRequestAdoption && (
+        <div className="md:hidden mb-4">
+          {existingRequest ? (
+            <Button variant="outline" className="w-full" onClick={() => navigate(`/adoption/my-requests/${existingRequest.id}`)}>
+              <Heart className="w-4 h-4 mr-2" />Ver Solicitud Existente
+            </Button>
+          ) : (
+            <Button className="w-full bg-warm-600 text-white hover:bg-warm-700" onClick={() => setShowAdoptionConfirm(true)} disabled={isSubmitting}>
+              <Heart className="w-4 h-4 mr-2" />Solicitar Adopción
+            </Button>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
         {/* Main column */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-5">
           {/* Basic info */}
           <Card>
             <CardContent className="pt-6">
@@ -741,7 +756,7 @@ export function PetDetail() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 hidden md:block">
           {/* Adoption request */}
           {canRequestAdoption && (
             <Card>
@@ -751,7 +766,7 @@ export function PetDetail() {
                     <Heart className="w-4 h-4 mr-2" />Ver Solicitud Existente
                   </Button>
                 ) : (
-                  <Button className="w-full" onClick={() => setShowAdoptionConfirm(true)} disabled={isSubmitting}>
+                  <Button className="w-full bg-warm-600 text-white hover:bg-warm-700" onClick={() => setShowAdoptionConfirm(true)} disabled={isSubmitting}>
                     <Heart className="w-4 h-4 mr-2" />Solicitar Adopción
                   </Button>
                 )}

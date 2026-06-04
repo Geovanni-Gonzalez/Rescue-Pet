@@ -7,7 +7,7 @@ export function PlaceholderPage({ title }: { title: string }) {
       <EmptyState
         icon={<Construction className="w-8 h-8" />}
         title={title}
-        description="Esta vista forma parte del esqueleto del prototipo y será implementada en la siguiente fase."
+        description="Esta sección estará disponible próximamente."
       />
     </div>
   );

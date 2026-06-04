@@ -99,9 +99,22 @@ export function Pets() {
           ))}
         </div>
       ) : (
-        <EmptyState 
-          title="No hay mascotas" 
-          description={searchTerm ? "Ninguna mascota coincide con tu búsqueda." : "No hay mascotas registradas en el sistema actualmente."} 
+        <EmptyState
+          title={searchTerm ? 'Sin resultados' : 'Sin mascotas registradas'}
+          description={
+            searchTerm
+              ? 'Ninguna mascota coincide con tu búsqueda.'
+              : canManagePets
+                ? 'Registra la primera mascota para comenzar.'
+                : 'No hay mascotas en el sistema actualmente.'
+          }
+          action={
+            canManagePets && !searchTerm ? (
+              <Button size="sm" onClick={() => navigate('/admin/pets/new')}>
+                <Plus className="w-4 h-4 mr-1" /> Registrar mascota
+              </Button>
+            ) : undefined
+          }
         />
       )}
     </div>

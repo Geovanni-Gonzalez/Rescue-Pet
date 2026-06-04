@@ -154,7 +154,7 @@ export function Profile() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div>
-                <p className="text-sm text-gray-500">Correo electronico</p>
+                <p className="text-sm text-gray-500">Correo electrónico</p>
                 <p className="font-medium text-gray-900">{currentUser?.email}</p>
               </div>
               <div>

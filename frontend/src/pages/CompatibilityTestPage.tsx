@@ -36,9 +36,9 @@ export function CompatibilityTestPage() {
           <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900">¡Test completado!</h2>
-        <p className="text-gray-500">Hemos calculado la afinidad con todas las mascotas disponibles. Ahora verás el catálogo ordenado especialmente para ti.</p>
+        <p className="text-gray-500">Calculamos la afinidad con las mascotas disponibles. El catálogo ahora estará ordenado por compatibilidad.</p>
         <Button onClick={() => navigate('/catalog')} size="lg">
-          Ver mi Catálogo Personalizado
+          Ver catálogo
         </Button>
       </div>
     );
@@ -52,10 +52,10 @@ export function CompatibilityTestPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Test de Afinidad</h1>
-          <p className="text-gray-500">
-            {initialData 
-              ? 'Actualiza tu perfil para recalcular la compatibilidad con las mascotas actuales.'
-              : 'Cuéntanos sobre ti y tu estilo de vida. Analizaremos a todas las mascotas disponibles para recomendarte al compañero ideal.'}
+          <p className="text-sm text-gray-500 mt-1">
+            {initialData
+              ? 'Actualiza tus respuestas para recalcular la compatibilidad.'
+              : 'Cuéntanos sobre tu estilo de vida para encontrar al compañero ideal.'}
           </p>
         </div>
       </div>

@@ -132,12 +132,12 @@ export function NotificationCenter() {
           {notifications.map((n) => {
             const style = TYPE_STYLES[n.type] || TYPE_STYLES['INFO'];
             return (
-              <Card key={n.id} className={`${!n.readAt ? 'border-l-4 border-l-rescue-500' : ''}`}>
+              <Card key={n.id} className={!n.readAt ? 'bg-rescue-50/30' : ''}>
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
                           {n.type}
                         </span>
                         <span className="text-xs text-gray-400">

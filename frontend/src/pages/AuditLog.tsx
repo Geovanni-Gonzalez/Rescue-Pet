@@ -145,7 +145,7 @@ export function AuditLog() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${colorClass}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colorClass}`}>
                           {log.action}
                         </span>
                         <span className="text-xs text-gray-500">{log.entityType}</span>
@@ -172,7 +172,7 @@ export function AuditLog() {
                       {meta && (
                         <div>
                           <span className="font-medium text-gray-500">Metadata:</span>
-                          <pre className="mt-1 p-2 bg-gray-50 rounded text-[11px] overflow-x-auto">
+                          <pre className="mt-1 p-2 bg-gray-50 rounded text-xs font-mono overflow-x-auto">
                             {JSON.stringify(meta, null, 2)}
                           </pre>
                         </div>

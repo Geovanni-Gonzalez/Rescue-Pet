@@ -9,7 +9,7 @@ import { ResetPassword } from './pages/ResetPassword';
 import { ActivateAccount } from './pages/ActivateAccount';
 import { ResendActivation } from './pages/ResendActivation';
 import { Profile } from './pages/Profile';
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { Dashboard } from './pages/Dashboard';
 import { Pets } from './pages/Pets';
 import { PetDetail } from './pages/PetDetail';
 import { PetNew } from './pages/PetNew';
@@ -46,7 +46,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: '/', element: <SmartRedirect /> },
-          { path: 'dashboard', element: <PlaceholderPage title="Panel Principal" /> },
+          { path: 'dashboard', element: <Dashboard /> },
           { path: 'profile', element: <Profile /> },
           { path: 'pets', element: <Pets /> },
           { path: 'pets/:id', element: <PetDetail /> },
@@ -87,7 +87,7 @@ export const router = createBrowserRouter([
             path: 'admin',
             element: <ProtectedRoute allowedRoles={['ADMIN', 'VOLUNTEER']} />,
             children: [
-              { index: true, element: <PlaceholderPage title="Administración del Sistema" /> },
+              { index: true, element: <Dashboard /> },
               { path: 'pets/new', element: <PetNew /> },
               { path: 'pets/:id/edit', element: <PetEdit /> },
               { path: 'adoption-requests', element: <AdminAdoptionRequests /> },

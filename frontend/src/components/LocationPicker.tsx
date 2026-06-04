@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
 // Fix default marker icons broken by webpack/vite bundlers

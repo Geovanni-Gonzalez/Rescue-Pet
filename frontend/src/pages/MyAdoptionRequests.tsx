@@ -53,12 +53,10 @@ export function MyAdoptionRequests() {
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Mis Solicitudes de Adopción</h1>
-      </div>
+    <div className="max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold text-gray-900 mb-5">Mis Solicitudes de Adopción</h1>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap mb-4">
         <Button
           variant={statusFilter === 'ALL' ? 'default' : 'outline'}
           size="sm"

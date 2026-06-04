@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { apiClient } from '../lib/api';
+import { requestPushPermission, showBrowserNotification, getPushPermission } from '../lib/pushNotifications';
 
 interface Notification {
   id: string;
@@ -29,10 +30,23 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const prevCountRef = useRef(0);
+  const pushAskedRef = useRef(false);
+
   const fetchCount = useCallback(async () => {
+    if (document.hidden) return;
     try {
       const res = await apiClient.get('/notifications/unread-count');
-      setUnreadCount(res.data.unreadCount);
+      const newCount = res.data.unreadCount as number;
+
+      if (newCount > prevCountRef.current && prevCountRef.current > 0) {
+        showBrowserNotification('Rescue Pet', {
+          body: `Tienes ${newCount} notificaciones sin leer`,
+          tag: 'rescue-pet-unread',
+        });
+      }
+      prevCountRef.current = newCount;
+      setUnreadCount(newCount);
     } catch { /* silent */ }
   }, []);
 
@@ -41,7 +55,9 @@ export function NotificationBell() {
     try {
       const res = await apiClient.get('/notifications?limit=10');
       setNotifications(res.data.notifications);
-      setUnreadCount(res.data.unreadCount);
+      const count = res.data.unreadCount as number;
+      prevCountRef.current = count;
+      setUnreadCount(count);
     } catch { /* silent */ }
     setIsLoading(false);
   }, []);
@@ -49,6 +65,13 @@ export function NotificationBell() {
   useEffect(() => {
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
+
+    if (!pushAskedRef.current && getPushPermission() === 'default') {
+      pushAskedRef.current = true;
+      const timer = setTimeout(() => requestPushPermission(), 10000);
+      return () => { clearInterval(interval); clearTimeout(timer); };
+    }
+
     return () => clearInterval(interval);
   }, [fetchCount]);
 
@@ -108,14 +131,14 @@ export function NotificationBell() {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white px-1">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-warm-600 text-white text-xs font-bold rounded-full border-2 border-white px-1">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-96 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Notificaciones</h3>
             <div className="flex items-center gap-2">
@@ -150,10 +173,10 @@ export function NotificationBell() {
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[n.type] || TYPE_COLORS['INFO']}`}>
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[n.type] || TYPE_COLORS['INFO']}`}>
                           {n.type}
                         </span>
-                        <span className="text-[11px] text-gray-400">{timeAgo(n.createdAt)}</span>
+                        <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
                       </div>
                       <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
                       <p className="text-xs text-gray-500 line-clamp-2">{n.message}</p>
