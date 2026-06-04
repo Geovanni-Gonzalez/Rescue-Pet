@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "if [ -d scripts ]; then node scripts/build-vercel-output.cjs; else node ../scripts/build-vercel-output.cjs; fi",
-  "installCommand": "node scripts/install-vercel.cjs || node ../scripts/install-vercel.cjs"
+  "experimentalServices": {
+    "frontend": {
+      "root": "frontend",
+      "routePrefix": "/",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "backend",
+      "routePrefix": "/_/backend",
+      "framework": "express",
+      "includeFiles": "data/**",
+      "maxDuration": 30
+    }
+  }
 }

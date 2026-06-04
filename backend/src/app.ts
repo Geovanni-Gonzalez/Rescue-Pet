@@ -20,6 +20,16 @@ import roleRoutes from './routes/roleRoutes';
 import auditRoutes from './routes/auditRoutes';
 
 const app = express();
+const serviceRoutePrefix = '/_/backend';
+
+app.use((req, _res, next) => {
+  if (req.url === serviceRoutePrefix) {
+    req.url = '/';
+  } else if (req.url.startsWith(`${serviceRoutePrefix}/`)) {
+    req.url = req.url.slice(serviceRoutePrefix.length);
+  }
+  next();
+});
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
