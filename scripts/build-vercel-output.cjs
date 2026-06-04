@@ -13,6 +13,7 @@ const backendDir = cwdHasBackend ? path.join(cwd, 'backend') : cwd;
 const outputRoot = path.join(projectRoot, '.vercel', 'output');
 const staticRoot = path.join(outputRoot, 'static');
 const functionRoot = path.join(outputRoot, 'functions', 'api', 'index.func');
+const legacyServerRoot = path.join(frontendDir, 'dist', 'server');
 
 function run(command, args, options = {}) {
   console.log(`$ ${command} ${args.join(' ')}`);
@@ -48,8 +49,14 @@ fs.mkdirSync(functionRoot, { recursive: true });
 copyDir(path.join(backendDir, 'dist'), path.join(functionRoot, 'dist'));
 copyDir(path.join(backendDir, 'node_modules'), path.join(functionRoot, 'node_modules'));
 
+fs.rmSync(legacyServerRoot, { recursive: true, force: true });
+fs.mkdirSync(legacyServerRoot, { recursive: true });
+copyDir(path.join(backendDir, 'dist'), path.join(legacyServerRoot, 'dist'));
+copyDir(path.join(backendDir, 'node_modules'), path.join(legacyServerRoot, 'node_modules'));
+
 if (fs.existsSync(path.join(backendDir, 'data'))) {
   copyDir(path.join(backendDir, 'data'), path.join(functionRoot, 'data'));
+  copyDir(path.join(backendDir, 'data'), path.join(legacyServerRoot, 'data'));
 }
 
 fs.writeFileSync(
@@ -61,6 +68,28 @@ fs.writeFileSync(
     '',
   ].join('\n')
 );
+
+fs.writeFileSync(
+  path.join(frontendDir, 'dist', 'index.js'),
+  [
+    "const path = require('path');",
+    "const express = require('./server/node_modules/express');",
+    "const appModule = require('./server/dist/app');",
+    'const app = appModule.default || appModule;',
+    '',
+    'app.use(express.static(__dirname));',
+    "app.get(/^\\/(?!api\\/|uploads\\/|health$).*/, (_req, res) => {",
+    "  res.sendFile(path.join(__dirname, 'index.html'));",
+    '});',
+    '',
+    'module.exports = app;',
+    '',
+  ].join('\n')
+);
+
+if (projectRoot !== repoRoot) {
+  copyDir(path.join(frontendDir, 'dist'), path.join(projectRoot, 'frontend', 'dist'));
+}
 
 writeJson(path.join(functionRoot, '.vc-config.json'), {
   runtime: 'nodejs22.x',
