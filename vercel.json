@@ -1,31 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
-  "buildCommand": "if [ -d frontend ]; then npm run build --prefix frontend; else npm run build --prefix ../frontend && mkdir -p frontend && cp -R ../frontend/dist frontend/dist; fi",
-  "installCommand": "if [ -d frontend ]; then npm install --prefix frontend --include=dev && npm install --prefix backend --include=dev; else npm install --prefix ../frontend --include=dev && npm install --prefix . --include=dev; fi",
-  "outputDirectory": "frontend/dist",
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "backend/data/**",
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/health",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/uploads/(.*)",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "buildCommand": "if [ -d scripts ]; then node scripts/build-vercel-output.cjs; else node ../scripts/build-vercel-output.cjs; fi",
+  "installCommand": "if [ -d frontend ]; then npm install --prefix frontend --include=dev && npm install --prefix backend --include=dev; else npm install --prefix ../frontend --include=dev && npm install --prefix . --include=dev; fi"
 }
