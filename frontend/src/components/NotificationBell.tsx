@@ -127,7 +127,7 @@ export function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative"
+        className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative transition-transform duration-150 ease-out-strong active:scale-[0.93]"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -138,7 +138,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-96 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-96 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden dropdown-enter">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Notificaciones</h3>
             <div className="flex items-center gap-2">

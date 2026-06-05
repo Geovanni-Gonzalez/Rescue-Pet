@@ -100,7 +100,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                   end={link.to === '/admin'}
                   onClick={handleNavClick}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] ${
                       isActive
                         ? 'bg-rescue-50 text-rescue-600'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -119,7 +119,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
       <div className="p-4 border-t border-border">
         <button
           onClick={() => { logout(); handleNavClick(); }}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97]"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesión

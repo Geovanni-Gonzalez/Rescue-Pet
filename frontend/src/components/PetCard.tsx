@@ -21,11 +21,11 @@ export function PetCard({ id, name, species, breed, age, status, photoUrl, onAct
     <button
       type="button"
       onClick={() => onAction && onAction(id)}
-      className="group text-left overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:shadow-md hover:border-rescue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group text-left overflow-hidden rounded-xl border border-border bg-card transition-[box-shadow,border-color,transform] duration-200 ease-out-strong hover:shadow-md hover:border-rescue-500/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="aspect-[4/3] bg-secondary relative overflow-hidden">
         {photoUrl ? (
-          <img src={photoUrl} alt={name} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+          <img src={photoUrl} alt={name} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 ease-out-strong [@media(hover:hover)]:group-hover:scale-[1.03]" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
             Sin foto

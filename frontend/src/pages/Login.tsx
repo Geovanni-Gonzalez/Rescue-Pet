@@ -65,7 +65,7 @@ export function Login() {
 
       {/* Form panel */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm" style={{ animation: 'stagger-fade-in 500ms var(--ease-out) both' }}>
           {/* Mobile brand mark */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <div className="w-9 h-9 bg-rescue-100 text-rescue-600 rounded-xl flex items-center justify-center">

@@ -33,6 +33,10 @@
     --ring: oklch(0.55 0.14 175);
 
     --radius: 0.75rem;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   .dark {
@@ -80,5 +84,73 @@
   }
   p {
     max-width: 72ch;
+  }
+}
+
+@layer components {
+  .dropdown-enter {
+    animation: dropdown-in 150ms var(--ease-out);
+    transform-origin: var(--origin, top right);
+  }
+
+  .sidebar-overlay {
+    animation: fade-in 200ms var(--ease-out);
+  }
+
+  .sidebar-drawer {
+    animation: slide-in-left 250ms var(--ease-drawer);
+  }
+
+  .stagger-grid > * {
+    animation: stagger-fade-in 400ms var(--ease-out) both;
+  }
+  .stagger-grid > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-grid > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger-grid > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger-grid > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-grid > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-grid > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger-grid > *:nth-child(7) { animation-delay: 240ms; }
+  .stagger-grid > *:nth-child(8) { animation-delay: 280ms; }
+  .stagger-grid > *:nth-child(n+9) { animation-delay: 300ms; }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes stagger-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

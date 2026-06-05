@@ -36,13 +36,13 @@ export function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-grid">
         {visible.map((action) => (
           <button
             key={action.to}
             type="button"
             onClick={() => navigate(action.to)}
-            className="flex items-start gap-3.5 p-4 rounded-xl border border-border bg-card text-left transition-all hover:shadow-sm hover:border-rescue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex items-start gap-3.5 p-4 rounded-xl border border-border bg-card text-left transition-[box-shadow,border-color,transform] duration-200 ease-out-strong hover:shadow-sm hover:border-rescue-500/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="w-9 h-9 rounded-lg bg-rescue-50 text-rescue-600 flex items-center justify-center flex-shrink-0">
               <action.icon className="w-4 h-4" />

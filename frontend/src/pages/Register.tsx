@@ -82,7 +82,7 @@ export function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-lg shadow-lg border-gray-200/80">
+      <Card className="w-full max-w-lg shadow-lg border-gray-200/80" style={{ animation: 'stagger-fade-in 500ms var(--ease-out) both' }}>
         <CardHeader className="text-center pb-6">
           <div className="mx-auto w-11 h-11 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-3">
             <PawPrint className="w-6 h-6" />

@@ -14,7 +14,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     <header className="bg-card border-b border-border h-16 flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-4">
         <button
-          className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+          className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-md transition-transform duration-150 ease-out-strong active:scale-[0.93]"
           onClick={onMenuClick}
           aria-label="Abrir menú"
         >
