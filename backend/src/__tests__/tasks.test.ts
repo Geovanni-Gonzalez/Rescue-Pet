@@ -105,7 +105,9 @@ describe('POST /api/tasks/:id/complete', () => {
     dbMock.operationalTask.findUnique.mockResolvedValue({ id: 't1', status: 'PENDING' });
     dbMock.auditLog.findFirst.mockResolvedValue(null);
     const updated = { id: 't1', status: 'COMPLETED', completedAt: new Date() };
-    dbMock.$transaction.mockResolvedValue([updated, {}]);
+    dbMock.operationalTask.update.mockResolvedValue(updated);
+    dbMock.auditLog.create.mockResolvedValue({});
+    dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
 
     const res = await request(app)
       .post('/api/tasks/t1/complete')

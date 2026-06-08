@@ -76,7 +76,7 @@ const ANIMAL_FIXTURE = {
 beforeEach(() => {
   jest.clearAllMocks();
   dbMock.auditLog.create.mockResolvedValue({});
-  dbMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+  dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
 });
 
 // ─── GET /api/animals ─────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ describe('PATCH /api/animals/:id/status', () => {
     dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
     dbMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, status: 'TREATMENT' });
     dbMock.animalStatusHistory.create = jest.fn().mockResolvedValue({});
-    dbMock.$transaction.mockResolvedValue([{ ...ANIMAL_FIXTURE, status: 'TREATMENT' }, {}]);
+    dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
 
     const res = await request(app)
       .patch('/api/animals/animal-1/status')

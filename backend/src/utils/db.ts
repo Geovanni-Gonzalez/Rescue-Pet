@@ -3,6 +3,33 @@ import path from 'path';
 import crypto from 'crypto';
 import { logger } from './logger';
 
+// ─── Async Mutex ─────────────────────────────────────────────────────────────
+// Serializes all write operations within the same process so that concurrent
+// requests cannot interleave load/save cycles and overwrite each other's data.
+class Mutex {
+  private _queue: Array<() => void> = [];
+  private _locked = false;
+
+  async acquire(): Promise<void> {
+    if (!this._locked) {
+      this._locked = true;
+      return;
+    }
+    return new Promise<void>((resolve) => this._queue.push(resolve));
+  }
+
+  release(): void {
+    const next = this._queue.shift();
+    if (next) {
+      next();
+    } else {
+      this._locked = false;
+    }
+  }
+}
+
+const writeLock = new Mutex();
+
 type Row = Record<string, any>;
 type Db = Record<ModelName, Row[]>;
 
@@ -505,9 +532,101 @@ class JsonDelegate {
     private readonly client: JsonDataClient,
   ) {}
 
+  // ── Read operations (no lock needed) ──────────────────────────────────────
+
   async findMany(args: Row = {}): Promise<any[]> {
-    const db = await this.client.load();
-    let rows = db[this.model].filter((row) => matchesWhere(row, args.where));
+    const snapshot = await this.client.load();
+    return this._findManyIn(snapshot, args);
+  }
+
+  async findFirst(args: Row = {}): Promise<any | null> {
+    const rows = await this.findMany({ ...args, take: 1 });
+    return rows[0] ?? null;
+  }
+
+  async findUnique(args: Row): Promise<any | null> {
+    const snapshot = await this.client.load();
+    return this._findUniqueIn(snapshot, args);
+  }
+
+  async count(args: Row = {}): Promise<number> {
+    const snapshot = await this.client.load();
+    return snapshot[this.model].filter((row) => matchesWhere(row, args.where)).length;
+  }
+
+  // ── Write operations (acquire lock → load → mutate → save → release) ─────
+
+  async create(args: Row): Promise<any> {
+    await writeLock.acquire();
+    try {
+      const snapshot = await this.client.load();
+      const result = this._createIn(snapshot, args);
+      await this.client.save(snapshot);
+      return result;
+    } finally {
+      writeLock.release();
+    }
+  }
+
+  async update(args: Row): Promise<any> {
+    await writeLock.acquire();
+    try {
+      const snapshot = await this.client.load();
+      const result = this._updateIn(snapshot, args);
+      await this.client.save(snapshot);
+      return result;
+    } finally {
+      writeLock.release();
+    }
+  }
+
+  async updateMany(args: Row): Promise<{ count: number }> {
+    await writeLock.acquire();
+    try {
+      const snapshot = await this.client.load();
+      const result = this._updateManyIn(snapshot, args);
+      await this.client.save(snapshot);
+      return result;
+    } finally {
+      writeLock.release();
+    }
+  }
+
+  async delete(args: Row): Promise<any> {
+    await writeLock.acquire();
+    try {
+      const snapshot = await this.client.load();
+      const result = this._deleteIn(snapshot, args);
+      await this.client.save(snapshot);
+      return result;
+    } finally {
+      writeLock.release();
+    }
+  }
+
+  async upsert(args: Row): Promise<any> {
+    await writeLock.acquire();
+    try {
+      const snapshot = await this.client.load();
+      const existing = this._findUniqueIn(snapshot, { where: args.where });
+      let result: any;
+      if (existing) {
+        result = this._updateIn(snapshot, { where: args.where, data: args.update, include: args.include, select: args.select });
+      } else {
+        result = this._createIn(snapshot, { data: args.create, include: args.include, select: args.select });
+      }
+      await this.client.save(snapshot);
+      return result;
+    } finally {
+      writeLock.release();
+    }
+  }
+
+  // ── Internal helpers that mutate an existing snapshot (no I/O) ────────────
+
+  /** @internal Used by $transaction — operates on a pre-loaded snapshot */
+  _findManyIn(snapshot: Db, args: Row = {}): any[] {
+    let rows = snapshot[this.model].filter((row) => matchesWhere(row, args.where));
     if (args.distinct) {
       const distinctFields = args.distinct as string[];
       const seen = new Set<string>();
@@ -521,77 +640,55 @@ class JsonDelegate {
     if (args.orderBy) rows = [...rows].sort(compareRows(args.orderBy));
     if (args.skip) rows = rows.slice(args.skip);
     if (args.take !== undefined) rows = rows.slice(0, args.take);
-    return rows.map((row) => this.client.hydrate(this.model, clone(row), args, db));
+    return rows.map((row) => this.client.hydrate(this.model, clone(row), args, snapshot));
   }
 
-  async findFirst(args: Row = {}): Promise<any | null> {
-    const rows = await this.findMany({ ...args, take: 1 });
-    return rows[0] ?? null;
+  /** @internal */
+  _findUniqueIn(snapshot: Db, args: Row): any | null {
+    const row = snapshot[this.model].find((item) => uniqueMatch(item, args.where));
+    return row ? this.client.hydrate(this.model, clone(row), args, snapshot) : null;
   }
 
-  async findUnique(args: Row): Promise<any | null> {
-    const db = await this.client.load();
-    const row = db[this.model].find((item) => uniqueMatch(item, args.where));
-    return row ? this.client.hydrate(this.model, clone(row), args, db) : null;
-  }
-
-  async count(args: Row = {}): Promise<number> {
-    const db = await this.client.load();
-    return db[this.model].filter((row) => matchesWhere(row, args.where)).length;
-  }
-
-  async create(args: Row): Promise<any> {
-    const db = await this.client.load();
+  /** @internal */
+  _createIn(snapshot: Db, args: Row): any {
     const row = {
       id: generateId(),
       ...defaultValues(this.model),
       ...dateDefaults(this.model),
       ...normalizeData(args.data ?? {}),
     };
-    db[this.model].push(row);
-    await this.client.save(db);
-    return this.client.hydrate(this.model, clone(row), args, db);
+    snapshot[this.model].push(row);
+    return this.client.hydrate(this.model, clone(row), args, snapshot);
   }
 
-  async update(args: Row): Promise<any> {
-    const db = await this.client.load();
-    const index = db[this.model].findIndex((row) => uniqueMatch(row, args.where));
+  /** @internal */
+  _updateIn(snapshot: Db, args: Row): any {
+    const index = snapshot[this.model].findIndex((row) => uniqueMatch(row, args.where));
     if (index < 0) throw new Error(`${this.model} not found`);
-    const row = db[this.model][index];
+    const row = snapshot[this.model][index];
     Object.assign(row, normalizeData(args.data ?? {}));
     touchUpdate(this.model, row);
-    await this.client.save(db);
-    return this.client.hydrate(this.model, clone(row), args, db);
+    return this.client.hydrate(this.model, clone(row), args, snapshot);
   }
 
-  async updateMany(args: Row): Promise<{ count: number }> {
-    const db = await this.client.load();
+  /** @internal */
+  _updateManyIn(snapshot: Db, args: Row): { count: number } {
     let count = 0;
-    for (const row of db[this.model]) {
+    for (const row of snapshot[this.model]) {
       if (!matchesWhere(row, args.where)) continue;
       Object.assign(row, normalizeData(args.data ?? {}));
       touchUpdate(this.model, row);
       count += 1;
     }
-    await this.client.save(db);
     return { count };
   }
 
-  async delete(args: Row): Promise<any> {
-    const db = await this.client.load();
-    const index = db[this.model].findIndex((row) => uniqueMatch(row, args.where));
+  /** @internal */
+  _deleteIn(snapshot: Db, args: Row): any {
+    const index = snapshot[this.model].findIndex((row) => uniqueMatch(row, args.where));
     if (index < 0) throw new Error(`${this.model} not found`);
-    const [deleted] = db[this.model].splice(index, 1);
-    await this.client.save(db);
+    const [deleted] = snapshot[this.model].splice(index, 1);
     return clone(deleted);
-  }
-
-  async upsert(args: Row): Promise<any> {
-    const existing = await this.findUnique({ where: args.where });
-    if (existing) {
-      return this.update({ where: args.where, data: args.update, include: args.include, select: args.select });
-    }
-    return this.create({ data: args.create, include: args.include, select: args.select });
   }
 }
 
@@ -626,11 +723,40 @@ class JsonDataClient {
     return undefined;
   }
 
-  async $transaction<T>(input: (tx: any) => Promise<T> | T): Promise<T>;
+  /**
+   * Atomic transaction — loads the DB once, applies all mutations on the same
+   * in-memory snapshot, and writes it back in a single save.
+   *
+   * Supports two signatures:
+   *   1. Callback: $transaction(async (tx) => { ... })
+   *   2. Array of "deferred" operations: $transaction([op1, op2, ...])
+   *      where each op is { delegate, method, args }.
+   *
+   * The array form is used by controllers that pass pre-built promises. Since
+   * the old code passed already-executing promises (e.g. db.animal.update(...)
+   * which starts immediately), we now also support receiving plain promises
+   * for backward compatibility — but the callback form is preferred.
+   */
+  async $transaction<T>(input: (tx: TransactionalClient) => Promise<T> | T): Promise<T>;
   async $transaction<T>(input: Promise<T>[]): Promise<T[]>;
   async $transaction(input: any): Promise<any> {
-    if (typeof input === 'function') return input(this);
-    return Promise.all(input);
+    // Array of already-executing promises — legacy path.
+    // These are already individually locked, so just await them all.
+    if (Array.isArray(input)) {
+      return Promise.all(input);
+    }
+
+    // Callback form — true atomic transaction.
+    await writeLock.acquire();
+    try {
+      const snapshot = await readDb();
+      const tx = new TransactionalClient(snapshot, this);
+      const result = await input(tx);
+      await writeDb(snapshot);
+      return result;
+    } finally {
+      writeLock.release();
+    }
   }
 
   hydrate(model: ModelName, row: Row, args: Row = {}, db: Db) {
@@ -726,6 +852,99 @@ class JsonDataClient {
   private relatedAnimal(id: string | null, query: Row, db: Db) {
     const animal = id ? db.animal.find((item) => item.id === id) : null;
     return animal ? applyProjection(clone(animal), query) : null;
+  }
+}
+
+/**
+ * A delegate that operates on a pre-loaded snapshot without any I/O.
+ * Used inside $transaction callbacks to ensure all operations share the
+ * same snapshot and write exactly once at the end.
+ */
+class TransactionalDelegate {
+  constructor(
+    private readonly model: ModelName,
+    private readonly client: JsonDataClient,
+    private readonly snapshot: Db,
+  ) {}
+
+  async findMany(args: Row = {}): Promise<any[]> {
+    const delegate = this.client[this.model] as JsonDelegate;
+    return delegate._findManyIn(this.snapshot, args);
+  }
+  async findFirst(args: Row = {}): Promise<any | null> {
+    const rows = await this.findMany({ ...args, take: 1 });
+    return rows[0] ?? null;
+  }
+  async findUnique(args: Row): Promise<any | null> {
+    const delegate = this.client[this.model] as JsonDelegate;
+    return delegate._findUniqueIn(this.snapshot, args);
+  }
+  async count(args: Row = {}): Promise<number> {
+    return this.snapshot[this.model].filter((row) => matchesWhere(row, args.where)).length;
+  }
+  async create(args: Row): Promise<any> {
+    const delegate = this.client[this.model] as JsonDelegate;
+    return delegate._createIn(this.snapshot, args);
+  }
+  async update(args: Row): Promise<any> {
+    const delegate = this.client[this.model] as JsonDelegate;
+    return delegate._updateIn(this.snapshot, args);
+  }
+  async updateMany(args: Row): Promise<{ count: number }> {
+    const delegate = this.client[this.model] as JsonDelegate;
+    return delegate._updateManyIn(this.snapshot, args);
+  }
+  async delete(args: Row): Promise<any> {
+    const delegate = this.client[this.model] as JsonDelegate;
+    return delegate._deleteIn(this.snapshot, args);
+  }
+}
+
+/**
+ * Lightweight proxy passed into $transaction callbacks. Exposes the same
+ * model delegates as JsonDataClient but all operate on a shared snapshot.
+ */
+class TransactionalClient {
+  user: TransactionalDelegate;
+  animal: TransactionalDelegate;
+  animalGallery: TransactionalDelegate;
+  animalStatusHistory: TransactionalDelegate;
+  animalRescueLocationHistory: TransactionalDelegate;
+  clinicalRecord: TransactionalDelegate;
+  clinicalEntry: TransactionalDelegate;
+  vaccine: TransactionalDelegate;
+  compatibilityTest: TransactionalDelegate;
+  compatibilityScore: TransactionalDelegate;
+  adoptionRequest: TransactionalDelegate;
+  interviewSlot: TransactionalDelegate;
+  adopterDocument: TransactionalDelegate;
+  adoptionContract: TransactionalDelegate;
+  notification: TransactionalDelegate;
+  operationalTask: TransactionalDelegate;
+  auditLog: TransactionalDelegate;
+
+  constructor(snapshot: Db, client: JsonDataClient) {
+    for (const name of modelNames) {
+      (this as any)[name] = new TransactionalDelegate(name, client, snapshot);
+    }
+
+    this.user = (this as any).user;
+    this.animal = (this as any).animal;
+    this.animalGallery = (this as any).animalGallery;
+    this.animalStatusHistory = (this as any).animalStatusHistory;
+    this.animalRescueLocationHistory = (this as any).animalRescueLocationHistory;
+    this.clinicalRecord = (this as any).clinicalRecord;
+    this.clinicalEntry = (this as any).clinicalEntry;
+    this.vaccine = (this as any).vaccine;
+    this.compatibilityTest = (this as any).compatibilityTest;
+    this.compatibilityScore = (this as any).compatibilityScore;
+    this.adoptionRequest = (this as any).adoptionRequest;
+    this.interviewSlot = (this as any).interviewSlot;
+    this.adopterDocument = (this as any).adopterDocument;
+    this.adoptionContract = (this as any).adoptionContract;
+    this.notification = (this as any).notification;
+    this.operationalTask = (this as any).operationalTask;
+    this.auditLog = (this as any).auditLog;
   }
 }
 

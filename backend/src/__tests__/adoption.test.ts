@@ -95,7 +95,7 @@ beforeEach(() => {
   dbMock.auditLog.create.mockResolvedValue({});
   dbMock.notification.create.mockResolvedValue({});
   dbMock.user.findMany.mockResolvedValue([]);
-  dbMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+  dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
 });
 
 // ─── CU-16: Solicitud de adopcion ─────────────────────────────────────────────
@@ -482,7 +482,7 @@ describe('POST /api/adoption-applications/:id/contract/sign (CU-20)', () => {
     dbMock.animal.update.mockResolvedValue({ ...ANIMAL, status: 'ADOPTED' });
     dbMock.animalStatusHistory.create.mockResolvedValue({});
 
-    dbMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+    dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/contract/sign`)

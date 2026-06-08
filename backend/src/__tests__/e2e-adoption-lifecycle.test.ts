@@ -225,10 +225,9 @@ describe('E2E Adoption Lifecycle', () => {
       id: ANIMAL_ID, status: 'QUARANTINE', mainPhotoUrl: 'http://photo.jpg',
     });
     dbMock.clinicalRecord.count.mockResolvedValue(1);
-    dbMock.$transaction.mockResolvedValue([
-      { id: ANIMAL_ID, status: 'AVAILABLE' },
-      {},
-    ]);
+    dbMock.animal.update.mockResolvedValue({ id: ANIMAL_ID, status: 'AVAILABLE' });
+    dbMock.animalStatusHistory.create.mockResolvedValue({});
+    dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
 
     const res = await request(app)
       .patch(`/api/animals/${ANIMAL_ID}/status`)
@@ -401,12 +400,11 @@ describe('E2E Adoption Lifecycle', () => {
       id: CONTRACT_ID, status: 'SIGNED', signedAt: new Date(),
       signedPdfUrl: 'http://localhost:3000/uploads/contracts/adoption-e2e-signed.pdf',
     };
-    dbMock.$transaction.mockResolvedValue([
-      signedContract,
-      { id: ANIMAL_ID, status: 'ADOPTED' },
-      {},
-      {},
-    ]);
+    dbMock.adoptionContract.update.mockResolvedValue(signedContract);
+    dbMock.animal.update.mockResolvedValue({ id: ANIMAL_ID, status: 'ADOPTED' });
+    dbMock.animalStatusHistory.create.mockResolvedValue({});
+    dbMock.auditLog.create.mockResolvedValue({});
+    dbMock.$transaction.mockImplementation(async (fn: Function) => fn(dbMock));
     dbMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID }]);
 
     const res = await request(app)

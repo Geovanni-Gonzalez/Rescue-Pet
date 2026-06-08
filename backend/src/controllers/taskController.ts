@@ -128,12 +128,12 @@ export const completeTask = async (req: Request, res: Response) => {
     }
   }
 
-  const [updated] = await db.$transaction([
-    db.operationalTask.update({
+  const updated = await db.$transaction(async (tx) => {
+    const task = await tx.operationalTask.update({
       where: { id },
       data: { status: 'COMPLETED', completedAt: new Date(), completedById: userId, comment: parsed.data.comment },
-    }),
-    db.auditLog.create({
+    });
+    await tx.auditLog.create({
       data: {
         userId,
         action: 'COMPLETE_TASK',
@@ -142,8 +142,9 @@ export const completeTask = async (req: Request, res: Response) => {
         metadataJson: JSON.stringify({ comment: parsed.data.comment, idempotencyKey }),
         ipAddress: getClientIp(req),
       },
-    }),
-  ]);
+    });
+    return task;
+  });
 
   res.json({ success: true, task: updated });
 };

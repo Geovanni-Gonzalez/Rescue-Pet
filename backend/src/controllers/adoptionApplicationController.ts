@@ -504,8 +504,8 @@ export const signContract = async (req: Request, res: Response) => {
     signedPdfUrl = `/contracts/adoption-${applicationId}-signed.pdf`;
   }
 
-  const [contract] = await db.$transaction([
-    db.adoptionContract.update({
+  const contract = await db.$transaction(async (tx) => {
+    const updatedContract = await tx.adoptionContract.update({
       where: { applicationId },
       data: {
         signatureImageUrl: parsed.data.signatureImageUrl,
@@ -513,9 +513,9 @@ export const signContract = async (req: Request, res: Response) => {
         status: 'SIGNED',
         signedAt: new Date(),
       },
-    }),
-    db.animal.update({ where: { id: application.animalId }, data: { status: 'ADOPTED' as AnimalStatus } }),
-    db.animalStatusHistory.create({
+    });
+    await tx.animal.update({ where: { id: application.animalId }, data: { status: 'ADOPTED' as AnimalStatus } });
+    await tx.animalStatusHistory.create({
       data: {
         animalId: application.animalId,
         previousStatus: 'AVAILABLE',
@@ -523,8 +523,8 @@ export const signContract = async (req: Request, res: Response) => {
         changedByUserId: userId,
         reason: 'Contrato de adopción firmado',
       },
-    }),
-    db.auditLog.create({
+    });
+    await tx.auditLog.create({
       data: {
         userId,
         action: 'SIGN_CONTRACT',
@@ -533,8 +533,9 @@ export const signContract = async (req: Request, res: Response) => {
         metadataJson: JSON.stringify({ applicationId }),
         ipAddress: getClientIp(req),
       },
-    }),
-  ]);
+    });
+    return updatedContract;
+  });
 
   const admins = await db.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
   await Promise.all(

@@ -260,9 +260,9 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
     }
   }
 
-  const [updated] = await db.$transaction([
-    db.animal.update({ where: { id }, data: { status: newStatus } }),
-    db.animalStatusHistory.create({
+  const updated = await db.$transaction(async (tx) => {
+    const animal = await tx.animal.update({ where: { id }, data: { status: newStatus } });
+    await tx.animalStatusHistory.create({
       data: {
         animalId: id,
         previousStatus: currentStatus,
@@ -270,8 +270,9 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
         changedByUserId: req.user!.id,
         reason: reason ?? null,
       },
-    }),
-  ]);
+    });
+    return animal;
+  });
 
   await writeAuditLog({
     userId: req.user!.id,
