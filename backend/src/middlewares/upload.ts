@@ -49,13 +49,13 @@ function loadBlobSdk(): {
 }
 
 function localUploadUrl(subdir: UploadSubdir, filename: string): string {
-  if (process.env.BACKEND_URL) {
-    return `${process.env.BACKEND_URL}/uploads/${subdir}/${filename}`;
-  }
-  // In production (Vercel), use a relative path so the browser resolves it
-  // against the current origin + the service route prefix (/_/backend).
+  // In Vercel, ALWAYS use relative paths. Absolute URLs (even from BACKEND_URL)
+  // break because Vercel deployment-specific hostnames require authentication.
   if (process.env.VERCEL) {
     return `/_/backend/uploads/${subdir}/${filename}`;
+  }
+  if (process.env.BACKEND_URL) {
+    return `${process.env.BACKEND_URL}/uploads/${subdir}/${filename}`;
   }
   return `http://localhost:${process.env.PORT || 3000}/uploads/${subdir}/${filename}`;
 }

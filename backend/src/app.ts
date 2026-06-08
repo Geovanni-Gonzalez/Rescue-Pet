@@ -39,17 +39,31 @@ app.use(express.json({ limit: '2mb' }));
 app.use(requestLogger);
 
 // ─── URL rewriter ───────────────────────────────────────────────────────────
-// Old data may contain absolute URLs like http://localhost:3000/uploads/...
-// In production, rewrite them to relative paths so the browser resolves them
-// against the current host. Also rewrites BACKEND_URL-based paths.
+// Old data may contain absolute URLs that break in production:
+//   • http://localhost:3000/uploads/...  (dev URLs left in db.json)
+//   • https://<deployment>.vercel.app/_/backend/uploads/...  (deployment-specific
+//     URLs that are protected by Vercel Authentication and return 401)
+// Rewrite them all to relative paths so the browser resolves them against the
+// current origin, which always works.
 if (process.env.VERCEL) {
+  // Matches localhost URLs and any Vercel deployment-specific URLs
   const localhostPattern = /https?:\/\/localhost:\d+\/uploads\//g;
+  const vercelDeployPattern = /https?:\/\/[a-z0-9-]+\.vercel\.app\/_\/backend\/uploads\//g;
   const _origJson = express.response.json;
   express.response.json = function rewriteJson(body: any) {
     if (body && typeof body === 'object') {
-      const str = JSON.stringify(body);
+      let str = JSON.stringify(body);
+      let changed = false;
       if (str.includes('/localhost:') && str.includes('/uploads/')) {
-        body = JSON.parse(str.replace(localhostPattern, '/_/backend/uploads/'));
+        str = str.replace(localhostPattern, '/_/backend/uploads/');
+        changed = true;
+      }
+      if (str.includes('.vercel.app/') && str.includes('/uploads/')) {
+        str = str.replace(vercelDeployPattern, '/_/backend/uploads/');
+        changed = true;
+      }
+      if (changed) {
+        body = JSON.parse(str);
       }
     }
     return _origJson.call(this, body);
@@ -68,18 +82,25 @@ app.use('/uploads/gallery', express.static(path.join(uploadsRoot, 'gallery')));
 app.get('/uploads/:subdir/:filename', async (req, res, next) => {
   const subdir = req.params['subdir'] as string;
   if (!['animals', 'gallery'].includes(subdir)) return next();
-  if (!process.env['BLOB_READ_WRITE_TOKEN']) return next();
+  if (!process.env['BLOB_READ_WRITE_TOKEN']) {
+    console.warn('[BLOB_FALLBACK] BLOB_READ_WRITE_TOKEN not set, cannot serve:', req.params['filename']);
+    return res.status(404).json({ success: false, error: 'Almacenamiento Blob no configurado' });
+  }
 
   try {
-    const { list, get } = require('@vercel/blob');
+    const { list } = require('@vercel/blob');
     const pathname = `uploads/${subdir}/${req.params['filename']}`;
     const { blobs } = await list({ prefix: pathname, limit: 1 });
-    const blob = blobs.filter((b: any) => b.url)[0];
-    if (!blob) return res.status(404).json({ success: false, error: 'Imagen no encontrada' });
+    const blob = blobs.find((b: any) => b.url && b.pathname === pathname);
+    if (!blob) {
+      console.warn('[BLOB_FALLBACK] File not found in Blob:', pathname);
+      return res.status(404).json({ success: false, error: 'Imagen no encontrada en almacenamiento' });
+    }
 
     // Redirect to the public Blob URL (CDN-backed, fast)
     return res.redirect(301, blob.url);
-  } catch {
+  } catch (err) {
+    console.error('[BLOB_FALLBACK] Error accessing Blob:', (err as Error).message);
     return next();
   }
 });
@@ -104,7 +125,12 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/audit', auditRoutes);
 
 app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date() });
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date(),
+    blobConfigured: Boolean(process.env['BLOB_READ_WRITE_TOKEN']),
+    environment: process.env.VERCEL ? 'vercel' : 'local',
+  });
 });
 
 app.use(errorHandler);
