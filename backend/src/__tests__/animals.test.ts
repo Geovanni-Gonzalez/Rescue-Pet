@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     animal: {
@@ -47,7 +47,7 @@ jest.mock('../middlewares/upload', () => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const JWT_SECRET = 'test-secret-123';
 const makeToken = (role: string, id = 'user-1') =>
@@ -75,25 +75,25 @@ const ANIMAL_FIXTURE = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prismaMock.auditLog.create.mockResolvedValue({});
-  prismaMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+  dbMock.auditLog.create.mockResolvedValue({});
+  dbMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
 });
 
 // ─── GET /api/animals ─────────────────────────────────────────────────────────
 
 describe('GET /api/animals', () => {
   it('ADMIN ve todos los animales', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    dbMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
     const res = await request(app).get('/api/animals').set(auth('ADMIN'));
     expect(res.status).toBe(200);
     expect(res.body.animals).toHaveLength(1);
   });
 
   it('ADOPTER solo ve animales AVAILABLE', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([]);
     const res = await request(app).get('/api/animals').set(auth('ADOPTER'));
     expect(res.status).toBe(200);
-    const call = prismaMock.animal.findMany.mock.calls[0][0];
+    const call = dbMock.animal.findMany.mock.calls[0][0];
     expect(call.where.status).toBe('AVAILABLE');
   });
 
@@ -107,20 +107,20 @@ describe('GET /api/animals', () => {
 
 describe('GET /api/animals/:id', () => {
   it('devuelve animal por id', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, gallery: [] });
+    dbMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, gallery: [] });
     const res = await request(app).get('/api/animals/animal-1').set(auth('ADMIN'));
     expect(res.status).toBe(200);
     expect(res.body.animal.id).toBe('animal-1');
   });
 
   it('retorna 404 si no existe', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(null);
+    dbMock.animal.findUnique.mockResolvedValue(null);
     const res = await request(app).get('/api/animals/nope').set(auth('ADMIN'));
     expect(res.status).toBe(404);
   });
 
   it('ADOPTER no puede ver animales no AVAILABLE', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, gallery: [], status: 'QUARANTINE' });
+    dbMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, gallery: [], status: 'QUARANTINE' });
     const res = await request(app).get('/api/animals/animal-1').set(auth('ADOPTER'));
     expect(res.status).toBe(403);
   });
@@ -130,8 +130,8 @@ describe('GET /api/animals/:id', () => {
 
 describe('POST /api/animals', () => {
   it('VOLUNTEER crea animal con foto', async () => {
-    prismaMock.animal.create.mockResolvedValue({ ...ANIMAL_FIXTURE, id: 'new-1' });
-    prismaMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, id: 'new-1', qrUrl: 'data:...' });
+    dbMock.animal.create.mockResolvedValue({ ...ANIMAL_FIXTURE, id: 'new-1' });
+    dbMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, id: 'new-1', qrUrl: 'data:...' });
 
     const res = await request(app)
       .post('/api/animals')
@@ -167,10 +167,10 @@ describe('POST /api/animals', () => {
 
 describe('PATCH /api/animals/:id/status', () => {
   it('transición válida QUARANTINE → TREATMENT', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
-    prismaMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, status: 'TREATMENT' });
-    prismaMock.animalStatusHistory.create = jest.fn().mockResolvedValue({});
-    prismaMock.$transaction.mockResolvedValue([{ ...ANIMAL_FIXTURE, status: 'TREATMENT' }, {}]);
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, status: 'TREATMENT' });
+    dbMock.animalStatusHistory.create = jest.fn().mockResolvedValue({});
+    dbMock.$transaction.mockResolvedValue([{ ...ANIMAL_FIXTURE, status: 'TREATMENT' }, {}]);
 
     const res = await request(app)
       .patch('/api/animals/animal-1/status')
@@ -182,7 +182,7 @@ describe('PATCH /api/animals/:id/status', () => {
   });
 
   it('rechaza transición inválida QUARANTINE → ADOPTED', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
 
     const res = await request(app)
       .patch('/api/animals/animal-1/status')
@@ -193,7 +193,7 @@ describe('PATCH /api/animals/:id/status', () => {
   });
 
   it('rechaza cambio en estado terminal DECEASED', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, status: 'DECEASED' });
+    dbMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, status: 'DECEASED' });
 
     const res = await request(app)
       .patch('/api/animals/animal-1/status')
@@ -213,8 +213,8 @@ describe('PATCH /api/animals/:id/status', () => {
   });
 
   it('requiere historial clínico para pasar a AVAILABLE', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
-    prismaMock.clinicalRecord.count.mockResolvedValue(0);
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.clinicalRecord.count.mockResolvedValue(0);
 
     const res = await request(app)
       .patch('/api/animals/animal-1/status')
@@ -230,13 +230,13 @@ describe('PATCH /api/animals/:id/status', () => {
 
 describe('PUT /api/animals/:id/rescue-location', () => {
   it('actualiza localización y archiva la anterior', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({
+    dbMock.animal.findUnique.mockResolvedValue({
       ...ANIMAL_FIXTURE,
       rescueLocationText: 'Calle 5',
       rescueLatitude: 9.9,
     });
-    prismaMock.animalRescueLocationHistory.create.mockResolvedValue({});
-    prismaMock.animal.update.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animalRescueLocationHistory.create.mockResolvedValue({});
+    dbMock.animal.update.mockResolvedValue(ANIMAL_FIXTURE);
 
     const res = await request(app)
       .put('/api/animals/animal-1/rescue-location')
@@ -244,11 +244,11 @@ describe('PUT /api/animals/:id/rescue-location', () => {
       .send({ rescueLocationText: 'Nueva dirección' });
 
     expect(res.status).toBe(200);
-    expect(prismaMock.animalRescueLocationHistory.create).toHaveBeenCalled();
+    expect(dbMock.animalRescueLocationHistory.create).toHaveBeenCalled();
   });
 
   it('retorna 400 si no hay ubicación', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
 
     const res = await request(app)
       .put('/api/animals/animal-1/rescue-location')
@@ -263,7 +263,7 @@ describe('PUT /api/animals/:id/rescue-location', () => {
 
 describe('GET /api/animals/:id/location-history', () => {
   it('devuelve historial de localizaciones', async () => {
-    prismaMock.animalRescueLocationHistory.findMany.mockResolvedValue([
+    dbMock.animalRescueLocationHistory.findMany.mockResolvedValue([
       { id: 'loc-1', locationText: 'Antigua dirección', createdAt: new Date() },
     ]);
 
@@ -280,8 +280,8 @@ describe('GET /api/animals/:id/location-history', () => {
 
 describe('POST /api/animals/:id/gallery', () => {
   it('sube múltiples imágenes', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
-    prismaMock.animalGallery.create
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animalGallery.create
       .mockResolvedValueOnce({ id: 'img-1', fileUrl: 'http://localhost:3000/uploads/gallery/a.png' })
       .mockResolvedValueOnce({ id: 'img-2', fileUrl: 'http://localhost:3000/uploads/gallery/b.png' });
 
@@ -296,7 +296,7 @@ describe('POST /api/animals/:id/gallery', () => {
   });
 
   it('retorna 400 sin imágenes', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
 
     const res = await request(app)
       .post('/api/animals/animal-1/gallery')
@@ -310,12 +310,12 @@ describe('POST /api/animals/:id/gallery', () => {
 
 describe('DELETE /api/animals/:id/gallery/:imageId', () => {
   it('elimina imagen secundaria', async () => {
-    prismaMock.animalGallery.findUnique.mockResolvedValue({
+    dbMock.animalGallery.findUnique.mockResolvedValue({
       id: 'img-1',
       animalId: 'animal-1',
       isMain: false,
     });
-    prismaMock.animalGallery.delete.mockResolvedValue({});
+    dbMock.animalGallery.delete.mockResolvedValue({});
 
     const res = await request(app)
       .delete('/api/animals/animal-1/gallery/img-1')
@@ -325,7 +325,7 @@ describe('DELETE /api/animals/:id/gallery/:imageId', () => {
   });
 
   it('no permite eliminar foto principal', async () => {
-    prismaMock.animalGallery.findUnique.mockResolvedValue({
+    dbMock.animalGallery.findUnique.mockResolvedValue({
       id: 'main-img',
       animalId: 'animal-1',
       isMain: true,
@@ -344,8 +344,8 @@ describe('DELETE /api/animals/:id/gallery/:imageId', () => {
 
 describe('POST /api/animals/:id/qr/regenerate', () => {
   it('genera QR y lo guarda', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
-    prismaMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, qrUrl: 'data:image/png;base64,fakeqrdata' });
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);
+    dbMock.animal.update.mockResolvedValue({ ...ANIMAL_FIXTURE, qrUrl: 'data:image/png;base64,fakeqrdata' });
 
     const res = await request(app)
       .post('/api/animals/animal-1/qr/regenerate')

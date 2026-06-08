@@ -2,7 +2,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     notification: {
@@ -20,7 +20,7 @@ jest.mock('../utils/prisma', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const token = jwt.sign({ id: 'user-1', email: 'test@test.com', role: 'ADOPTER' }, 'test-secret-123');
 const adminToken = jwt.sign({ id: 'admin-1', email: 'admin@test.com', role: 'ADMIN' }, 'test-secret-123');
@@ -30,8 +30,8 @@ beforeEach(() => jest.clearAllMocks());
 describe('GET /api/notifications', () => {
   it('retorna notificaciones paginadas del usuario autenticado', async () => {
     const notifs = [{ id: 'n1', userId: 'user-1', title: 'Test', message: 'Msg', type: 'INFO', readAt: null, createdAt: new Date() }];
-    prismaMock.notification.findMany.mockResolvedValue(notifs);
-    prismaMock.notification.count.mockResolvedValueOnce(1).mockResolvedValueOnce(1);
+    dbMock.notification.findMany.mockResolvedValue(notifs);
+    dbMock.notification.count.mockResolvedValueOnce(1).mockResolvedValueOnce(1);
 
     const res = await request(app).get('/api/notifications').set('Authorization', `Bearer ${token}`);
 
@@ -43,12 +43,12 @@ describe('GET /api/notifications', () => {
   });
 
   it('filtra solo no leídas cuando unread=true', async () => {
-    prismaMock.notification.findMany.mockResolvedValue([]);
-    prismaMock.notification.count.mockResolvedValue(0);
+    dbMock.notification.findMany.mockResolvedValue([]);
+    dbMock.notification.count.mockResolvedValue(0);
 
     await request(app).get('/api/notifications?unread=true').set('Authorization', `Bearer ${token}`);
 
-    expect(prismaMock.notification.findMany).toHaveBeenCalledWith(
+    expect(dbMock.notification.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ readAt: null }) })
     );
   });
@@ -61,7 +61,7 @@ describe('GET /api/notifications', () => {
 
 describe('GET /api/notifications/unread-count', () => {
   it('retorna el conteo de no leídas', async () => {
-    prismaMock.notification.count.mockResolvedValue(5);
+    dbMock.notification.count.mockResolvedValue(5);
 
     const res = await request(app).get('/api/notifications/unread-count').set('Authorization', `Bearer ${token}`);
 
@@ -73,8 +73,8 @@ describe('GET /api/notifications/unread-count', () => {
 describe('PATCH /api/notifications/:id/read', () => {
   it('marca una notificación como leída', async () => {
     const notif = { id: 'n1', userId: 'user-1', readAt: null };
-    prismaMock.notification.findUnique.mockResolvedValue(notif);
-    prismaMock.notification.update.mockResolvedValue({ ...notif, readAt: new Date() });
+    dbMock.notification.findUnique.mockResolvedValue(notif);
+    dbMock.notification.update.mockResolvedValue({ ...notif, readAt: new Date() });
 
     const res = await request(app).patch('/api/notifications/n1/read').set('Authorization', `Bearer ${token}`);
 
@@ -83,7 +83,7 @@ describe('PATCH /api/notifications/:id/read', () => {
   });
 
   it('retorna 404 si la notificación no pertenece al usuario', async () => {
-    prismaMock.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'other-user' });
+    dbMock.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'other-user' });
 
     const res = await request(app).patch('/api/notifications/n1/read').set('Authorization', `Bearer ${token}`);
 
@@ -92,18 +92,18 @@ describe('PATCH /api/notifications/:id/read', () => {
 
   it('es idempotente si ya fue leída', async () => {
     const notif = { id: 'n1', userId: 'user-1', readAt: new Date() };
-    prismaMock.notification.findUnique.mockResolvedValue(notif);
+    dbMock.notification.findUnique.mockResolvedValue(notif);
 
     const res = await request(app).patch('/api/notifications/n1/read').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(prismaMock.notification.update).not.toHaveBeenCalled();
+    expect(dbMock.notification.update).not.toHaveBeenCalled();
   });
 });
 
 describe('POST /api/notifications/read-all', () => {
   it('marca todas como leídas', async () => {
-    prismaMock.notification.updateMany.mockResolvedValue({ count: 3 });
+    dbMock.notification.updateMany.mockResolvedValue({ count: 3 });
 
     const res = await request(app).post('/api/notifications/read-all').set('Authorization', `Bearer ${token}`);
 
@@ -114,8 +114,8 @@ describe('POST /api/notifications/read-all', () => {
 
 describe('DELETE /api/notifications/:id', () => {
   it('elimina una notificación propia', async () => {
-    prismaMock.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'user-1' });
-    prismaMock.notification.delete.mockResolvedValue({});
+    dbMock.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'user-1' });
+    dbMock.notification.delete.mockResolvedValue({});
 
     const res = await request(app).delete('/api/notifications/n1').set('Authorization', `Bearer ${token}`);
 
@@ -124,7 +124,7 @@ describe('DELETE /api/notifications/:id', () => {
   });
 
   it('retorna 404 si no pertenece al usuario', async () => {
-    prismaMock.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'other' });
+    dbMock.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'other' });
 
     const res = await request(app).delete('/api/notifications/n1').set('Authorization', `Bearer ${token}`);
 

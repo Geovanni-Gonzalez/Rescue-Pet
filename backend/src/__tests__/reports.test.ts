@@ -2,7 +2,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     adoptionRequest: { findMany: jest.fn() },
@@ -14,7 +14,7 @@ jest.mock('../utils/prisma', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const adminToken = jwt.sign({ id: 'admin-1', email: 'admin@test.com', role: 'ADMIN' }, 'test-secret-123');
 const adopterToken = jwt.sign({ id: 'user-1', email: 'user@test.com', role: 'ADOPTER' }, 'test-secret-123');
@@ -38,8 +38,8 @@ describe('GET /api/reports/adoptions', () => {
   ];
 
   it('retorna reporte con resumen y datos enriquecidos con afinidad', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([
+    dbMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([
       { adopterId: 'u1', animalId: 'an1', scorePercentage: 87.5 },
     ]);
 
@@ -54,8 +54,8 @@ describe('GET /api/reports/adoptions', () => {
   });
 
   it('filtra por especie', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/reports/adoptions?species=Gato').set('Authorization', `Bearer ${adminToken}`);
 
@@ -64,27 +64,27 @@ describe('GET /api/reports/adoptions', () => {
   });
 
   it('filtra por rango de fechas', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue([]);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([]);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app)
       .get('/api/reports/adoptions?from=2025-06-01&to=2025-06-30')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const call = prismaMock.adoptionRequest.findMany.mock.calls[0][0];
+    const call = dbMock.adoptionRequest.findMany.mock.calls[0][0];
     expect(call.where.updatedAt).toBeDefined();
     expect(call.where.updatedAt.gte).toEqual(new Date('2025-06-01'));
   });
 
   it('filtra por estado específico', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue([]);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([]);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app)
       .get('/api/reports/adoptions?status=APPROVED')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const call = prismaMock.adoptionRequest.findMany.mock.calls[0][0];
+    const call = dbMock.adoptionRequest.findMany.mock.calls[0][0];
     expect(call.where.status).toBe('APPROVED');
   });
 
@@ -111,7 +111,7 @@ describe('GET /api/reports/health', () => {
   ];
 
   it('retorna reporte de salud con resumen', async () => {
-    prismaMock.animal.findMany.mockResolvedValue(mockAnimals);
+    dbMock.animal.findMany.mockResolvedValue(mockAnimals);
 
     const res = await request(app).get('/api/reports/health').set('Authorization', `Bearer ${adminToken}`);
 
@@ -123,18 +123,18 @@ describe('GET /api/reports/health', () => {
   });
 
   it('filtra por tratamiento activo', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([mockAnimals[0]]);
+    dbMock.animal.findMany.mockResolvedValue([mockAnimals[0]]);
 
     await request(app)
       .get('/api/reports/health?treatmentActive=true')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const call = prismaMock.animal.findMany.mock.calls[0][0];
+    const call = dbMock.animal.findMany.mock.calls[0][0];
     expect(call.where.status).toBe('TREATMENT');
   });
 
   it('filtra solo animales con vacunas pendientes', async () => {
-    prismaMock.animal.findMany.mockResolvedValue(mockAnimals);
+    dbMock.animal.findMany.mockResolvedValue(mockAnimals);
 
     const res = await request(app)
       .get('/api/reports/health?vaccinePending=true')
@@ -154,7 +154,7 @@ describe('GET /api/reports/health', () => {
 
 describe('GET /api/reports/species', () => {
   it('retorna lista de especies distintas', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([{ species: 'Gato' }, { species: 'Perro' }]);
+    dbMock.animal.findMany.mockResolvedValue([{ species: 'Gato' }, { species: 'Perro' }]);
 
     const res = await request(app).get('/api/reports/species').set('Authorization', `Bearer ${adminToken}`);
 
@@ -167,9 +167,9 @@ describe('GET /api/reports/species', () => {
 
 describe('Export endpoints block when no data', () => {
   beforeEach(() => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue([]);
-    prismaMock.animal.findMany.mockResolvedValue([]);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([]);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
   });
 
   it('GET /api/reports/adoptions/export/pdf retorna 400 sin datos', async () => {
@@ -214,8 +214,8 @@ describe('Export endpoints produce output with data', () => {
   ];
 
   it('GET /api/reports/adoptions/export/csv retorna CSV con BOM', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/reports/adoptions/export/csv').set('Authorization', `Bearer ${adminToken}`);
 
@@ -226,7 +226,7 @@ describe('Export endpoints produce output with data', () => {
   });
 
   it('GET /api/reports/health/export/csv retorna CSV', async () => {
-    prismaMock.animal.findMany.mockResolvedValue(mockAnimals);
+    dbMock.animal.findMany.mockResolvedValue(mockAnimals);
 
     const res = await request(app).get('/api/reports/health/export/csv').set('Authorization', `Bearer ${adminToken}`);
 
@@ -236,8 +236,8 @@ describe('Export endpoints produce output with data', () => {
   });
 
   it('GET /api/reports/adoptions/export/pdf retorna PDF', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue(mockApps);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app)
       .get('/api/reports/adoptions/export/pdf')
@@ -256,7 +256,7 @@ describe('Export endpoints produce output with data', () => {
   });
 
   it('GET /api/reports/health/export/pdf retorna PDF', async () => {
-    prismaMock.animal.findMany.mockResolvedValue(mockAnimals);
+    dbMock.animal.findMany.mockResolvedValue(mockAnimals);
 
     const res = await request(app)
       .get('/api/reports/health/export/pdf')

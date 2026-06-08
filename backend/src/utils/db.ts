@@ -752,6 +752,6 @@ function isRelation(model: ModelName, key: string): boolean {
   return relations[model].includes(key);
 }
 
-const prisma = new JsonDataClient();
+const db = new JsonDataClient();
 
-export default prisma;
+export default db;

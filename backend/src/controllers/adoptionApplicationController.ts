@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 import type { AdoptionRequestStatus, DocumentType, AnimalStatus } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
@@ -50,14 +50,14 @@ export const createApplication = async (req: Request, res: Response) => {
   const { animalId } = parsed.data;
   const adopterId = req.user!.id;
 
-  const animal = await prisma.animal.findUnique({ where: { id: animalId } });
+  const animal = await db.animal.findUnique({ where: { id: animalId } });
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
   if (animal.status !== 'AVAILABLE') {
     return res.status(400).json({ success: false, error: 'El animal no está disponible para adopción' });
   }
 
-  const existing = await prisma.adoptionRequest.findFirst({
+  const existing = await db.adoptionRequest.findFirst({
     where: { adopterId, animalId, status: { in: ACTIVE_STATUSES } },
   });
 
@@ -69,7 +69,7 @@ export const createApplication = async (req: Request, res: Response) => {
     });
   }
 
-  const application = await prisma.adoptionRequest.create({
+  const application = await db.adoptionRequest.create({
     data: { adopterId, animalId, status: 'RECEIVED' },
     include: {
       animal: { select: { id: true, name: true, species: true } },
@@ -85,10 +85,10 @@ export const createApplication = async (req: Request, res: Response) => {
     ipAddress: getClientIp(req),
   });
 
-  const admins = await prisma.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
+  const admins = await db.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
   await Promise.all(
     admins.map((admin) =>
-      prisma.notification.create({
+      db.notification.create({
         data: {
           userId: admin.id,
           type: 'INFO',
@@ -118,7 +118,7 @@ export const getApplications = async (req: Request, res: Response) => {
     where['status'] = status;
   }
 
-  const applications = await prisma.adoptionRequest.findMany({
+  const applications = await db.adoptionRequest.findMany({
     where: where as any,
     include: {
       animal: { select: { id: true, name: true, species: true, mainPhotoUrl: true, status: true } },
@@ -135,7 +135,7 @@ export const getApplicationById = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
   const { role, id: userId } = req.user!;
 
-  const application = await prisma.adoptionRequest.findUnique({
+  const application = await db.adoptionRequest.findUnique({
     where: { id },
     include: {
       animal: {
@@ -183,7 +183,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
 
   const { status, rejectionReason } = parsed.data;
 
-  const application = await prisma.adoptionRequest.findUnique({
+  const application = await db.adoptionRequest.findUnique({
     where: { id },
     include: { animal: true, adopter: true },
   });
@@ -202,7 +202,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   }
 
   if (status === 'APPROVED') {
-    const docs = await prisma.adopterDocument.findMany({
+    const docs = await db.adopterDocument.findMany({
       where: { applicationId: id, status: 'ACTIVE' },
       select: { documentType: true },
     });
@@ -213,7 +213,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
     }
   }
 
-  const updated = await prisma.adoptionRequest.update({
+  const updated = await db.adoptionRequest.update({
     where: { id },
     data: { status, rejectionReason: status === 'REJECTED' ? rejectionReason : null },
     include: {
@@ -243,7 +243,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   };
   const notif = notifMap[status];
   if (notif) {
-    await prisma.notification.create({
+    await db.notification.create({
       data: {
         userId: application.adopterId,
         type: notif.type,
@@ -268,7 +268,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
       });
       const pdfUrl = buildContractUrl(pdfFilename);
 
-      await prisma.adoptionContract.upsert({
+      await db.adoptionContract.upsert({
         where: { applicationId: id },
         update: { pdfUrl },
         create: {
@@ -281,7 +281,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
     } catch (err) {
       // If PDF generation fails, contract record still created but without URL
       logger.error('PDF contract generation failed', { applicationId: id, error: (err as Error).message });
-      await prisma.adoptionContract.upsert({
+      await db.adoptionContract.upsert({
         where: { applicationId: id },
         update: {},
         create: {
@@ -311,7 +311,7 @@ export const uploadDocument = async (req: Request, res: Response) => {
   }
   const documentType = rawType as DocumentType;
 
-  const application = await prisma.adoptionRequest.findUnique({
+  const application = await db.adoptionRequest.findUnique({
     where: { id: applicationId },
     include: { adopter: true, animal: true },
   });
@@ -326,18 +326,18 @@ export const uploadDocument = async (req: Request, res: Response) => {
   }
 
   // Archive previous version of same type
-  const previous = await prisma.adopterDocument.findFirst({
+  const previous = await db.adopterDocument.findFirst({
     where: { applicationId, documentType, status: 'ACTIVE' },
     orderBy: { version: 'desc' },
   });
   const nextVersion = (previous?.version ?? 0) + 1;
   if (previous) {
-    await prisma.adopterDocument.update({ where: { id: previous.id }, data: { status: 'ARCHIVED' } });
+    await db.adopterDocument.update({ where: { id: previous.id }, data: { status: 'ARCHIVED' } });
   }
 
   const fileUrl = await persistDocument(file);
 
-  const document = await prisma.adopterDocument.create({
+  const document = await db.adopterDocument.create({
     data: {
       adopterId: application.adopterId,
       applicationId,
@@ -357,10 +357,10 @@ export const uploadDocument = async (req: Request, res: Response) => {
     ipAddress: getClientIp(req),
   });
 
-  const admins = await prisma.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
+  const admins = await db.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
   await Promise.all(
     admins.map((admin) =>
-      prisma.notification.create({
+      db.notification.create({
         data: {
           userId: admin.id,
           type: 'INFO',
@@ -380,14 +380,14 @@ export const getDocuments = async (req: Request, res: Response) => {
   const applicationId = req.params['id'] as string;
   const { role, id: userId } = req.user!;
 
-  const application = await prisma.adoptionRequest.findUnique({ where: { id: applicationId } });
+  const application = await db.adoptionRequest.findUnique({ where: { id: applicationId } });
   if (!application) return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
 
   if (role === 'ADOPTER' && application.adopterId !== userId) {
     return res.status(403).json({ success: false, error: 'Acceso denegado.' });
   }
 
-  const documents = await prisma.adopterDocument.findMany({
+  const documents = await db.adopterDocument.findMany({
     where: { applicationId },
     orderBy: { uploadedAt: 'desc' },
     select: {
@@ -409,7 +409,7 @@ export const getDocuments = async (req: Request, res: Response) => {
 export const generateContract = async (req: Request, res: Response) => {
   const applicationId = req.params['id'] as string;
 
-  const application = await prisma.adoptionRequest.findUnique({
+  const application = await db.adoptionRequest.findUnique({
     where: { id: applicationId },
     include: { animal: true, adopter: { select: { fullName: true, email: true } } },
   });
@@ -431,7 +431,7 @@ export const generateContract = async (req: Request, res: Response) => {
 
     const pdfUrl = buildContractUrl(pdfFilename);
 
-    const contract = await prisma.adoptionContract.upsert({
+    const contract = await db.adoptionContract.upsert({
       where: { applicationId },
       update: { pdfUrl },
       create: {
@@ -453,14 +453,14 @@ export const getContract = async (req: Request, res: Response) => {
   const applicationId = req.params['id'] as string;
   const { role, id: userId } = req.user!;
 
-  const application = await prisma.adoptionRequest.findUnique({ where: { id: applicationId } });
+  const application = await db.adoptionRequest.findUnique({ where: { id: applicationId } });
   if (!application) return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
 
   if (role === 'ADOPTER' && application.adopterId !== userId) {
     return res.status(403).json({ success: false, error: 'Acceso denegado.' });
   }
 
-  const contract = await prisma.adoptionContract.findUnique({ where: { applicationId } });
+  const contract = await db.adoptionContract.findUnique({ where: { applicationId } });
   if (!contract) return res.status(404).json({ success: false, error: 'Contrato no generado aún.' });
 
   res.json({ success: true, contract });
@@ -473,7 +473,7 @@ export const signContract = async (req: Request, res: Response) => {
   const parsed = signContractSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Firma inválida' });
 
-  const application = await prisma.adoptionRequest.findUnique({
+  const application = await db.adoptionRequest.findUnique({
     where: { id: applicationId },
     include: { animal: true, adopter: { select: { fullName: true, email: true } }, contract: true },
   });
@@ -504,8 +504,8 @@ export const signContract = async (req: Request, res: Response) => {
     signedPdfUrl = `/contracts/adoption-${applicationId}-signed.pdf`;
   }
 
-  const [contract] = await prisma.$transaction([
-    prisma.adoptionContract.update({
+  const [contract] = await db.$transaction([
+    db.adoptionContract.update({
       where: { applicationId },
       data: {
         signatureImageUrl: parsed.data.signatureImageUrl,
@@ -514,8 +514,8 @@ export const signContract = async (req: Request, res: Response) => {
         signedAt: new Date(),
       },
     }),
-    prisma.animal.update({ where: { id: application.animalId }, data: { status: 'ADOPTED' as AnimalStatus } }),
-    prisma.animalStatusHistory.create({
+    db.animal.update({ where: { id: application.animalId }, data: { status: 'ADOPTED' as AnimalStatus } }),
+    db.animalStatusHistory.create({
       data: {
         animalId: application.animalId,
         previousStatus: 'AVAILABLE',
@@ -524,7 +524,7 @@ export const signContract = async (req: Request, res: Response) => {
         reason: 'Contrato de adopción firmado',
       },
     }),
-    prisma.auditLog.create({
+    db.auditLog.create({
       data: {
         userId,
         action: 'SIGN_CONTRACT',
@@ -536,10 +536,10 @@ export const signContract = async (req: Request, res: Response) => {
     }),
   ]);
 
-  const admins = await prisma.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
+  const admins = await db.user.findMany({ where: { role: 'ADMIN', status: 'ACTIVE' } });
   await Promise.all(
     admins.map((admin) =>
-      prisma.notification.create({
+      db.notification.create({
         data: {
           userId: admin.id,
           type: 'SUCCESS',

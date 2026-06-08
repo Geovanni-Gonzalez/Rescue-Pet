@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 
 const clinicalEntrySchema = z.object({
@@ -20,7 +20,7 @@ export const getClinicalRecord = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, error: 'Acceso denegado al expediente clínico completo.' });
   }
 
-  const record = await prisma.clinicalRecord.findUnique({
+  const record = await db.clinicalRecord.findUnique({
     where: { animalId },
     include: {
       entries: {
@@ -44,7 +44,7 @@ export const getMedicalSummary = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, error: 'Acceso denegado.' });
   }
 
-  const record = await prisma.clinicalRecord.findUnique({
+  const record = await db.clinicalRecord.findUnique({
     where: { animalId },
     include: {
       entries: {
@@ -63,7 +63,7 @@ export const getMedicalSummary = async (req: Request, res: Response) => {
   });
 
   const entryCount = record
-    ? await prisma.clinicalEntry.count({ where: { clinicalRecordId: record.id } })
+    ? await db.clinicalEntry.count({ where: { clinicalRecordId: record.id } })
     : 0;
 
   res.json({ success: true, summary: { hasRecord: !!record, entryCount, recentEntries: record?.entries ?? [] } });
@@ -83,12 +83,12 @@ export const createClinicalEntry = async (req: Request, res: Response) => {
   }
 
   // Get or create clinical record
-  let record = await prisma.clinicalRecord.findUnique({ where: { animalId } });
+  let record = await db.clinicalRecord.findUnique({ where: { animalId } });
   if (!record) {
-    record = await prisma.clinicalRecord.create({ data: { animalId } });
+    record = await db.clinicalRecord.create({ data: { animalId } });
   }
 
-  const entry = await prisma.clinicalEntry.create({
+  const entry = await db.clinicalEntry.create({
     data: {
       clinicalRecordId: record.id,
       animalId,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 import type { AnimalStatus } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
@@ -90,7 +90,7 @@ export const getAnimals = async (req: Request, res: Response) => {
     where['status'] = req.query['status'];
   }
 
-  const animals = await prisma.animal.findMany({
+  const animals = await db.animal.findMany({
     where: where as never,
     orderBy: { createdAt: 'desc' },
     include: { _count: { select: { gallery: true } } },
@@ -103,7 +103,7 @@ export const getAnimalById = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
   const role = req.user!.role;
 
-  const animal = await prisma.animal.findUnique({
+  const animal = await db.animal.findUnique({
     where: { id },
     include: { gallery: { orderBy: { createdAt: 'asc' } } },
   });
@@ -137,7 +137,7 @@ export const createAnimal = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'La fotografía principal es obligatoria.' });
   }
 
-  const newAnimal = await prisma.animal.create({
+  const newAnimal = await db.animal.create({
     data: {
       ...parsed.data,
       status: 'QUARANTINE',
@@ -154,7 +154,7 @@ export const createAnimal = async (req: Request, res: Response) => {
     logger.error('QR generation failed', { animalId: newAnimal.id, error: (err as Error).message });
   }
 
-  const updated = await prisma.animal.update({
+  const updated = await db.animal.update({
     where: { id: newAnimal.id },
     data: { publicProfileUrl, qrUrl },
   });
@@ -173,7 +173,7 @@ export const createAnimal = async (req: Request, res: Response) => {
 export const updateAnimal = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const animal = await prisma.animal.findUnique({ where: { id } });
+  const animal = await db.animal.findUnique({ where: { id } });
   if (!animal) {
     if (req.file) uploadStorage.cleanupUpload(req.file.path);
     return res.status(404).json({ success: false, error: 'Animal no encontrado' });
@@ -196,7 +196,7 @@ export const updateAnimal = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
   }
 
-  const updated = await prisma.animal.update({ where: { id }, data: parsed.data });
+  const updated = await db.animal.update({ where: { id }, data: parsed.data });
 
   await writeAuditLog({
     userId: req.user!.id,
@@ -217,7 +217,7 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Estado inválido' });
 
   const { status: newStatus, reason } = parsed.data;
-  const animal = await prisma.animal.findUnique({ where: { id } });
+  const animal = await db.animal.findUnique({ where: { id } });
 
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
@@ -238,7 +238,7 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
   }
 
   if (newStatus === 'AVAILABLE') {
-    const recordCount = await prisma.clinicalRecord.count({ where: { animalId: id } });
+    const recordCount = await db.clinicalRecord.count({ where: { animalId: id } });
     if (!animal.mainPhotoUrl || recordCount === 0) {
       return res.status(400).json({
         success: false,
@@ -248,7 +248,7 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
   }
 
   if (currentStatus === 'AVAILABLE' && newStatus !== 'ADOPTED') {
-    const activeRequest = await prisma.adoptionRequest.findFirst({
+    const activeRequest = await db.adoptionRequest.findFirst({
       where: { animalId: id, status: { in: ACTIVE_ADOPTION_STATUSES } },
     });
     if (activeRequest) {
@@ -260,9 +260,9 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
     }
   }
 
-  const [updated] = await prisma.$transaction([
-    prisma.animal.update({ where: { id }, data: { status: newStatus } }),
-    prisma.animalStatusHistory.create({
+  const [updated] = await db.$transaction([
+    db.animal.update({ where: { id }, data: { status: newStatus } }),
+    db.animalStatusHistory.create({
       data: {
         animalId: id,
         previousStatus: currentStatus,
@@ -288,7 +288,7 @@ export const updateAnimalStatus = async (req: Request, res: Response) => {
 export const getAnimalStatusHistory = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const history = await prisma.animalStatusHistory.findMany({
+  const history = await db.animalStatusHistory.findMany({
     where: { animalId: id },
     orderBy: { createdAt: 'desc' },
     include: { changedBy: { select: { id: true, fullName: true, role: true } } },
@@ -311,12 +311,12 @@ export const updateRescueLocation = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Se requiere texto de ubicación o coordenadas completas.' });
   }
 
-  const animal = await prisma.animal.findUnique({ where: { id } });
+  const animal = await db.animal.findUnique({ where: { id } });
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
   // Archive current location before overwriting
   if (animal.rescueLocationText || animal.rescueLatitude !== null) {
-    await prisma.animalRescueLocationHistory.create({
+    await db.animalRescueLocationHistory.create({
       data: {
         animalId: id,
         locationText: animal.rescueLocationText,
@@ -327,7 +327,7 @@ export const updateRescueLocation = async (req: Request, res: Response) => {
     });
   }
 
-  const updated = await prisma.animal.update({
+  const updated = await db.animal.update({
     where: { id },
     data: { rescueLocationText, rescueLatitude, rescueLongitude },
   });
@@ -338,7 +338,7 @@ export const updateRescueLocation = async (req: Request, res: Response) => {
 export const getLocationHistory = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const history = await prisma.animalRescueLocationHistory.findMany({
+  const history = await db.animalRescueLocationHistory.findMany({
     where: { animalId: id },
     orderBy: { createdAt: 'desc' },
     include: { changedBy: { select: { id: true, fullName: true } } },
@@ -350,12 +350,12 @@ export const getLocationHistory = async (req: Request, res: Response) => {
 export const regenerateQR = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const animal = await prisma.animal.findUnique({ where: { id } });
+  const animal = await db.animal.findUnique({ where: { id } });
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
   try {
     const qrUrl = await generatePetQrDataUrl(id);
-    const updated = await prisma.animal.update({ where: { id }, data: { qrUrl } });
+    const updated = await db.animal.update({ where: { id }, data: { qrUrl } });
 
     await writeAuditLog({
       userId: req.user!.id,
@@ -373,7 +373,7 @@ export const regenerateQR = async (req: Request, res: Response) => {
 
 export const downloadQR = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
-  const animal = await prisma.animal.findUnique({ where: { id }, select: { qrUrl: true, name: true } });
+  const animal = await db.animal.findUnique({ where: { id }, select: { qrUrl: true, name: true } });
 
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
   if (!animal.qrUrl) return res.status(404).json({ success: false, error: 'QR no disponible. Regeneralo primero.' });

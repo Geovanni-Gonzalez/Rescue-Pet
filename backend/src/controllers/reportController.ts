@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import PDFDocument from 'pdfkit';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 
 // ─── Adoption Report ─────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ async function fetchAdoptionData(query: Record<string, unknown>) {
   }
   if (Object.keys(dateFilter).length) where['updatedAt'] = dateFilter;
 
-  const applications = await prisma.adoptionRequest.findMany({
+  const applications = await db.adoptionRequest.findMany({
     where: where as any,
     include: {
       animal: { select: { id: true, name: true, species: true } },
@@ -55,7 +55,7 @@ export const getAdoptionReport = async (req: Request, res: Response) => {
   const adopterIds = [...new Set(applications.map((a) => a.adopterId))];
   const animalIds = [...new Set(applications.map((a) => a.animalId))];
 
-  const scores = await prisma.compatibilityScore.findMany({
+  const scores = await db.compatibilityScore.findMany({
     where: { adopterId: { in: adopterIds }, animalId: { in: animalIds } },
   });
   const scoreMap = new Map(scores.map((s) => [`${s.adopterId}-${s.animalId}`, s.scorePercentage]));
@@ -86,7 +86,7 @@ async function fetchHealthData(query: Record<string, unknown>) {
     vaccineWhere['nextDueAt'] = { ...(vaccineWhere['nextDueAt'] as any || {}), lte: end };
   }
 
-  const animals = await prisma.animal.findMany({
+  const animals = await db.animal.findMany({
     where: animalWhere as any,
     select: {
       id: true,
@@ -134,7 +134,7 @@ export const getHealthReport = async (req: Request, res: Response) => {
 // ─── Species list (for filter dropdowns) ─────────────────────────────────────
 
 export const getSpeciesList = async (_req: Request, res: Response) => {
-  const raw = await prisma.animal.findMany({
+  const raw = await db.animal.findMany({
     distinct: ['species'],
     select: { species: true },
     orderBy: { species: 'asc' },
@@ -167,7 +167,7 @@ export const exportAdoptionPdf = async (req: Request, res: Response) => {
 
   const summary = buildAdoptionSummary(applications);
 
-  const scores = await prisma.compatibilityScore.findMany({
+  const scores = await db.compatibilityScore.findMany({
     where: {
       adopterId: { in: [...new Set(applications.map((a) => a.adopterId))] },
       animalId: { in: [...new Set(applications.map((a) => a.animalId))] },
@@ -280,7 +280,7 @@ export const exportAdoptionCsv = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'No hay datos para exportar con los filtros seleccionados.' });
   }
 
-  const scores = await prisma.compatibilityScore.findMany({
+  const scores = await db.compatibilityScore.findMany({
     where: {
       adopterId: { in: [...new Set(applications.map((a) => a.adopterId))] },
       animalId: { in: [...new Set(applications.map((a) => a.animalId))] },

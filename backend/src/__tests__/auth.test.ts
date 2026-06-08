@@ -2,7 +2,7 @@ import request from 'supertest';
 import bcrypt from 'bcrypt';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     user: {
@@ -20,18 +20,18 @@ jest.mock('../services/emailService', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prismaMock.auditLog.create.mockResolvedValue({});
+  dbMock.auditLog.create.mockResolvedValue({});
 });
 
 // ─── Login ───────────────────────────────────────────────────────────────────
 
 describe('POST /api/auth/login', () => {
   it('retorna 401 cuando el usuario no existe', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.findUnique.mockResolvedValue(null);
 
     const res = await request(app).post('/api/auth/login').send({ email: 'x@x.com', password: 'pass1234' });
 
@@ -40,7 +40,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('retorna 401 para cuenta INACTIVE', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ status: 'INACTIVE' });
+    dbMock.user.findUnique.mockResolvedValue({ status: 'INACTIVE' });
 
     const res = await request(app).post('/api/auth/login').send({ email: 'x@x.com', password: 'pass1234' });
 
@@ -48,7 +48,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('retorna 401 con code PENDING_VERIFICATION para cuenta no activada', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: '1', email: 'x@x.com', status: 'PENDING_VERIFICATION' });
+    dbMock.user.findUnique.mockResolvedValue({ id: '1', email: 'x@x.com', status: 'PENDING_VERIFICATION' });
 
     const res = await request(app).post('/api/auth/login').send({ email: 'x@x.com', password: 'pass1234' });
 
@@ -57,7 +57,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('retorna 401 para cuenta BLOCKED con lockedUntil en el futuro', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: '1',
       status: 'BLOCKED',
       lockedUntil: new Date(Date.now() + 60_000),
@@ -70,7 +70,7 @@ describe('POST /api/auth/login', () => {
 
   it('retorna token JWT con credenciales válidas', async () => {
     const passwordHash = await bcrypt.hash('password123', 10);
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       email: 'admin@test.com',
       fullName: 'Admin',
@@ -80,7 +80,7 @@ describe('POST /api/auth/login', () => {
       failedLoginCount: 0,
       lockedUntil: null,
     });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.update.mockResolvedValue({});
 
     const res = await request(app).post('/api/auth/login').send({ email: 'admin@test.com', password: 'password123' });
 
@@ -92,7 +92,7 @@ describe('POST /api/auth/login', () => {
 
   it('bloquea cuenta después de 5 intentos fallidos', async () => {
     const passwordHash = await bcrypt.hash('correct', 10);
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-2',
       email: 'user@test.com',
       role: 'ADOPTER',
@@ -101,11 +101,11 @@ describe('POST /api/auth/login', () => {
       failedLoginCount: 4,
       lockedUntil: null,
     });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.update.mockResolvedValue({});
 
     await request(app).post('/api/auth/login').send({ email: 'user@test.com', password: 'wrongpassword' });
 
-    const updateCall = prismaMock.user.update.mock.calls[0][0];
+    const updateCall = dbMock.user.update.mock.calls[0][0];
     expect(updateCall.data.status).toBe('BLOCKED');
     expect(updateCall.data.lockedUntil).toBeDefined();
   });
@@ -120,8 +120,8 @@ describe('POST /api/auth/login', () => {
 
 describe('POST /api/auth/register-adopter', () => {
   it('crea cuenta y retorna 201', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.create.mockResolvedValue({ id: 'new-1', email: 'nuevo@test.com' });
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.create.mockResolvedValue({ id: 'new-1', email: 'nuevo@test.com' });
 
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Juan Perez',
@@ -134,7 +134,7 @@ describe('POST /api/auth/register-adopter', () => {
   });
 
   it('retorna 400 si el correo ya está registrado', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'existing' });
+    dbMock.user.findUnique.mockResolvedValue({ id: 'existing' });
 
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Juan',
@@ -156,8 +156,8 @@ describe('POST /api/auth/register-adopter', () => {
   });
 
   it('expone activationToken en entorno no-producción', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.create.mockResolvedValue({ id: 'new-1', email: 'test@test.com' });
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.create.mockResolvedValue({ id: 'new-1', email: 'test@test.com' });
 
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Test User',
@@ -173,12 +173,12 @@ describe('POST /api/auth/register-adopter', () => {
 
 describe('GET /api/auth/activate', () => {
   it('activa cuenta con token válido', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       activationToken: 'valid-token',
       activationTokenExpiresAt: new Date(Date.now() + 3_600_000),
     });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.update.mockResolvedValue({});
 
     const res = await request(app).get('/api/auth/activate?token=valid-token');
 
@@ -187,7 +187,7 @@ describe('GET /api/auth/activate', () => {
   });
 
   it('retorna 400 para token expirado', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       activationToken: 'expired-token',
       activationTokenExpiresAt: new Date(Date.now() - 3_600_000),
@@ -200,8 +200,8 @@ describe('GET /api/auth/activate', () => {
   });
 
   it('retorna 400 para token inexistente', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.auditLog.create.mockResolvedValue({});
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.auditLog.create.mockResolvedValue({});
 
     const res = await request(app).get('/api/auth/activate?token=bad-token');
 
@@ -218,7 +218,7 @@ describe('GET /api/auth/activate', () => {
 
 describe('POST /api/auth/forgot-password', () => {
   it('siempre retorna 200 (previene enumeración de usuarios)', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.findUnique.mockResolvedValue(null);
 
     const res = await request(app).post('/api/auth/forgot-password').send({ email: 'noexiste@test.com' });
 
@@ -228,8 +228,8 @@ describe('POST /api/auth/forgot-password', () => {
 
   it('llama a sendPasswordResetEmail cuando existe el usuario', async () => {
     const { sendPasswordResetEmail } = await import('../services/emailService');
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'user@test.com', status: 'ACTIVE' });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'user@test.com', status: 'ACTIVE' });
+    dbMock.user.update.mockResolvedValue({});
 
     await request(app).post('/api/auth/forgot-password').send({ email: 'user@test.com' });
 
@@ -239,12 +239,12 @@ describe('POST /api/auth/forgot-password', () => {
 
 describe('POST /api/auth/reset-password', () => {
   it('restablece la contraseña con token válido', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       resetToken: 'valid-reset',
       resetTokenExpiresAt: new Date(Date.now() + 3_600_000),
     });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.update.mockResolvedValue({});
 
     const res = await request(app)
       .post('/api/auth/reset-password')
@@ -255,7 +255,7 @@ describe('POST /api/auth/reset-password', () => {
   });
 
   it('retorna 400 para token expirado', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       resetToken: 'expired-reset',
       resetTokenExpiresAt: new Date(Date.now() - 1000),
@@ -269,7 +269,7 @@ describe('POST /api/auth/reset-password', () => {
   });
 
   it('retorna 400 para token inexistente', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.findUnique.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/api/auth/reset-password')
@@ -283,7 +283,7 @@ describe('POST /api/auth/reset-password', () => {
 
 describe('POST /api/auth/resend-activation', () => {
   it('siempre retorna 200 (previene enumeración)', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.findUnique.mockResolvedValue(null);
 
     const res = await request(app).post('/api/auth/resend-activation').send({ email: 'noexiste@test.com' });
 
@@ -293,12 +293,12 @@ describe('POST /api/auth/resend-activation', () => {
 
   it('llama a sendActivationEmail para cuenta PENDING_VERIFICATION', async () => {
     const { sendActivationEmail } = await import('../services/emailService');
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       email: 'pending@test.com',
       status: 'PENDING_VERIFICATION',
     });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.update.mockResolvedValue({});
 
     await request(app).post('/api/auth/resend-activation').send({ email: 'pending@test.com' });
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { uploadsRoot } from '../utils/uploadsRoot';
 import * as uploadStorage from '../middlewares/upload';
 
@@ -11,7 +11,7 @@ async function persistGalleryPhoto(file: Express.Multer.File) {
 
 export const getGallery = async (req: Request, res: Response) => {
   const animalId = req.params['id'] as string;
-  const gallery = await prisma.animalGallery.findMany({
+  const gallery = await db.animalGallery.findMany({
     where: { animalId },
     orderBy: [{ isMain: 'desc' }, { createdAt: 'asc' }],
   });
@@ -21,7 +21,7 @@ export const getGallery = async (req: Request, res: Response) => {
 export const addGalleryImages = async (req: Request, res: Response) => {
   const animalId = req.params['id'] as string;
 
-  const animal = await prisma.animal.findUnique({ where: { id: animalId } });
+  const animal = await db.animal.findUnique({ where: { id: animalId } });
   if (!animal) {
     // Clean up any uploaded files
     const files = (req.files as Express.Multer.File[]) ?? [];
@@ -36,7 +36,7 @@ export const addGalleryImages = async (req: Request, res: Response) => {
 
   const created = await Promise.all(
     files.map(async (file) =>
-      prisma.animalGallery.create({
+      db.animalGallery.create({
         data: {
           animalId,
           fileUrl: await persistGalleryPhoto(file),
@@ -54,7 +54,7 @@ export const addGalleryImages = async (req: Request, res: Response) => {
 export const deleteGalleryImage = async (req: Request, res: Response) => {
   const { id: animalId, imageId } = req.params as { id: string; imageId: string };
 
-  const image = await prisma.animalGallery.findUnique({ where: { id: imageId } });
+  const image = await db.animalGallery.findUnique({ where: { id: imageId } });
 
   if (!image || image.animalId !== animalId) {
     return res.status(404).json({ success: false, error: 'Imagen no encontrada' });
@@ -64,7 +64,7 @@ export const deleteGalleryImage = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'No se puede eliminar la fotografía principal.' });
   }
 
-  await prisma.animalGallery.delete({ where: { id: imageId } });
+  await db.animalGallery.delete({ where: { id: imageId } });
 
   // Clean up physical file
   try {

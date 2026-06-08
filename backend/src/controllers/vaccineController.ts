@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 
 const postponeSchema = z.object({
@@ -26,10 +26,10 @@ export const createVaccine = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
   }
 
-  const animal = await prisma.animal.findUnique({ where: { id: animalId } });
+  const animal = await db.animal.findUnique({ where: { id: animalId } });
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
 
-  const vaccine = await prisma.vaccine.create({
+  const vaccine = await db.vaccine.create({
     data: {
       animalId,
       vaccineType: parsed.data.vaccineType,
@@ -51,7 +51,7 @@ export const getAnimalVaccines = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, error: 'Acceso denegado.' });
   }
 
-  const vaccines = await prisma.vaccine.findMany({
+  const vaccines = await db.vaccine.findMany({
     where: { animalId },
     orderBy: { appliedAt: 'desc' },
   });
@@ -63,7 +63,7 @@ export const getImmunizationAlerts = async (req: Request, res: Response) => {
   const now = new Date();
   const alertWindow = new Date(now.getTime() + 72 * 60 * 60 * 1000); // 72 hours from now
 
-  const vaccines = await prisma.vaccine.findMany({
+  const vaccines = await db.vaccine.findMany({
     where: {
       status: 'PENDING',
       nextDueAt: { lte: alertWindow },
@@ -80,10 +80,10 @@ export const getImmunizationAlerts = async (req: Request, res: Response) => {
 export const completeImmunization = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const vaccine = await prisma.vaccine.findUnique({ where: { id } });
+  const vaccine = await db.vaccine.findUnique({ where: { id } });
   if (!vaccine) return res.status(404).json({ success: false, error: 'Alerta no encontrada' });
 
-  const updated = await prisma.vaccine.update({
+  const updated = await db.vaccine.update({
     where: { id },
     data: { status: 'COMPLETED' },
   });
@@ -98,10 +98,10 @@ export const postponeImmunization = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Fecha inválida.' });
   }
 
-  const vaccine = await prisma.vaccine.findUnique({ where: { id } });
+  const vaccine = await db.vaccine.findUnique({ where: { id } });
   if (!vaccine) return res.status(404).json({ success: false, error: 'Alerta no encontrada' });
 
-  const updated = await prisma.vaccine.update({
+  const updated = await db.vaccine.update({
     where: { id },
     data: { status: 'POSTPONED', postponedTo: new Date(parsed.data.postponedTo) },
   });

@@ -2,7 +2,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     user: {
@@ -20,7 +20,7 @@ jest.mock('../services/emailService', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const JWT_SECRET = 'test-secret-123';
 
@@ -33,14 +33,14 @@ const authHeader = (role: string, id?: string) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prismaMock.auditLog.create.mockResolvedValue({});
+  dbMock.auditLog.create.mockResolvedValue({});
 });
 
 // ─── GET /api/users ────────────────────────────────────────────────────────────
 
 describe('GET /api/users', () => {
   it('ADMIN obtiene la lista de usuarios', async () => {
-    prismaMock.user.findMany.mockResolvedValue([]);
+    dbMock.user.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/users').set(authHeader('ADMIN'));
 
@@ -64,8 +64,8 @@ describe('GET /api/users', () => {
 
 describe('POST /api/users', () => {
   it('ADMIN crea un VETERINARIAN', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.create.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.create.mockResolvedValue({
       id: 'vet-1',
       fullName: 'Dr. García',
       email: 'vet@test.com',
@@ -103,7 +103,7 @@ describe('POST /api/users', () => {
   });
 
   it('retorna 400 si el correo ya existe', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'existing' });
+    dbMock.user.findUnique.mockResolvedValue({ id: 'existing' });
 
     const res = await request(app)
       .post('/api/users')
@@ -127,7 +127,7 @@ describe('POST /api/users', () => {
 
 describe('PUT /api/users/me', () => {
   it('usuario actualiza su propio perfil', async () => {
-    prismaMock.user.update.mockResolvedValue({
+    dbMock.user.update.mockResolvedValue({
       id: 'user-1',
       fullName: 'Nuevo Nombre',
       email: 'adopter@test.com',
@@ -151,7 +151,7 @@ describe('PUT /api/users/me/password', () => {
   it('retorna 400 si currentPassword es incorrecto', async () => {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash('correct-password', 10);
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash });
+    dbMock.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash });
 
     const res = await request(app)
       .put('/api/users/me/password')
@@ -165,8 +165,8 @@ describe('PUT /api/users/me/password', () => {
   it('cambia la contraseña correctamente', async () => {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash('current-password', 10);
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash });
+    dbMock.user.update.mockResolvedValue({});
 
     const res = await request(app)
       .put('/api/users/me/password')
@@ -182,7 +182,7 @@ describe('PUT /api/users/me/password', () => {
 
 describe('PATCH /api/users/:id/deactivate', () => {
   it('ADMIN desactiva otro usuario', async () => {
-    prismaMock.user.update.mockResolvedValue({ id: 'other-user', status: 'INACTIVE' });
+    dbMock.user.update.mockResolvedValue({ id: 'other-user', status: 'INACTIVE' });
 
     const res = await request(app)
       .patch('/api/users/other-user/deactivate')
@@ -214,7 +214,7 @@ describe('PATCH /api/users/:id/deactivate', () => {
 
 describe('GET /api/users/:id', () => {
   it('usuario ve su propio perfil', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com' });
+    dbMock.user.findUnique.mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com' });
 
     const res = await request(app).get('/api/users/user-1').set(authHeader('ADOPTER', 'user-1'));
 
@@ -228,7 +228,7 @@ describe('GET /api/users/:id', () => {
   });
 
   it('ADMIN puede ver cualquier perfil', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'any-user', fullName: 'Other', email: 'other@test.com' });
+    dbMock.user.findUnique.mockResolvedValue({ id: 'any-user', fullName: 'Other', email: 'other@test.com' });
 
     const res = await request(app).get('/api/users/any-user').set(authHeader('ADMIN', 'admin-id'));
 

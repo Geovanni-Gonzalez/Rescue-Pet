@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 
 const slotCreateSchema = z.object({
@@ -11,7 +11,7 @@ export const createSlot = async (req: Request, res: Response) => {
   const parsed = slotCreateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos' });
 
-  const slot = await prisma.interviewSlot.create({
+  const slot = await db.interviewSlot.create({
     data: {
       startsAt: new Date(parsed.data.startsAt),
       endsAt: new Date(parsed.data.endsAt),
@@ -23,7 +23,7 @@ export const createSlot = async (req: Request, res: Response) => {
 };
 
 export const getAvailableSlots = async (_req: Request, res: Response) => {
-  const slots = await prisma.interviewSlot.findMany({
+  const slots = await db.interviewSlot.findMany({
     where: { status: 'available', startsAt: { gte: new Date() } },
     orderBy: { startsAt: 'asc' },
   });
@@ -36,7 +36,7 @@ export const scheduleInterview = async (req: Request, res: Response) => {
 
   if (!slotId) return res.status(400).json({ success: false, error: 'slotId es requerido.' });
 
-  const application = await prisma.adoptionRequest.findUnique({ where: { id: applicationId } });
+  const application = await db.adoptionRequest.findUnique({ where: { id: applicationId } });
   if (!application) return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
 
   if (!['RECEIVED', 'INTERVIEW'].includes(application.status)) {
@@ -45,7 +45,7 @@ export const scheduleInterview = async (req: Request, res: Response) => {
 
   // Transactional lock to prevent double-booking
   try {
-    const [slot] = await prisma.$transaction(async (tx) => {
+    const [slot] = await db.$transaction(async (tx) => {
       const slot = await tx.interviewSlot.findUnique({ where: { id: slotId } });
       if (!slot || slot.status !== 'available') {
         throw new Error('SLOT_UNAVAILABLE');
@@ -76,9 +76,9 @@ export const scheduleInterview = async (req: Request, res: Response) => {
 export const cancelSlot = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
-  const slot = await prisma.interviewSlot.findUnique({ where: { id } });
+  const slot = await db.interviewSlot.findUnique({ where: { id } });
   if (!slot) return res.status(404).json({ success: false, error: 'Slot no encontrado' });
 
-  await prisma.interviewSlot.update({ where: { id }, data: { status: 'cancelled' } });
+  await db.interviewSlot.update({ where: { id }, data: { status: 'cancelled' } });
   res.json({ success: true, message: 'Slot cancelado' });
 };

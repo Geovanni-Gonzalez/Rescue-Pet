@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 
 const testSchema = z.object({
@@ -80,7 +80,7 @@ function calculateCompatibility(test: z.infer<typeof testSchema>, animal: {
 
 export const getMyTest = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
-  const test = await prisma.compatibilityTest.findUnique({ where: { adopterId } });
+  const test = await db.compatibilityTest.findUnique({ where: { adopterId } });
   res.json({ success: true, test });
 };
 
@@ -92,17 +92,17 @@ export const saveTestAndRecalculate = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Datos de test inválidos', details: parsed.error.issues });
   }
 
-  const test = await prisma.compatibilityTest.upsert({
+  const test = await db.compatibilityTest.upsert({
     where: { adopterId },
     update: parsed.data,
     create: { ...parsed.data, adopterId },
   });
 
-  const availableAnimals = await prisma.animal.findMany({ where: { status: 'AVAILABLE' } });
+  const availableAnimals = await db.animal.findMany({ where: { status: 'AVAILABLE' } });
 
   for (const animal of availableAnimals) {
     const { score, explanation } = calculateCompatibility(parsed.data, animal);
-    await prisma.compatibilityScore.upsert({
+    await db.compatibilityScore.upsert({
       where: { adopterId_animalId: { adopterId, animalId: animal.id } },
       update: { scorePercentage: score, explanation },
       create: { adopterId, animalId: animal.id, scorePercentage: score, explanation },
@@ -115,17 +115,17 @@ export const saveTestAndRecalculate = async (req: Request, res: Response) => {
 export const recalculateCompatibility = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
 
-  const test = await prisma.compatibilityTest.findUnique({ where: { adopterId } });
+  const test = await db.compatibilityTest.findUnique({ where: { adopterId } });
   if (!test) {
     return res.status(400).json({ success: false, error: 'No tienes un test guardado. Completa el test primero.' });
   }
 
-  const availableAnimals = await prisma.animal.findMany({ where: { status: 'AVAILABLE' } });
+  const availableAnimals = await db.animal.findMany({ where: { status: 'AVAILABLE' } });
 
   for (const animal of availableAnimals) {
     const testInput = { ...test, allergies: test.allergies ?? undefined };
     const { score, explanation } = calculateCompatibility(testInput, animal);
-    await prisma.compatibilityScore.upsert({
+    await db.compatibilityScore.upsert({
       where: { adopterId_animalId: { adopterId, animalId: animal.id } },
       update: { scorePercentage: score, explanation, calculatedAt: new Date() },
       create: { adopterId, animalId: animal.id, scorePercentage: score, explanation },
@@ -137,7 +137,7 @@ export const recalculateCompatibility = async (req: Request, res: Response) => {
 
 export const getCompatibilityResults = async (req: Request, res: Response) => {
   const adopterId = req.user!.id;
-  const scores = await prisma.compatibilityScore.findMany({
+  const scores = await db.compatibilityScore.findMany({
     where: { adopterId },
     include: { animal: { select: { id: true, name: true, species: true, mainPhotoUrl: true } } },
     orderBy: { scorePercentage: 'desc' },

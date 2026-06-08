@@ -2,7 +2,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     animal: { findMany: jest.fn(), findUnique: jest.fn(), count: jest.fn().mockResolvedValue(0) },
@@ -17,7 +17,7 @@ jest.mock('../utils/prisma', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const JWT_SECRET = 'test-secret-123';
 const makeToken = (role: string, id = 'user-1') =>
@@ -52,57 +52,57 @@ const ANIMAL_FIXTURE = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prismaMock.auditLog.create.mockResolvedValue({});
+  dbMock.auditLog.create.mockResolvedValue({});
 });
 
 // ─── GET /api/catalog/animals ─────────────────────────────────────────────────
 
 describe('GET /api/catalog/animals', () => {
   it('devuelve solo mascotas AVAILABLE y requiere auth', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
-    prismaMock.animal.count.mockResolvedValue(1);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    dbMock.animal.count.mockResolvedValue(1);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/catalog/animals').set(auth('ADOPTER'));
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.animals).toHaveLength(1);
-    // Verify the Prisma query filtered by AVAILABLE
-    const call = prismaMock.animal.findMany.mock.calls[0][0];
+    // Verify the DB query filtered by AVAILABLE
+    const call = dbMock.animal.findMany.mock.calls[0][0];
     expect((call.where as Record<string, unknown>)['status']).toBe('AVAILABLE');
   });
 
   it('filtra por especie cuando se pasa query param', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([]);
-    prismaMock.animal.count.mockResolvedValue(0);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([]);
+    dbMock.animal.count.mockResolvedValue(0);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/catalog/animals?species=Gato').set(auth('ADOPTER'));
 
-    const call = prismaMock.animal.findMany.mock.calls[0][0];
+    const call = dbMock.animal.findMany.mock.calls[0][0];
     expect((call.where as Record<string, unknown>)['species']).toBe('Gato');
   });
 
   it('filtra por tamaño', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([]);
-    prismaMock.animal.count.mockResolvedValue(0);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([]);
+    dbMock.animal.count.mockResolvedValue(0);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/catalog/animals?size=SMALL').set(auth('ADOPTER'));
 
-    const call = prismaMock.animal.findMany.mock.calls[0][0];
+    const call = dbMock.animal.findMany.mock.calls[0][0];
     expect((call.where as Record<string, unknown>)['size']).toBe('SMALL');
   });
 
   it('filtra por rango de edad', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([]);
-    prismaMock.animal.count.mockResolvedValue(0);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([]);
+    dbMock.animal.count.mockResolvedValue(0);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/catalog/animals?minAge=6&maxAge=24').set(auth('ADOPTER'));
 
-    const call = prismaMock.animal.findMany.mock.calls[0][0];
+    const call = dbMock.animal.findMany.mock.calls[0][0];
     const ageFilter = (call.where as Record<string, unknown>)['estimatedAge'] as Record<string, number>;
     expect(ageFilter['gte']).toBe(6);
     expect(ageFilter['lte']).toBe(24);
@@ -110,9 +110,9 @@ describe('GET /api/catalog/animals', () => {
 
   it('adjunta puntaje de compatibilidad si existe y ordena desc', async () => {
     const animal2 = { ...ANIMAL_FIXTURE, id: 'animal-2', name: 'Toby' };
-    prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE, animal2]);
-    prismaMock.animal.count.mockResolvedValue(2);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([
+    dbMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE, animal2]);
+    dbMock.animal.count.mockResolvedValue(2);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([
       { animalId: 'animal-1', scorePercentage: 80, explanation: 'Buen espacio.' },
       { animalId: 'animal-2', scorePercentage: 45, explanation: 'Espacio limitado.' },
     ]);
@@ -127,9 +127,9 @@ describe('GET /api/catalog/animals', () => {
   });
 
   it('retorna sortedByCompatibility=false si no hay scores', async () => {
-    prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
-    prismaMock.animal.count.mockResolvedValue(1);
-    prismaMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    dbMock.animal.count.mockResolvedValue(1);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/catalog/animals').set(auth('ADOPTER'));
 
@@ -147,7 +147,7 @@ describe('GET /api/catalog/animals', () => {
 
 describe('GET /api/adopters/me/compatibility-test', () => {
   it('devuelve el test del adoptante', async () => {
-    prismaMock.compatibilityTest.findUnique.mockResolvedValue({ ...TEST_PAYLOAD, adopterId: 'user-1' });
+    dbMock.compatibilityTest.findUnique.mockResolvedValue({ ...TEST_PAYLOAD, adopterId: 'user-1' });
 
     const res = await request(app).get('/api/adopters/me/compatibility-test').set(auth('ADOPTER'));
 
@@ -156,7 +156,7 @@ describe('GET /api/adopters/me/compatibility-test', () => {
   });
 
   it('devuelve null si no hay test previo', async () => {
-    prismaMock.compatibilityTest.findUnique.mockResolvedValue(null);
+    dbMock.compatibilityTest.findUnique.mockResolvedValue(null);
 
     const res = await request(app).get('/api/adopters/me/compatibility-test').set(auth('ADOPTER'));
 
@@ -174,9 +174,9 @@ describe('GET /api/adopters/me/compatibility-test', () => {
 
 describe('PUT /api/adopters/me/compatibility-test', () => {
   it('guarda el test y recalcula para todos los animales disponibles', async () => {
-    prismaMock.compatibilityTest.upsert.mockResolvedValue({ ...TEST_PAYLOAD, adopterId: 'user-1', id: 'test-1' });
-    prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
-    prismaMock.compatibilityScore.upsert.mockResolvedValue({});
+    dbMock.compatibilityTest.upsert.mockResolvedValue({ ...TEST_PAYLOAD, adopterId: 'user-1', id: 'test-1' });
+    dbMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    dbMock.compatibilityScore.upsert.mockResolvedValue({});
 
     const res = await request(app)
       .put('/api/adopters/me/compatibility-test')
@@ -185,7 +185,7 @@ describe('PUT /api/adopters/me/compatibility-test', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(prismaMock.compatibilityScore.upsert).toHaveBeenCalledTimes(1);
+    expect(dbMock.compatibilityScore.upsert).toHaveBeenCalledTimes(1);
   });
 
   it('rechaza body inválido con 400', async () => {
@@ -211,9 +211,9 @@ describe('PUT /api/adopters/me/compatibility-test', () => {
 
 describe('POST /api/adopters/me/compatibility/recalculate', () => {
   it('recalcula usando test guardado', async () => {
-    prismaMock.compatibilityTest.findUnique.mockResolvedValue({ ...TEST_PAYLOAD, adopterId: 'user-1' });
-    prismaMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
-    prismaMock.compatibilityScore.upsert.mockResolvedValue({});
+    dbMock.compatibilityTest.findUnique.mockResolvedValue({ ...TEST_PAYLOAD, adopterId: 'user-1' });
+    dbMock.animal.findMany.mockResolvedValue([ANIMAL_FIXTURE]);
+    dbMock.compatibilityScore.upsert.mockResolvedValue({});
 
     const res = await request(app)
       .post('/api/adopters/me/compatibility/recalculate')
@@ -224,7 +224,7 @@ describe('POST /api/adopters/me/compatibility/recalculate', () => {
   });
 
   it('retorna 400 si no hay test guardado', async () => {
-    prismaMock.compatibilityTest.findUnique.mockResolvedValue(null);
+    dbMock.compatibilityTest.findUnique.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/api/adopters/me/compatibility/recalculate')
@@ -239,11 +239,11 @@ describe('POST /api/adopters/me/compatibility/recalculate', () => {
 
 describe('Algoritmo de compatibilidad', () => {
   const setup = (animalOverride: Partial<typeof ANIMAL_FIXTURE>) => {
-    prismaMock.compatibilityTest.upsert.mockImplementation(({ create }: { create: unknown }) =>
+    dbMock.compatibilityTest.upsert.mockImplementation(({ create }: { create: unknown }) =>
       Promise.resolve(create)
     );
-    prismaMock.animal.findMany.mockResolvedValue([{ ...ANIMAL_FIXTURE, ...animalOverride }]);
-    prismaMock.compatibilityScore.upsert.mockImplementation(
+    dbMock.animal.findMany.mockResolvedValue([{ ...ANIMAL_FIXTURE, ...animalOverride }]);
+    dbMock.compatibilityScore.upsert.mockImplementation(
       ({ update }: { update: { scorePercentage: number; explanation: string } }) =>
         Promise.resolve(update)
     );
@@ -256,7 +256,7 @@ describe('Algoritmo de compatibilidad', () => {
 
     await request(app).put('/api/adopters/me/compatibility-test').set(auth('ADOPTER')).send(payload);
 
-    const upsertCall = prismaMock.compatibilityScore.upsert.mock.calls[0][0];
+    const upsertCall = dbMock.compatibilityScore.upsert.mock.calls[0][0];
     expect(upsertCall.update.scorePercentage).toBeLessThan(65);
   });
 
@@ -267,7 +267,7 @@ describe('Algoritmo de compatibilidad', () => {
 
     await request(app).put('/api/adopters/me/compatibility-test').set(auth('ADOPTER')).send(payload);
 
-    const upsertCall = prismaMock.compatibilityScore.upsert.mock.calls[0][0];
+    const upsertCall = dbMock.compatibilityScore.upsert.mock.calls[0][0];
     expect(upsertCall.update.scorePercentage).toBeGreaterThan(50);
   });
 
@@ -278,17 +278,17 @@ describe('Algoritmo de compatibilidad', () => {
     const payloadCon = { ...TEST_PAYLOAD, allergies: 'Pelo de gato' };
 
     await request(app).put('/api/adopters/me/compatibility-test').set(auth('ADOPTER')).send(payloadSin);
-    const scoreSin = prismaMock.compatibilityScore.upsert.mock.calls[0][0].update.scorePercentage;
+    const scoreSin = dbMock.compatibilityScore.upsert.mock.calls[0][0].update.scorePercentage;
 
     jest.clearAllMocks();
-    prismaMock.auditLog.create.mockResolvedValue({});
+    dbMock.auditLog.create.mockResolvedValue({});
     setup({});
-    prismaMock.compatibilityTest.upsert.mockImplementation(({ create }: { create: unknown }) =>
+    dbMock.compatibilityTest.upsert.mockImplementation(({ create }: { create: unknown }) =>
       Promise.resolve(create)
     );
 
     await request(app).put('/api/adopters/me/compatibility-test').set(auth('ADOPTER')).send(payloadCon);
-    const scoreCon = prismaMock.compatibilityScore.upsert.mock.calls[0][0].update.scorePercentage;
+    const scoreCon = dbMock.compatibilityScore.upsert.mock.calls[0][0].update.scorePercentage;
 
     expect(scoreSin).toBeGreaterThan(scoreCon);
   });
@@ -310,7 +310,7 @@ describe('Algoritmo de compatibilidad', () => {
 
     await request(app).put('/api/adopters/me/compatibility-test').set(auth('ADOPTER')).send(payload);
 
-    const score = prismaMock.compatibilityScore.upsert.mock.calls[0][0].update.scorePercentage;
+    const score = dbMock.compatibilityScore.upsert.mock.calls[0][0].update.scorePercentage;
     expect(score).toBeGreaterThanOrEqual(0);
     expect(score).toBeLessThanOrEqual(100);
   });

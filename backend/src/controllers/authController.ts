@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { sendActivationEmail, sendPasswordResetEmail } from '../services/emailService';
@@ -42,7 +42,7 @@ export const login = async (req: Request, res: Response) => {
   const ip = getClientIp(req);
   const invalidMsg = 'Credenciales inválidas o cuenta inactiva';
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await db.user.findUnique({ where: { email } });
 
   if (!user || user.status === 'INACTIVE') {
     return res.status(401).json({ success: false, error: invalidMsg });
@@ -66,7 +66,7 @@ export const login = async (req: Request, res: Response) => {
     const newCount = (user.failedLoginCount ?? 0) + 1;
     const shouldLock = newCount >= LOCK_THRESHOLD;
 
-    await prisma.user.update({
+    await db.user.update({
       where: { id: user.id },
       data: {
         failedLoginCount: newCount,
@@ -78,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, error: invalidMsg });
   }
 
-  await prisma.user.update({
+  await db.user.update({
     where: { id: user.id },
     data: {
       failedLoginCount: 0,
@@ -123,7 +123,7 @@ export const getMe = async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, error: 'No autenticado' });
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: req.user.id },
     select: {
       id: true,
@@ -150,7 +150,7 @@ export const registerAdopter = async (req: Request, res: Response) => {
 
   const { fullName, email, password, phone } = parsed.data;
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await db.user.findUnique({ where: { email } });
   if (existingUser) {
     // Generic message to prevent user enumeration
     return res.status(400).json({
@@ -163,7 +163,7 @@ export const registerAdopter = async (req: Request, res: Response) => {
   const activationToken = crypto.randomBytes(32).toString('hex');
   const activationTokenExpiresAt = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
 
-  const newUser = await prisma.user.create({
+  const newUser = await db.user.create({
     data: {
       fullName,
       email,
@@ -199,7 +199,7 @@ export const activateAccount = async (req: Request, res: Response) => {
   const token = req.query['token'] as string;
   if (!token) return res.status(400).json({ success: false, error: 'Token requerido' });
 
-  const user = await prisma.user.findUnique({ where: { activationToken: token } });
+  const user = await db.user.findUnique({ where: { activationToken: token } });
 
   if (!user) {
     await writeAuditLog({
@@ -220,7 +220,7 @@ export const activateAccount = async (req: Request, res: Response) => {
     });
   }
 
-  await prisma.user.update({
+  await db.user.update({
     where: { id: user.id },
     data: {
       status: 'ACTIVE',
@@ -239,7 +239,7 @@ export const resendActivation = async (req: Request, res: Response) => {
 
   const genericMsg = 'Si la cuenta existe y está pendiente de activación, recibirás un nuevo correo.';
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await db.user.findUnique({ where: { email: parsed.data.email } });
 
   if (!user || user.status !== 'PENDING_VERIFICATION') {
     return res.json({ success: true, message: genericMsg });
@@ -248,7 +248,7 @@ export const resendActivation = async (req: Request, res: Response) => {
   const activationToken = crypto.randomBytes(32).toString('hex');
   const activationTokenExpiresAt = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
 
-  await prisma.user.update({
+  await db.user.update({
     where: { id: user.id },
     data: { activationToken, activationTokenExpiresAt },
   });
@@ -266,7 +266,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
   const genericMsg = 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.';
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await db.user.findUnique({ where: { email: parsed.data.email } });
 
   if (!user || user.status === 'INACTIVE') {
     return res.json({ success: true, message: genericMsg });
@@ -275,7 +275,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   const resetToken = crypto.randomBytes(32).toString('hex');
   const resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-  await prisma.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
+  await db.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
 
   sendPasswordResetEmail(user.email, resetToken).catch((err) =>
     logger.error('Failed to send password reset email', { error: (err as Error).message })
@@ -290,7 +290,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   const { token, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { resetToken: token } });
+  const user = await db.user.findUnique({ where: { resetToken: token } });
 
   if (!user || !user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
     return res.status(400).json({ success: false, error: 'Token inválido o expirado.' });
@@ -298,7 +298,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.user.update({
+  await db.user.update({
     where: { id: user.id },
     data: {
       passwordHash,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 import type { TaskType } from '../types/enums';
 import { writeAuditLog, getClientIp } from '../services/auditService';
@@ -34,7 +34,7 @@ export const getTasks = async (req: Request, res: Response) => {
   if (statusFilter === 'PENDING' || statusFilter === 'COMPLETED') where['status'] = statusFilter;
   if (typeFilter && TASK_TYPES.includes(typeFilter as TaskType)) where['type'] = typeFilter;
 
-  const tasks = await prisma.operationalTask.findMany({
+  const tasks = await db.operationalTask.findMany({
     where: where as any,
     include: {
       animal: { select: { id: true, name: true, species: true } },
@@ -59,7 +59,7 @@ export const getTaskAlerts = async (req: Request, res: Response) => {
   if (role === 'VETERINARIAN') where['assignedRole'] = 'VETERINARIAN';
   else if (role === 'VOLUNTEER') where['assignedRole'] = 'VOLUNTEER';
 
-  const tasks = await prisma.operationalTask.findMany({
+  const tasks = await db.operationalTask.findMany({
     where: where as any,
     include: { animal: { select: { id: true, name: true } } },
     orderBy: { scheduledAt: 'asc' },
@@ -72,7 +72,7 @@ export const createTask = async (req: Request, res: Response) => {
   const parsed = createTaskSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
 
-  const task = await prisma.operationalTask.create({
+  const task = await db.operationalTask.create({
     data: {
       ...parsed.data,
       scheduledAt: new Date(parsed.data.scheduledAt),
@@ -112,28 +112,28 @@ export const completeTask = async (req: Request, res: Response) => {
   const parsed = completeTaskSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos' });
 
-  const task = await prisma.operationalTask.findUnique({ where: { id } });
+  const task = await db.operationalTask.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
   if (task.status === 'COMPLETED') {
     return res.status(409).json({ success: false, error: 'La tarea ya fue completada.', alreadyCompleted: true });
   }
 
   if (idempotencyKey) {
-    const existing = await prisma.auditLog.findFirst({
+    const existing = await db.auditLog.findFirst({
       where: { action: 'COMPLETE_TASK', entityId: id, metadataJson: { contains: idempotencyKey } },
     });
     if (existing) {
-      const alreadyDone = await prisma.operationalTask.findUnique({ where: { id } });
+      const alreadyDone = await db.operationalTask.findUnique({ where: { id } });
       return res.json({ success: true, task: alreadyDone, idempotent: true });
     }
   }
 
-  const [updated] = await prisma.$transaction([
-    prisma.operationalTask.update({
+  const [updated] = await db.$transaction([
+    db.operationalTask.update({
       where: { id },
       data: { status: 'COMPLETED', completedAt: new Date(), completedById: userId, comment: parsed.data.comment },
     }),
-    prisma.auditLog.create({
+    db.auditLog.create({
       data: {
         userId,
         action: 'COMPLETE_TASK',
@@ -149,7 +149,7 @@ export const completeTask = async (req: Request, res: Response) => {
 };
 
 export const getTaskCompletions = async (_req: Request, res: Response) => {
-  const completions = await prisma.auditLog.findMany({
+  const completions = await db.auditLog.findMany({
     where: { action: 'COMPLETE_TASK', entityType: 'OperationalTask' },
     include: { user: { select: { id: true, fullName: true, role: true } } },
     orderBy: { createdAt: 'desc' },

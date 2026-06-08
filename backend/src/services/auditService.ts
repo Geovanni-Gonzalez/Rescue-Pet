@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 
 interface AuditInput {
   userId: string;
@@ -11,7 +11,7 @@ interface AuditInput {
 }
 
 export async function writeAuditLog({ userId, action, entityType, entityId, metadata, ipAddress }: AuditInput) {
-  return prisma.auditLog.create({
+  return db.auditLog.create({
     data: {
       userId,
       action,

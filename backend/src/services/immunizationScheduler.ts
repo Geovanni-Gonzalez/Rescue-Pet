@@ -1,4 +1,4 @@
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { notifyByRole } from './notificationService';
 import { logger } from '../utils/logger';
 
@@ -10,7 +10,7 @@ async function checkUpcomingVaccines() {
     const now = new Date();
     const alertWindow = new Date(now.getTime() + ALERT_WINDOW_HOURS * 60 * 60 * 1000);
 
-    const upcoming = await prisma.vaccine.findMany({
+    const upcoming = await db.vaccine.findMany({
       where: {
         status: 'PENDING',
         nextDueAt: { lte: alertWindow, gte: now },
@@ -22,7 +22,7 @@ async function checkUpcomingVaccines() {
 
     if (upcoming.length === 0) return;
 
-    const alreadyNotified = await prisma.notification.findMany({
+    const alreadyNotified = await db.notification.findMany({
       where: {
         resourceType: 'Vaccine',
         resourceId: { in: upcoming.map((v) => v.id) },
@@ -66,7 +66,7 @@ async function checkOverdueVaccines() {
   try {
     const now = new Date();
 
-    const overdue = await prisma.vaccine.findMany({
+    const overdue = await db.vaccine.findMany({
       where: {
         status: 'PENDING',
         nextDueAt: { lt: now },
@@ -78,7 +78,7 @@ async function checkOverdueVaccines() {
 
     if (overdue.length === 0) return;
 
-    const alreadyNotified = await prisma.notification.findMany({
+    const alreadyNotified = await db.notification.findMany({
       where: {
         resourceType: 'VaccineOverdue',
         resourceId: { in: overdue.map((v) => v.id) },

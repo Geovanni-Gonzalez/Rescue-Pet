@@ -2,7 +2,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     operationalTask: {
@@ -24,7 +24,7 @@ jest.mock('../utils/prisma', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const adminToken = jwt.sign({ id: 'admin-1', email: 'admin@test.com', role: 'ADMIN' }, 'test-secret-123');
 const vetToken = jwt.sign({ id: 'vet-1', email: 'vet@test.com', role: 'VETERINARIAN' }, 'test-secret-123');
@@ -34,7 +34,7 @@ beforeEach(() => jest.clearAllMocks());
 
 describe('GET /api/tasks', () => {
   it('retorna tareas filtradas por estado', async () => {
-    prismaMock.operationalTask.findMany.mockResolvedValue([]);
+    dbMock.operationalTask.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/tasks?status=PENDING').set('Authorization', `Bearer ${adminToken}`);
 
@@ -43,11 +43,11 @@ describe('GET /api/tasks', () => {
   });
 
   it('filtra por rol del veterinario', async () => {
-    prismaMock.operationalTask.findMany.mockResolvedValue([]);
+    dbMock.operationalTask.findMany.mockResolvedValue([]);
 
     await request(app).get('/api/tasks').set('Authorization', `Bearer ${vetToken}`);
 
-    expect(prismaMock.operationalTask.findMany).toHaveBeenCalledWith(
+    expect(dbMock.operationalTask.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ assignedRole: 'VETERINARIAN' }) })
     );
   });
@@ -56,8 +56,8 @@ describe('GET /api/tasks', () => {
 describe('POST /api/tasks', () => {
   it('crea una tarea y envía notificaciones', async () => {
     const task = { id: 't1', type: 'HEALTH', assignedRole: 'VETERINARIAN', scheduledAt: new Date(), animal: { id: 'a1', name: 'Rex' } };
-    prismaMock.operationalTask.create.mockResolvedValue(task);
-    prismaMock.user.findMany.mockResolvedValue([{ id: 'vet-1' }]);
+    dbMock.operationalTask.create.mockResolvedValue(task);
+    dbMock.user.findMany.mockResolvedValue([{ id: 'vet-1' }]);
 
     const res = await request(app)
       .post('/api/tasks')
@@ -66,7 +66,7 @@ describe('POST /api/tasks', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(prismaMock.auditLog.create).toHaveBeenCalled();
+    expect(dbMock.auditLog.create).toHaveBeenCalled();
   });
 
   it('retorna 403 para voluntario', async () => {
@@ -90,7 +90,7 @@ describe('POST /api/tasks', () => {
 
 describe('POST /api/tasks/:id/complete', () => {
   it('rechaza doble completación con 409', async () => {
-    prismaMock.operationalTask.findUnique.mockResolvedValue({ id: 't1', status: 'COMPLETED' });
+    dbMock.operationalTask.findUnique.mockResolvedValue({ id: 't1', status: 'COMPLETED' });
 
     const res = await request(app)
       .post('/api/tasks/t1/complete')
@@ -102,10 +102,10 @@ describe('POST /api/tasks/:id/complete', () => {
   });
 
   it('completa una tarea pendiente atómicamente', async () => {
-    prismaMock.operationalTask.findUnique.mockResolvedValue({ id: 't1', status: 'PENDING' });
-    prismaMock.auditLog.findFirst.mockResolvedValue(null);
+    dbMock.operationalTask.findUnique.mockResolvedValue({ id: 't1', status: 'PENDING' });
+    dbMock.auditLog.findFirst.mockResolvedValue(null);
     const updated = { id: 't1', status: 'COMPLETED', completedAt: new Date() };
-    prismaMock.$transaction.mockResolvedValue([updated, {}]);
+    dbMock.$transaction.mockResolvedValue([updated, {}]);
 
     const res = await request(app)
       .post('/api/tasks/t1/complete')
@@ -117,9 +117,9 @@ describe('POST /api/tasks/:id/complete', () => {
   });
 
   it('retorna resultado idempotente con X-Idempotency-Key repetido', async () => {
-    prismaMock.operationalTask.findUnique.mockResolvedValueOnce({ id: 't1', status: 'PENDING' });
-    prismaMock.auditLog.findFirst.mockResolvedValue({ id: 'existing' });
-    prismaMock.operationalTask.findUnique.mockResolvedValueOnce({ id: 't1', status: 'COMPLETED' });
+    dbMock.operationalTask.findUnique.mockResolvedValueOnce({ id: 't1', status: 'PENDING' });
+    dbMock.auditLog.findFirst.mockResolvedValue({ id: 'existing' });
+    dbMock.operationalTask.findUnique.mockResolvedValueOnce({ id: 't1', status: 'COMPLETED' });
 
     const res = await request(app)
       .post('/api/tasks/t1/complete')
@@ -132,7 +132,7 @@ describe('POST /api/tasks/:id/complete', () => {
   });
 
   it('retorna 404 para tarea inexistente', async () => {
-    prismaMock.operationalTask.findUnique.mockResolvedValue(null);
+    dbMock.operationalTask.findUnique.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/api/tasks/nonexistent/complete')
@@ -145,7 +145,7 @@ describe('POST /api/tasks/:id/complete', () => {
 
 describe('GET /api/tasks/completions', () => {
   it('solo accesible para ADMIN', async () => {
-    prismaMock.auditLog.findMany.mockResolvedValue([]);
+    dbMock.auditLog.findMany.mockResolvedValue([]);
 
     const res = await request(app).get('/api/tasks/completions').set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);

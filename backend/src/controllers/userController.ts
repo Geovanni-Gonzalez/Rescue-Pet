@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 import { z } from 'zod';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { sendInternalUserCredentials } from '../services/emailService';
@@ -45,7 +45,7 @@ const USER_SELECT = {
 } as const;
 
 export const getUsers = async (req: Request, res: Response) => {
-  const users = await prisma.user.findMany({ select: USER_SELECT, orderBy: { createdAt: 'desc' } });
+  const users = await db.user.findMany({ select: USER_SELECT, orderBy: { createdAt: 'desc' } });
   res.json({ success: true, users });
 };
 
@@ -56,7 +56,7 @@ export const getUserById = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, error: 'Acceso denegado.' });
   }
 
-  const user = await prisma.user.findUnique({ where: { id }, select: USER_SELECT });
+  const user = await db.user.findUnique({ where: { id }, select: USER_SELECT });
   if (!user) return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
 
   res.json({ success: true, user });
@@ -70,7 +70,7 @@ export const createUser = async (req: Request, res: Response) => {
 
   const { fullName, email, role, phone } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
     return res.status(400).json({ success: false, error: 'Ya existe un usuario con ese correo.' });
   }
@@ -78,7 +78,7 @@ export const createUser = async (req: Request, res: Response) => {
   const tempPassword = crypto.randomBytes(8).toString('hex');
   const passwordHash = await bcrypt.hash(tempPassword, 12);
 
-  const newUser = await prisma.user.create({
+  const newUser = await db.user.create({
     data: { fullName, email, passwordHash, phone, role, status: 'ACTIVE' },
     select: USER_SELECT,
   });
@@ -104,7 +104,7 @@ export const updateMe = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
   }
 
-  const updated = await prisma.user.update({
+  const updated = await db.user.update({
     where: { id: req.user!.id },
     data: parsed.data,
     select: USER_SELECT,
@@ -122,7 +122,7 @@ export const updateUserAdmin = async (req: Request, res: Response) => {
   }
 
   try {
-    const updated = await prisma.user.update({
+    const updated = await db.user.update({
       where: { id },
       data: parsed.data,
       select: USER_SELECT,
@@ -151,7 +151,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
   const { currentPassword, newPassword } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+  const user = await db.user.findUnique({ where: { id: req.user!.id } });
   if (!user) return res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
 
   const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -161,7 +161,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
 
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+  await db.user.update({ where: { id: user.id }, data: { passwordHash } });
 
   await writeAuditLog({
     userId: user.id,
@@ -182,7 +182,7 @@ export const deactivateUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const updated = await prisma.user.update({
+    const updated = await db.user.update({
       where: { id },
       data: { status: 'INACTIVE' },
       select: USER_SELECT,

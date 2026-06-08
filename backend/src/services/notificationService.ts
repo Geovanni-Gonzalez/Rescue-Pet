@@ -1,4 +1,4 @@
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 
 interface NotificationInput {
   userId: string;
@@ -10,13 +10,13 @@ interface NotificationInput {
 }
 
 export async function notifyUser({ userId, title, message, type = 'INFO', resourceType, resourceId }: NotificationInput) {
-  return prisma.notification.create({
+  return db.notification.create({
     data: { userId, title, message, type, resourceType, resourceId },
   });
 }
 
 export async function notifyActiveAdmins(input: Omit<NotificationInput, 'userId'>) {
-  const admins = await prisma.user.findMany({
+  const admins = await db.user.findMany({
     where: { role: 'ADMIN', status: 'ACTIVE' },
     select: { id: true },
   });
@@ -24,7 +24,7 @@ export async function notifyActiveAdmins(input: Omit<NotificationInput, 'userId'
 }
 
 export async function notifyByRole(role: 'VETERINARIAN' | 'VOLUNTEER', input: Omit<NotificationInput, 'userId'>) {
-  const users = await prisma.user.findMany({
+  const users = await db.user.findMany({
     where: { role, status: 'ACTIVE' },
     select: { id: true },
   });

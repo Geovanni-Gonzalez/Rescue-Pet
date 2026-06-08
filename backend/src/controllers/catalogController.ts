@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 
 export const getCatalog = async (req: Request, res: Response) => {
   const adopterId = req.user?.id;
@@ -19,7 +19,7 @@ export const getCatalog = async (req: Request, res: Response) => {
   }
 
   const [animals, total] = await Promise.all([
-    prisma.animal.findMany({
+    db.animal.findMany({
       where: where as any,
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -39,12 +39,12 @@ export const getCatalog = async (req: Request, res: Response) => {
         createdAt: true,
       },
     }),
-    prisma.animal.count({ where: where as any }),
+    db.animal.count({ where: where as any }),
   ]);
 
   // If adopter has compatibility scores, attach them
   if (adopterId) {
-    const scores = await prisma.compatibilityScore.findMany({
+    const scores = await db.compatibilityScore.findMany({
       where: { adopterId, animalId: { in: animals.map((a) => a.id) } },
       select: { animalId: true, scorePercentage: true, explanation: true },
     });
@@ -79,7 +79,7 @@ export const getCatalogAnimalById = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
   const adopterId = req.user?.id;
 
-  const animal = await prisma.animal.findUnique({
+  const animal = await db.animal.findUnique({
     where: { id, status: 'AVAILABLE' },
     include: { gallery: true },
   });
@@ -88,7 +88,7 @@ export const getCatalogAnimalById = async (req: Request, res: Response) => {
 
   let compatibilityScore = null;
   if (adopterId) {
-    const score = await prisma.compatibilityScore.findUnique({
+    const score = await db.compatibilityScore.findUnique({
       where: { adopterId_animalId: { adopterId, animalId: id } },
     });
     compatibilityScore = score?.scorePercentage ?? null;

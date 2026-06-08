@@ -14,7 +14,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     user: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), update: jest.fn() },
@@ -46,7 +46,7 @@ jest.mock('../services/pdfService', () => ({
 jest.mock('../services/qrService', () => ({ generatePetQrDataUrl: jest.fn() }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const JWT_SECRET = 'test-secret-123';
 const validToken = jwt.sign({ id: 'u1', email: 'test@t.com', role: 'ADMIN' }, JWT_SECRET);
@@ -93,7 +93,7 @@ describe('JWT validation', () => {
 
 describe('Input validation', () => {
   it('register — rejects short password', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.findUnique.mockResolvedValue(null);
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Test', email: 'x@x.com', password: '12',
     });
@@ -141,14 +141,14 @@ describe('Input validation', () => {
     const res = await request(app)
       .get("/api/animals?status=AVAILABLE'; DROP TABLE animal;--")
       .set(auth);
-    // Should not crash — returns normally (Prisma parameterizes)
+    // Should not crash — returns normally (DB layer parameterizes)
     expect([200, 400, 404, 500]).toContain(res.status);
     expect(res.body).toBeDefined();
   });
 
   it('XSS payload in body is stored as-is (no execution)', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.create.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.create.mockResolvedValue({
       id: 'xss-user', fullName: '<script>alert("xss")</script>',
       email: 'xss@test.com', role: 'ADOPTER', status: 'PENDING_VERIFICATION',
     });
@@ -200,7 +200,7 @@ describe('Audit logging on access denial', () => {
       .set({ Authorization: `Bearer ${adopterToken}` });
 
     // The authorizeRoles middleware should have called writeAccessDeniedLog
-    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+    expect(dbMock.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           action: 'ACCESS_DENIED',

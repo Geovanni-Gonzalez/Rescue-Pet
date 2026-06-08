@@ -2,7 +2,7 @@
  * E2E Test: Full Adoption Lifecycle
  *
  * Simulates the complete happy-path flow from adopter registration
- * through contract signing. All 13 steps use mocked Prisma but
+ * through contract signing. All 13 steps use a mocked DB layer but
  * exercise the real Express routes, middleware, validators and
  * controller logic end-to-end.
  *
@@ -30,7 +30,7 @@ import app from '../app';
 
 const mockDb: Record<string, any> = {};
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     user: {
@@ -116,7 +116,7 @@ jest.mock('../services/qrService', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 const JWT_SECRET = 'test-secret-123';
 
@@ -139,8 +139,8 @@ beforeEach(() => jest.clearAllMocks());
 
 describe('E2E Adoption Lifecycle', () => {
   it('Step 1 — Register adopter', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.create.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.create.mockResolvedValue({
       id: ADOPTER_ID, fullName: 'E2E Adoptante', email: 'adopter@e2e.com',
       role: 'ADOPTER', status: 'PENDING_VERIFICATION',
     });
@@ -161,12 +161,12 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 2: Activación de cuenta ──────────────────────────────────────────
 
   it('Step 2 — Activate account', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: ADOPTER_ID, status: 'PENDING_VERIFICATION',
       activationToken: 'valid-token',
       activationTokenExpiresAt: new Date(Date.now() + 86400000),
     });
-    prismaMock.user.update.mockResolvedValue({ id: ADOPTER_ID, status: 'ACTIVE' });
+    dbMock.user.update.mockResolvedValue({ id: ADOPTER_ID, status: 'ACTIVE' });
 
     const res = await request(app).get('/api/auth/activate?token=valid-token');
 
@@ -181,11 +181,11 @@ describe('E2E Adoption Lifecycle', () => {
     const bcrypt = require('bcrypt');
     const hash = await bcrypt.hash('secure1234', 12);
 
-    prismaMock.user.findUnique.mockResolvedValue({
+    dbMock.user.findUnique.mockResolvedValue({
       id: ADOPTER_ID, email: 'adopter@e2e.com', passwordHash: hash,
       role: 'ADOPTER', status: 'ACTIVE', failedLoginCount: 0,
     });
-    prismaMock.user.update.mockResolvedValue({});
+    dbMock.user.update.mockResolvedValue({});
 
     const res = await request(app).post('/api/auth/login').send({
       email: 'adopter@e2e.com',
@@ -204,8 +204,8 @@ describe('E2E Adoption Lifecycle', () => {
       id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro', status: 'QUARANTINE',
       mainPhotoUrl: 'http://localhost:3000/uploads/test.jpg',
     };
-    prismaMock.animal.create.mockResolvedValue(newAnimal);
-    prismaMock.animal.update.mockResolvedValue({ ...newAnimal, publicProfileUrl: '...', qrUrl: '...' });
+    dbMock.animal.create.mockResolvedValue(newAnimal);
+    dbMock.animal.update.mockResolvedValue({ ...newAnimal, publicProfileUrl: '...', qrUrl: '...' });
 
     const res = await request(app)
       .post('/api/animals')
@@ -221,11 +221,11 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 5: Cambio de estado a Disponible ─────────────────────────────────
 
   it('Step 5 — Change animal status to AVAILABLE', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({
+    dbMock.animal.findUnique.mockResolvedValue({
       id: ANIMAL_ID, status: 'QUARANTINE', mainPhotoUrl: 'http://photo.jpg',
     });
-    prismaMock.clinicalRecord.count.mockResolvedValue(1);
-    prismaMock.$transaction.mockResolvedValue([
+    dbMock.clinicalRecord.count.mockResolvedValue(1);
+    dbMock.$transaction.mockResolvedValue([
       { id: ANIMAL_ID, status: 'AVAILABLE' },
       {},
     ]);
@@ -242,12 +242,12 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 6: Test de compatibilidad ────────────────────────────────────────
 
   it('Step 6 — Save compatibility test', async () => {
-    prismaMock.compatibilityTest.upsert.mockResolvedValue({ id: 'ct1', adopterId: ADOPTER_ID });
-    prismaMock.animal.findMany.mockResolvedValue([{
+    dbMock.compatibilityTest.upsert.mockResolvedValue({ id: 'ct1', adopterId: ADOPTER_ID });
+    dbMock.animal.findMany.mockResolvedValue([{
       id: ANIMAL_ID, spaceNeed: 'LARGE', goodWithChildren: true,
       goodWithPets: true, energyLevel: 'HIGH', status: 'AVAILABLE',
     }]);
-    prismaMock.compatibilityScore.upsert.mockResolvedValue({});
+    dbMock.compatibilityScore.upsert.mockResolvedValue({});
 
     const res = await request(app)
       .put('/api/adopters/me/compatibility-test')
@@ -265,14 +265,14 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 7: Solicitud de adopción ─────────────────────────────────────────
 
   it('Step 7 — Create adoption application', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({ id: ANIMAL_ID, status: 'AVAILABLE', name: 'E2E Rex', species: 'Perro' });
-    prismaMock.adoptionRequest.findFirst.mockResolvedValue(null);
-    prismaMock.adoptionRequest.create.mockResolvedValue({
+    dbMock.animal.findUnique.mockResolvedValue({ id: ANIMAL_ID, status: 'AVAILABLE', name: 'E2E Rex', species: 'Perro' });
+    dbMock.adoptionRequest.findFirst.mockResolvedValue(null);
+    dbMock.adoptionRequest.create.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'RECEIVED',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
       adopter: { id: ADOPTER_ID, fullName: 'E2E Adoptante', email: 'adopter@e2e.com' },
     });
-    prismaMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID, role: 'ADMIN', status: 'ACTIVE' }]);
+    dbMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID, role: 'ADMIN', status: 'ACTIVE' }]);
 
     const res = await request(app)
       .post('/api/adoption-applications')
@@ -281,23 +281,23 @@ describe('E2E Adoption Lifecycle', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.application.status).toBe('RECEIVED');
-    expect(prismaMock.notification.create).toHaveBeenCalled();
-    expect(prismaMock.auditLog.create).toHaveBeenCalled();
+    expect(dbMock.notification.create).toHaveBeenCalled();
+    expect(dbMock.auditLog.create).toHaveBeenCalled();
   });
 
   // ─── Step 8: Agenda de entrevista ──────────────────────────────────────────
 
   it('Step 8 — Schedule interview', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, status: 'RECEIVED',
     });
     const updatedSlot = { id: SLOT_ID, status: 'reserved', reservedByApplicationId: APP_ID };
-    prismaMock.$transaction.mockImplementation(async (fn: Function) => {
-      prismaMock.interviewSlot.findUnique.mockResolvedValue({
+    dbMock.$transaction.mockImplementation(async (fn: Function) => {
+      dbMock.interviewSlot.findUnique.mockResolvedValue({
         id: SLOT_ID, status: 'available',
       });
-      prismaMock.interviewSlot.update.mockResolvedValue(updatedSlot);
-      prismaMock.adoptionRequest.update.mockResolvedValue({
+      dbMock.interviewSlot.update.mockResolvedValue(updatedSlot);
+      dbMock.adoptionRequest.update.mockResolvedValue({
         id: APP_ID, status: 'INTERVIEW',
       });
       return [updatedSlot];
@@ -315,16 +315,16 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 9: Carga de documentos ───────────────────────────────────────────
 
   it('Step 9 — Upload documents', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, status: 'INTERVIEW',
       adopter: { fullName: 'E2E Adoptante' },
       animal: { name: 'E2E Rex' },
     });
-    prismaMock.adopterDocument.findFirst.mockResolvedValue(null);
-    prismaMock.adopterDocument.create.mockResolvedValue({
+    dbMock.adopterDocument.findFirst.mockResolvedValue(null);
+    dbMock.adopterDocument.create.mockResolvedValue({
       id: 'doc1', documentType: 'ID_CARD', fileName: 'id.pdf', version: 1,
     });
-    prismaMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID }]);
+    dbMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID }]);
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/documents`)
@@ -339,22 +339,22 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 10: Aprobación de solicitud (admin) ──────────────────────────────
 
   it('Step 10 — Approve adoption application', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'VISIT',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
       adopter: { id: ADOPTER_ID, fullName: 'E2E Adoptante', email: 'adopter@e2e.com' },
     });
-    prismaMock.adopterDocument.findMany.mockResolvedValue([
+    dbMock.adopterDocument.findMany.mockResolvedValue([
       { documentType: 'ID_CARD' },
       { documentType: 'ADDRESS_PROOF' },
     ]);
-    prismaMock.adoptionRequest.update.mockResolvedValue({
+    dbMock.adoptionRequest.update.mockResolvedValue({
       id: APP_ID, status: 'APPROVED',
       animal: { id: ANIMAL_ID, name: 'E2E Rex' },
       adopter: { id: ADOPTER_ID, fullName: 'E2E Adoptante' },
       documents: [], contract: null, interviewSlot: null,
     });
-    prismaMock.adoptionContract.upsert.mockResolvedValue({ id: CONTRACT_ID });
+    dbMock.adoptionContract.upsert.mockResolvedValue({ id: CONTRACT_ID });
 
     const res = await request(app)
       .patch(`/api/adoption-applications/${APP_ID}/status`)
@@ -363,18 +363,18 @@ describe('E2E Adoption Lifecycle', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.application.status).toBe('APPROVED');
-    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(dbMock.notification.create).toHaveBeenCalled();
   });
 
   // ─── Step 11: Generación de contrato ───────────────────────────────────────
 
   it('Step 11 — Generate contract', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'APPROVED',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
       adopter: { fullName: 'E2E Adoptante', email: 'adopter@e2e.com' },
     });
-    prismaMock.adoptionContract.upsert.mockResolvedValue({
+    dbMock.adoptionContract.upsert.mockResolvedValue({
       id: CONTRACT_ID, applicationId: APP_ID, status: 'GENERATED',
       pdfUrl: 'http://localhost:3000/uploads/contracts/adoption-e2e.pdf',
     });
@@ -391,7 +391,7 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 12: Firma digital ────────────────────────────────────────────────
 
   it('Step 12 — Sign contract', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'APPROVED',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
       adopter: { fullName: 'E2E Adoptante', email: 'adopter@e2e.com' },
@@ -401,13 +401,13 @@ describe('E2E Adoption Lifecycle', () => {
       id: CONTRACT_ID, status: 'SIGNED', signedAt: new Date(),
       signedPdfUrl: 'http://localhost:3000/uploads/contracts/adoption-e2e-signed.pdf',
     };
-    prismaMock.$transaction.mockResolvedValue([
+    dbMock.$transaction.mockResolvedValue([
       signedContract,
       { id: ANIMAL_ID, status: 'ADOPTED' },
       {},
       {},
     ]);
-    prismaMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID }]);
+    dbMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID }]);
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/contract/sign`)
@@ -421,7 +421,7 @@ describe('E2E Adoption Lifecycle', () => {
   // ─── Step 13: Verificar mascota en estado Adoptado ─────────────────────────
 
   it('Step 13 — Verify animal is ADOPTED', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({
+    dbMock.animal.findUnique.mockResolvedValue({
       id: ANIMAL_ID, name: 'E2E Rex', status: 'ADOPTED', gallery: [],
     });
 

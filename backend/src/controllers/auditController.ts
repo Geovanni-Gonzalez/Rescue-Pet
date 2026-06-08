@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
+import db from '../utils/db';
 
 export const getAuditLogs = async (req: Request, res: Response) => {
   const page = Math.max(1, parseInt(req.query['page'] as string) || 1);
@@ -16,21 +16,21 @@ export const getAuditLogs = async (req: Request, res: Response) => {
   if (userId) where['userId'] = userId;
 
   const [logs, total] = await Promise.all([
-    prisma.auditLog.findMany({
+    db.auditLog.findMany({
       where: where as any,
       include: { user: { select: { id: true, fullName: true, role: true, email: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip,
     }),
-    prisma.auditLog.count({ where: where as any }),
+    db.auditLog.count({ where: where as any }),
   ]);
 
   res.json({ success: true, logs, total, page, limit });
 };
 
 export const getAuditActions = async (_req: Request, res: Response) => {
-  const raw = await prisma.auditLog.findMany({
+  const raw = await db.auditLog.findMany({
     distinct: ['action'],
     select: { action: true },
     orderBy: { action: 'asc' },
@@ -39,7 +39,7 @@ export const getAuditActions = async (_req: Request, res: Response) => {
 };
 
 export const getAuditEntityTypes = async (_req: Request, res: Response) => {
-  const raw = await prisma.auditLog.findMany({
+  const raw = await db.auditLog.findMany({
     distinct: ['entityType'],
     select: { entityType: true },
     orderBy: { entityType: 'asc' },

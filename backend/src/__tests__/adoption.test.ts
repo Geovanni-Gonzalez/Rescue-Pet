@@ -4,7 +4,7 @@ import app from '../app';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.mock('../utils/prisma', () => ({
+jest.mock('../utils/db', () => ({
   __esModule: true,
   default: {
     animal: { findUnique: jest.fn(), update: jest.fn() },
@@ -49,7 +49,7 @@ jest.mock('../services/pdfService', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaMock = require('../utils/prisma').default;
+const dbMock = require('../utils/db').default;
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 // RFC 4122 compliant UUIDs (version 4, variant 8x) — required by z.string().uuid() in Zod v4
@@ -92,19 +92,19 @@ const CONTRACT = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prismaMock.auditLog.create.mockResolvedValue({});
-  prismaMock.notification.create.mockResolvedValue({});
-  prismaMock.user.findMany.mockResolvedValue([]);
-  prismaMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+  dbMock.auditLog.create.mockResolvedValue({});
+  dbMock.notification.create.mockResolvedValue({});
+  dbMock.user.findMany.mockResolvedValue([]);
+  dbMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
 });
 
 // ─── CU-16: Solicitud de adopcion ─────────────────────────────────────────────
 
 describe('POST /api/adoption-applications (CU-16)', () => {
   it('crea solicitud para animal Disponible', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL);
-    prismaMock.adoptionRequest.findFirst.mockResolvedValue(null);
-    prismaMock.adoptionRequest.create.mockResolvedValue({
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL);
+    dbMock.adoptionRequest.findFirst.mockResolvedValue(null);
+    dbMock.adoptionRequest.create.mockResolvedValue({
       ...APPLICATION,
       animal: { id: ANIMAL_ID, name: 'Luna', species: 'Perro' },
       adopter: { id: USER_ID, fullName: 'Ana Perez', email: 'ana@test.com' },
@@ -120,7 +120,7 @@ describe('POST /api/adoption-applications (CU-16)', () => {
   });
 
   it('rechaza si animal no esta Disponible', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue({ ...ANIMAL, status: 'QUARANTINE' });
+    dbMock.animal.findUnique.mockResolvedValue({ ...ANIMAL, status: 'QUARANTINE' });
 
     const res = await request(app)
       .post('/api/adoption-applications')
@@ -131,8 +131,8 @@ describe('POST /api/adoption-applications (CU-16)', () => {
   });
 
   it('rechaza si ya existe solicitud activa — devuelve existingRequestId', async () => {
-    prismaMock.animal.findUnique.mockResolvedValue(ANIMAL);
-    prismaMock.adoptionRequest.findFirst.mockResolvedValue({ id: EXISTING_ID });
+    dbMock.animal.findUnique.mockResolvedValue(ANIMAL);
+    dbMock.adoptionRequest.findFirst.mockResolvedValue({ id: EXISTING_ID });
 
     const res = await request(app)
       .post('/api/adoption-applications')
@@ -164,23 +164,23 @@ describe('POST /api/adoption-applications (CU-16)', () => {
 
 describe('GET /api/adoption-applications (CU-18)', () => {
   it('ADOPTER solo ve sus propias solicitudes (filtro por adopterId)', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue([APPLICATION]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([APPLICATION]);
     await request(app).get('/api/adoption-applications').set(auth('ADOPTER', USER_ID));
-    const call = prismaMock.adoptionRequest.findMany.mock.calls[0][0];
+    const call = dbMock.adoptionRequest.findMany.mock.calls[0][0];
     expect(call.where.adopterId).toBe(USER_ID);
   });
 
   it('ADMIN ve todas las solicitudes (sin filtro adopterId)', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue([APPLICATION]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([APPLICATION]);
     await request(app).get('/api/adoption-applications').set(auth('ADMIN'));
-    const call = prismaMock.adoptionRequest.findMany.mock.calls[0][0];
+    const call = dbMock.adoptionRequest.findMany.mock.calls[0][0];
     expect(call.where.adopterId).toBeUndefined();
   });
 
   it('puede filtrar por status', async () => {
-    prismaMock.adoptionRequest.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([]);
     await request(app).get('/api/adoption-applications?status=APPROVED').set(auth('ADMIN'));
-    const call = prismaMock.adoptionRequest.findMany.mock.calls[0][0];
+    const call = dbMock.adoptionRequest.findMany.mock.calls[0][0];
     expect(call.where.status).toBe('APPROVED');
   });
 });
@@ -193,8 +193,8 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
   });
 
   it('ADMIN puede avanzar estado RECEIVED a INTERVIEW', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('RECEIVED'));
-    prismaMock.adoptionRequest.update.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('RECEIVED'));
+    dbMock.adoptionRequest.update.mockResolvedValue({
       ...APPLICATION, status: 'INTERVIEW', documents: [], contract: null, interviewSlot: null,
     });
 
@@ -207,7 +207,7 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
   });
 
   it('rechaza transicion invalida RECEIVED a APPROVED', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('RECEIVED'));
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('RECEIVED'));
 
     const res = await request(app)
       .patch(`/api/adoption-applications/${APP_ID}/status`)
@@ -219,7 +219,7 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
   });
 
   it('requiere motivo al rechazar', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('RECEIVED'));
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('RECEIVED'));
 
     const res = await request(app)
       .patch(`/api/adoption-applications/${APP_ID}/status`)
@@ -231,8 +231,8 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
   });
 
   it('requiere documentos completos para APPROVED', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('VISIT'));
-    prismaMock.adopterDocument.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('VISIT'));
+    dbMock.adopterDocument.findMany.mockResolvedValue([]);
 
     const res = await request(app)
       .patch(`/api/adoption-applications/${APP_ID}/status`)
@@ -244,14 +244,14 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
   });
 
   it('genera contrato PDF al aprobar con documentos completos', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('VISIT'));
-    prismaMock.adopterDocument.findMany.mockResolvedValue([
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAnimalAdopter('VISIT'));
+    dbMock.adopterDocument.findMany.mockResolvedValue([
       { documentType: 'ID_CARD' }, { documentType: 'ADDRESS_PROOF' },
     ]);
-    prismaMock.adoptionRequest.update.mockResolvedValue({
+    dbMock.adoptionRequest.update.mockResolvedValue({
       ...APPLICATION, status: 'APPROVED', documents: [], contract: null, interviewSlot: null,
     });
-    prismaMock.adoptionContract.upsert.mockResolvedValue(CONTRACT);
+    dbMock.adoptionContract.upsert.mockResolvedValue(CONTRACT);
 
     const res = await request(app)
       .patch(`/api/adoption-applications/${APP_ID}/status`)
@@ -259,7 +259,7 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
       .send({ status: 'APPROVED' });
 
     expect(res.status).toBe(200);
-    expect(prismaMock.adoptionContract.upsert).toHaveBeenCalled();
+    expect(dbMock.adoptionContract.upsert).toHaveBeenCalled();
   });
 
   it('ADOPTER no puede cambiar estado', async () => {
@@ -275,7 +275,7 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
 
 describe('POST /api/interview-slots (CU-17)', () => {
   it('ADMIN puede crear un slot', async () => {
-    prismaMock.interviewSlot.create.mockResolvedValue({
+    dbMock.interviewSlot.create.mockResolvedValue({
       id: SLOT_ID,
       startsAt: new Date('2026-06-01T10:00:00Z'),
       endsAt: new Date('2026-06-01T11:00:00Z'),
@@ -302,7 +302,7 @@ describe('POST /api/interview-slots (CU-17)', () => {
 
 describe('GET /api/interview-slots/available (CU-17)', () => {
   it('devuelve slots disponibles', async () => {
-    prismaMock.interviewSlot.findMany.mockResolvedValue([
+    dbMock.interviewSlot.findMany.mockResolvedValue([
       { id: SLOT_ID, startsAt: new Date('2026-06-01T10:00:00Z'), endsAt: new Date('2026-06-01T11:00:00Z'), status: 'available' },
     ]);
 
@@ -317,9 +317,9 @@ describe('GET /api/interview-slots/available (CU-17)', () => {
 
 describe('POST /api/adoption-applications/:id/schedule-interview (CU-17)', () => {
   it('reserva slot con bloqueo transaccional', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
 
-    prismaMock.$transaction.mockImplementation(async (fn: Function) => {
+    dbMock.$transaction.mockImplementation(async (fn: Function) => {
       const fakeTx = {
         interviewSlot: {
           findUnique: jest.fn().mockResolvedValue({ id: SLOT_ID, status: 'available' }),
@@ -341,9 +341,9 @@ describe('POST /api/adoption-applications/:id/schedule-interview (CU-17)', () =>
   });
 
   it('retorna 409 si slot ya esta reservado', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
 
-    prismaMock.$transaction.mockImplementation(async (fn: Function) => {
+    dbMock.$transaction.mockImplementation(async (fn: Function) => {
       const fakeTx = {
         interviewSlot: {
           findUnique: jest.fn().mockResolvedValue({ id: SLOT_ID, status: 'reserved' }),
@@ -372,9 +372,9 @@ describe('POST /api/adoption-applications/:id/documents (CU-19)', () => {
   };
 
   it('ADOPTER sube documento via multipart/form-data', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
-    prismaMock.adopterDocument.findFirst.mockResolvedValue(null);
-    prismaMock.adopterDocument.create.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
+    dbMock.adopterDocument.findFirst.mockResolvedValue(null);
+    dbMock.adopterDocument.create.mockResolvedValue({
       id: 'doc-1', documentType: 'ID_CARD', fileName: 'cedula.pdf',
       fileUrl: 'http://localhost:3000/uploads/documents/abc.pdf', version: 1,
     });
@@ -390,7 +390,7 @@ describe('POST /api/adoption-applications/:id/documents (CU-19)', () => {
   });
 
   it('rechaza documentType invalido', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/documents`)
@@ -402,10 +402,10 @@ describe('POST /api/adoption-applications/:id/documents (CU-19)', () => {
   });
 
   it('archiva version anterior y crea version nueva', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
-    prismaMock.adopterDocument.findFirst.mockResolvedValue({ id: 'old-doc-id', version: 1, status: 'ACTIVE' });
-    prismaMock.adopterDocument.update.mockResolvedValue({ id: 'old-doc-id', status: 'ARCHIVED' });
-    prismaMock.adopterDocument.create.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
+    dbMock.adopterDocument.findFirst.mockResolvedValue({ id: 'old-doc-id', version: 1, status: 'ACTIVE' });
+    dbMock.adopterDocument.update.mockResolvedValue({ id: 'old-doc-id', status: 'ARCHIVED' });
+    dbMock.adopterDocument.create.mockResolvedValue({
       id: 'doc-2', documentType: 'ID_CARD', fileName: 'cedula_v2.pdf', version: 2,
     });
 
@@ -416,14 +416,14 @@ describe('POST /api/adoption-applications/:id/documents (CU-19)', () => {
       .attach('file', Buffer.from('v2'), { filename: 'cedula_v2.pdf', contentType: 'application/pdf' });
 
     expect(res.status).toBe(201);
-    expect(prismaMock.adopterDocument.update).toHaveBeenCalledWith({
+    expect(dbMock.adopterDocument.update).toHaveBeenCalledWith({
       where: { id: 'old-doc-id' }, data: { status: 'ARCHIVED' },
     });
     expect(res.body.document.version).toBe(2);
   });
 
   it('falla si no hay archivo adjunto', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(appWithAdopterAnimal);
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/documents`)
@@ -439,12 +439,12 @@ describe('POST /api/adoption-applications/:id/documents (CU-19)', () => {
 
 describe('POST /api/adoption-applications/:id/contract/generate (CU-20)', () => {
   it('ADMIN genera contrato PDF para solicitud APPROVED', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       ...APPLICATION, status: 'APPROVED',
       animal: { ...ANIMAL },
       adopter: { fullName: 'Ana', email: 'a@test.com' },
     });
-    prismaMock.adoptionContract.upsert.mockResolvedValue(CONTRACT);
+    dbMock.adoptionContract.upsert.mockResolvedValue(CONTRACT);
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/contract/generate`)
@@ -455,7 +455,7 @@ describe('POST /api/adoption-applications/:id/contract/generate (CU-20)', () => 
   });
 
   it('no genera contrato para solicitud no aprobada', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       ...APPLICATION, status: 'INTERVIEW',
       animal: ANIMAL, adopter: { fullName: 'Ana', email: 'a@test.com' },
     });
@@ -470,19 +470,19 @@ describe('POST /api/adoption-applications/:id/contract/generate (CU-20)', () => 
 
 describe('POST /api/adoption-applications/:id/contract/sign (CU-20)', () => {
   it('adoptante firma y mascota cambia a ADOPTADO', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       ...APPLICATION, status: 'APPROVED',
       animal: { ...ANIMAL },
       adopter: { fullName: 'Ana', email: 'a@test.com' },
       contract: { ...CONTRACT },
     });
-    prismaMock.adoptionContract.update.mockResolvedValue({
+    dbMock.adoptionContract.update.mockResolvedValue({
       ...CONTRACT, status: 'SIGNED', signedPdfUrl: 'http://x/signed.pdf',
     });
-    prismaMock.animal.update.mockResolvedValue({ ...ANIMAL, status: 'ADOPTED' });
-    prismaMock.animalStatusHistory.create.mockResolvedValue({});
+    dbMock.animal.update.mockResolvedValue({ ...ANIMAL, status: 'ADOPTED' });
+    dbMock.animalStatusHistory.create.mockResolvedValue({});
 
-    prismaMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+    dbMock.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
 
     const res = await request(app)
       .post(`/api/adoption-applications/${APP_ID}/contract/sign`)
@@ -490,13 +490,13 @@ describe('POST /api/adoption-applications/:id/contract/sign (CU-20)', () => {
       .send({ signatureImageUrl: 'data:image/png;base64,iVBORw0KGgo=' });
 
     expect(res.status).toBe(200);
-    expect(prismaMock.animal.update).toHaveBeenCalledWith(
+    expect(dbMock.animal.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: 'ADOPTED' } })
     );
   });
 
   it('solo el adoptante puede firmar (no otro usuario)', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       ...APPLICATION, status: 'APPROVED',
       animal: ANIMAL,
       adopter: { fullName: 'Ana', email: 'a@test.com' },
@@ -512,7 +512,7 @@ describe('POST /api/adoption-applications/:id/contract/sign (CU-20)', () => {
   });
 
   it('no se puede firmar si solicitud no esta APPROVED', async () => {
-    prismaMock.adoptionRequest.findUnique.mockResolvedValue({
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({
       ...APPLICATION, status: 'INTERVIEW',
       animal: ANIMAL,
       adopter: { fullName: 'Ana', email: 'a@test.com' },
