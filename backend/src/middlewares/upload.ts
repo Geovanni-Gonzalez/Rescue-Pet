@@ -48,6 +48,35 @@ function loadBlobSdk(): {
   }
 }
 
+// Auto-detect store access mode: try 'public' first, fall back to 'private'.
+// Caches result after first successful upload so subsequent calls are fast.
+let _detectedAccess: 'public' | 'private' | null = null;
+
+async function putWithAutoAccess(
+  put: (pathname: string, body: Buffer, opts: Record<string, unknown>) => Promise<{ url: string }>,
+  pathname: string,
+  body: Buffer,
+  opts: Record<string, unknown>,
+): Promise<{ url: string }> {
+  if (_detectedAccess) {
+    return put(pathname, body, { ...opts, access: _detectedAccess });
+  }
+  // Try public first
+  try {
+    const result = await put(pathname, body, { ...opts, access: 'public' });
+    _detectedAccess = 'public';
+    return result;
+  } catch (err: any) {
+    if (err?.message?.includes('private') || err?.message?.includes('public')) {
+      // Store mode mismatch — try the other mode
+      const result = await put(pathname, body, { ...opts, access: 'private' });
+      _detectedAccess = 'private';
+      return result;
+    }
+    throw err;
+  }
+}
+
 function localUploadUrl(subdir: UploadSubdir, filename: string): string {
   // In Vercel, ALWAYS use relative paths. Absolute URLs (even from BACKEND_URL)
   // break because Vercel deployment-specific hostnames require authentication.
@@ -99,19 +128,15 @@ export async function persistUploadedFile(subdir: UploadSubdir, file: Express.Mu
 
   const { put } = loadBlobSdk();
   const pathname = `uploads/${subdir}/${file.filename}`;
-  // Always use 'private' access — Vercel Blob stores may be configured as
-  // private-only. Images are served through our own proxy route which
-  // redirects to signed Blob URLs.
-  const blob = await put(pathname, fs.readFileSync(file.path), {
-    access: 'public',
+  await putWithAutoAccess(put, pathname, fs.readFileSync(file.path), {
     allowOverwrite: true,
     contentType: file.mimetype,
   });
 
   cleanupLocalFile(file.path);
   // Always return a relative URL so images are served through our backend
-  // proxy (which handles Blob retrieval). This avoids exposing raw Blob URLs
-  // and works regardless of store access mode.
+  // proxy (which handles Blob retrieval). This works regardless of store
+  // access mode (public or private).
   return localUploadUrl(subdir, file.filename);
 }
 
@@ -124,8 +149,7 @@ export async function persistGeneratedFile(
   if (!isBlobEnabled()) return;
 
   const { put } = loadBlobSdk();
-  await put(`uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
-    access: 'public',
+  await putWithAutoAccess(put, `uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
     allowOverwrite: true,
     contentType,
   });
