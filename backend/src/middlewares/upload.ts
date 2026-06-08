@@ -49,8 +49,15 @@ function loadBlobSdk(): {
 }
 
 function localUploadUrl(subdir: UploadSubdir, filename: string): string {
-  const base = process.env.BACKEND_URL || 'http://localhost:3000';
-  return `${base}/uploads/${subdir}/${filename}`;
+  if (process.env.BACKEND_URL) {
+    return `${process.env.BACKEND_URL}/uploads/${subdir}/${filename}`;
+  }
+  // In production (Vercel), use a relative path so the browser resolves it
+  // against the current origin + the service route prefix (/_/backend).
+  if (process.env.VERCEL) {
+    return `/_/backend/uploads/${subdir}/${filename}`;
+  }
+  return `http://localhost:${process.env.PORT || 3000}/uploads/${subdir}/${filename}`;
 }
 
 function makeStorage(subdir: UploadSubdir) {
