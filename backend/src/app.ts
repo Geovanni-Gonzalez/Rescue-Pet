@@ -78,7 +78,8 @@ app.use('/uploads/animals', express.static(path.join(uploadsRoot, 'animals')));
 app.use('/uploads/gallery', express.static(path.join(uploadsRoot, 'gallery')));
 
 // Blob fallback — when the local file doesn't exist (Vercel serverless /tmp
-// is ephemeral), proxy the request to Vercel Blob so old URLs still work.
+// is ephemeral), fetch from Vercel Blob and proxy the response.
+// Works with both public and private Blob stores.
 app.get('/uploads/:subdir/:filename', async (req, res, next) => {
   const subdir = req.params['subdir'] as string;
   if (!['animals', 'gallery'].includes(subdir)) return next();
@@ -97,8 +98,22 @@ app.get('/uploads/:subdir/:filename', async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'Imagen no encontrada en almacenamiento' });
     }
 
-    // Redirect to the public Blob URL (CDN-backed, fast)
-    return res.redirect(301, blob.url);
+    // For private stores, we must fetch the blob using the token and proxy it.
+    // The blob.downloadUrl (or blob.url with token) lets us read the content.
+    const blobResponse = await fetch(blob.downloadUrl || blob.url, {
+      headers: { Authorization: `Bearer ${process.env['BLOB_READ_WRITE_TOKEN']}` },
+    });
+
+    if (!blobResponse.ok) {
+      console.error('[BLOB_FALLBACK] Failed to fetch blob:', blobResponse.status);
+      return res.status(502).json({ success: false, error: 'Error al obtener imagen' });
+    }
+
+    // Set appropriate headers and stream the response
+    res.set('Content-Type', blob.contentType || 'application/octet-stream');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    const buffer = Buffer.from(await blobResponse.arrayBuffer());
+    return res.send(buffer);
   } catch (err) {
     console.error('[BLOB_FALLBACK] Error accessing Blob:', (err as Error).message);
     return next();

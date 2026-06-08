@@ -99,15 +99,20 @@ export async function persistUploadedFile(subdir: UploadSubdir, file: Express.Mu
 
   const { put } = loadBlobSdk();
   const pathname = `uploads/${subdir}/${file.filename}`;
-  const access = subdir === 'animals' || subdir === 'gallery' ? 'public' : 'private';
+  // Always use 'private' access — Vercel Blob stores may be configured as
+  // private-only. Images are served through our own proxy route which
+  // redirects to signed Blob URLs.
   const blob = await put(pathname, fs.readFileSync(file.path), {
-    access,
+    access: 'private',
     allowOverwrite: true,
     contentType: file.mimetype,
   });
 
   cleanupLocalFile(file.path);
-  return access === 'public' ? blob.url : localUploadUrl(subdir, file.filename);
+  // Always return a relative URL so images are served through our backend
+  // proxy (which handles Blob retrieval). This avoids exposing raw Blob URLs
+  // and works regardless of store access mode.
+  return localUploadUrl(subdir, file.filename);
 }
 
 export async function persistGeneratedFile(
@@ -120,7 +125,7 @@ export async function persistGeneratedFile(
 
   const { put } = loadBlobSdk();
   await put(`uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
-    access: subdir === 'animals' || subdir === 'gallery' ? 'public' : 'private',
+    access: 'private',
     allowOverwrite: true,
     contentType,
   });
