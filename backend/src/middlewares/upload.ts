@@ -103,7 +103,7 @@ export async function persistUploadedFile(subdir: UploadSubdir, file: Express.Mu
   // private-only. Images are served through our own proxy route which
   // redirects to signed Blob URLs.
   const blob = await put(pathname, fs.readFileSync(file.path), {
-    access: 'private',
+    access: 'public',
     allowOverwrite: true,
     contentType: file.mimetype,
   });
@@ -125,7 +125,7 @@ export async function persistGeneratedFile(
 
   const { put } = loadBlobSdk();
   await put(`uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
-    access: 'private',
+    access: 'public',
     allowOverwrite: true,
     contentType,
   });
