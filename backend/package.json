@@ -16,8 +16,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@vercel/blob": "^1.1.1",
     "@types/pdfkit": "^0.17.6",
+    "@vercel/blob": "^2.4.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
