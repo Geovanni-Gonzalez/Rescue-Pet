@@ -36,10 +36,10 @@ function isBlobEnabled() {
 }
 
 // Blob access mode: configure via BLOB_ACCESS env var ('public' or 'private').
-// Defaults to 'public'. Set to 'private' if your store is private-only.
+// Defaults to 'private' (most Vercel Blob stores are created as private).
 function blobAccessMode(): 'public' | 'private' {
   const mode = process.env['BLOB_ACCESS'];
-  return mode === 'private' ? 'private' : 'public';
+  return mode === 'public' ? 'public' : 'private';
 }
 
 function loadBlobSdk() {
