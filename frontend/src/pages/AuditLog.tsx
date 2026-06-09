@@ -85,13 +85,13 @@ export function AuditLog() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Shield className="w-6 h-6 text-rescue-600" />
             Registro de Auditoría
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Historial inalterable de acciones del sistema</p>
+          <p className="text-sm text-muted-foreground mt-1">Historial inalterable de acciones del sistema</p>
         </div>
-        <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+        <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
           {total} {total === 1 ? 'registro' : 'registros'}
         </span>
       </div>
@@ -102,11 +102,11 @@ export function AuditLog() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <Filter className="w-4 h-4 text-gray-400" />
+        <Filter className="w-4 h-4 text-muted-foreground" />
         <select
           value={actionFilter}
           onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-          className="h-8 rounded-md border border-gray-300 px-2 text-sm"
+          className="h-8 rounded-md border border-border px-2 text-sm"
         >
           <option value="">Todas las acciones</option>
           {actions.map((a) => (
@@ -116,7 +116,7 @@ export function AuditLog() {
         <select
           value={entityTypeFilter}
           onChange={(e) => { setEntityTypeFilter(e.target.value); setPage(1); }}
-          className="h-8 rounded-md border border-gray-300 px-2 text-sm"
+          className="h-8 rounded-md border border-border px-2 text-sm"
         >
           <option value="">Todos los tipos</option>
           {entityTypes.map((t) => (
@@ -136,9 +136,9 @@ export function AuditLog() {
           {logs.map((log) => {
             const meta = parseMetadata(log.metadataJson);
             const expanded = expandedId === log.id;
-            const colorClass = ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-700';
+            const colorClass = ACTION_COLORS[log.action] || 'bg-muted text-foreground';
             return (
-              <Card key={log.id} className="hover:bg-gray-50/50 transition-colors">
+              <Card key={log.id} className="hover:bg-muted transition-colors">
                 <CardContent className="py-3 px-4">
                   <div
                     className="flex items-center gap-3 cursor-pointer"
@@ -149,31 +149,31 @@ export function AuditLog() {
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colorClass}`}>
                           {log.action}
                         </span>
-                        <span className="text-xs text-gray-500">{log.entityType}</span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground">{log.entityType}</span>
+                        <span className="text-xs text-muted-foreground">
                           {new Date(log.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 mt-0.5">
+                      <p className="text-sm text-foreground mt-0.5">
                         <span className="font-medium">{log.user.fullName}</span>
-                        <span className="text-gray-400"> ({log.user.role})</span>
+                        <span className="text-muted-foreground"> ({log.user.role})</span>
                       </p>
                     </div>
-                    {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </div>
 
                   {expanded && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 text-xs space-y-1.5 text-gray-600">
+                    <div className="mt-3 pt-3 border-t border-border text-xs space-y-1.5 text-muted-foreground">
                       <div className="grid grid-cols-2 gap-2">
-                        <div><span className="font-medium text-gray-500">ID registro:</span> <span className="font-mono">{log.id}</span></div>
-                        <div><span className="font-medium text-gray-500">ID entidad:</span> <span className="font-mono">{log.entityId}</span></div>
-                        <div><span className="font-medium text-gray-500">Usuario:</span> {log.user.email}</div>
-                        <div><span className="font-medium text-gray-500">IP:</span> {log.ipAddress || 'N/A'}</div>
+                        <div><span className="font-medium text-muted-foreground">ID registro:</span> <span className="font-mono">{log.id}</span></div>
+                        <div><span className="font-medium text-muted-foreground">ID entidad:</span> <span className="font-mono">{log.entityId}</span></div>
+                        <div><span className="font-medium text-muted-foreground">Usuario:</span> {log.user.email}</div>
+                        <div><span className="font-medium text-muted-foreground">IP:</span> {log.ipAddress || 'N/A'}</div>
                       </div>
                       {meta && (
                         <div>
-                          <span className="font-medium text-gray-500">Metadata:</span>
-                          <pre className="mt-1 p-2 bg-gray-50 rounded text-xs font-mono overflow-x-auto">
+                          <span className="font-medium text-muted-foreground">Metadata:</span>
+                          <pre className="mt-1 p-2 bg-muted rounded text-xs font-mono overflow-x-auto">
                             {JSON.stringify(meta, null, 2)}
                           </pre>
                         </div>
@@ -192,7 +192,7 @@ export function AuditLog() {
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-600">Página {page} de {totalPages}</span>
+          <span className="text-sm text-muted-foreground">Página {page} de {totalPages}</span>
           <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
             <ChevronRight className="w-4 h-4" />
           </Button>

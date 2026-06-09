@@ -31,7 +31,7 @@ export function PetEdit() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Editar Mascota: {pet.name}</h1>
+        <h1 className="text-2xl font-bold text-foreground">Editar Mascota: {pet.name}</h1>
       </div>
       <PetForm initialData={pet} isEdit={true} />
     </div>

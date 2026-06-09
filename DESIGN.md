@@ -21,7 +21,7 @@ Hue 175 (teal-green) tints nearly every neutral. Dark values exist for all token
 | `--primary` | `oklch(0.51 0.14 175)` | `oklch(0.60 0.14 175)` | Primary actions, links, brand mark (light tuned for AA on white text) |
 | `--secondary` | `oklch(0.94 0.01 175)` | `oklch(0.25 0.01 175)` | Secondary surfaces, image placeholders |
 | `--muted` | `oklch(0.94 0.008 175)` | `oklch(0.25 0.008 175)` | Subdued backgrounds |
-| `--muted-foreground` | `oklch(0.55 0.01 175)` | `oklch(0.65 0.01 175)` | Secondary text |
+| `--muted-foreground` | `oklch(0.50 0.01 175)` | `oklch(0.65 0.01 175)` | Secondary text (light tuned for AA on `muted` surfaces) |
 | `--accent` | `oklch(0.75 0.16 70)` | `oklch(0.70 0.14 70)` | Warm amber accent (hue 70) |
 | `--destructive` | `oklch(0.55 0.20 25)` | `oklch(0.45 0.15 25)` | Error / danger actions (light tuned for AA) |
 | `--border` / `--input` | `oklch(0.90 0.006 175)` | `oklch(0.25 0.008 175)` | Borders, input outlines |
@@ -63,14 +63,14 @@ Utility classes: `bg-status-{role}`, `text-status-{role}-fg`, `border-status-{ro
 Consumers refactored to the token system: StatusBadge, AdoptionRequestTable, AdoptionStatusTimeline, StatusTransitionActions (labels), NotificationBell (type tags), CompatibilityScoreBadge.
 
 ### Raw Palette Still in Use
-Feedback banners are now the `Alert` primitive. What still reaches for the raw Tailwind palette and bypasses tokens: table and section chrome and `gray-*` neutrals across pages, the `gray-*`/`bg-white` surfaces in PetStatusSelector, the urgency-tinted Card in ImmunizationAlerts, the `NotificationCenter` type-style map, and the compact `amber-*` hints in GalleryManager and LocationPicker. These are mostly neutrals and one-offs, left for a separate neutrals pass (`polish`).
+Neutrals are now tokenized: ~375 raw `gray-*` utilities and 9 `bg-white` surfaces were swept onto `foreground` / `muted-foreground` / `muted` / `border` / `card`. What deliberately remains on the raw palette is non-neutral and not duplicated: the urgency-tinted Card in ImmunizationAlerts (red/yellow by overdue state), the `NotificationCenter` type-style map (the four feedback levels), the compact `amber-*` hints in GalleryManager and LocationPicker, the warm onboarding banner in Catalog (intentional brand accent), and white-on-color text plus black scrim overlays. The NotificationCenter map is a candidate to route through the status roles next.
 
 ### Color Strategy
 **Restrained.** Teal-green tinted neutrals (hue 175) carry the surface, `rescue-600` is the single brand accent, and the `warm-*` amber appears in roughly 10% of cases (afinidad scores, unread count). This fits the product register and the brand voice ("warm but professional"). It also threads the anti-references: not the cold gray SaaS dashboard, not the pastel pet-shop.
 
 ### Issues
 - **Neutrals and one-off accents still bypass tokens.** `gray-50/100/400/500/600/900` stand in for `muted` / `border` / `foreground` across Sidebar, Topbar, NotificationBell chrome, EmptyState, tables, and most pages; auth banners use raw green/red. These are the remaining raw-palette usages now that status semantics are tokenized. Heaviest in PetDetail, AdminReports, AdoptionRequestDetail, AuditLog, TaskManagement, AdminUsers.
-- **Dark mode is defined but unreachable.** Every semantic and status token has a complete `.dark` value and `darkMode: ["class"]` is configured, but nothing ever applies the `.dark` class. No toggle, no system-preference listener. The status system is now dark-ready; the remaining raw-palette neutrals and banners would still not respond to a theme switch.
+- **Dark mode is fully wired but has no toggle.** Every semantic and status token has a complete `.dark` value, `darkMode: ["class"]` is configured, and now that neutrals, status, and feedback all run through tokens, forcing the `.dark` class flips the whole UI coherently (verified on the auth pages). The only thing missing is the trigger: a toggle or system-preference listener that adds the `.dark` class. The handful of remaining raw colors (urgency Card, amber hints, white-on-color) would not respond, but they are minor.
 - **Resolved since the prior extraction:** the token layer is fully OKLCH (previously HSL plus a parallel hardcoded-hex scale); the amber accent is in use; status and feedback colors are extracted into one OKLCH role system with a single source of truth (`design/status.ts`), ending the per-component duplication and the duplicate `AdoptionRequestStatusType` type and triplicated status labels.
 
 ## Typography
@@ -250,7 +250,7 @@ No bounce, no elastic. Exponential ease-out throughout, consistent with the shar
 - NotificationBell is an accessible disclosure: `aria-haspopup`/`aria-expanded` on the trigger, `role="dialog"` + label on the panel, Escape closes and returns focus, and a `sr-only aria-live="polite"` region announces the unread count.
 - Focus rings: `focus-visible:ring` on all primitives, PetCard, Dashboard cards, and now Sidebar nav/logout, Topbar, NotificationBell, and Gallery controls.
 - `prefers-reduced-motion` fully honored.
-- Contrast verified (OKLCH to WCAG): all status soft badges pass AA (5.1 to 9.8); `--primary`, `rescue-600`, and `--destructive` were tuned so white-on-color and link text clear 4.5:1. Solid status fills (timeline) meet the 3:1 graphical threshold and carry icons only.
+- Contrast verified (OKLCH to WCAG): all status soft badges pass AA (5.1 to 9.8); `--primary`, `rescue-600`, `--destructive`, and `--muted-foreground` were tuned so white-on-color, link text, and secondary text on `muted` surfaces clear 4.5:1. Solid status fills (timeline) meet the 3:1 graphical threshold and carry icons only.
 - Status indicators pair color with text labels (badges) or icons (timeline Check/Circle), so they are not color-only.
 - Remaining gaps: native `<select>` controls (PetStatusSelector, PetFilters) are styled manually outside the Input primitive; touch targets in the dense notification list are improved (`p-1.5`) but still below 44px.
 

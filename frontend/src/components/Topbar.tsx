@@ -14,7 +14,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     <header className="bg-card border-b border-border h-16 flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-4">
         <button
-          className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-md transition-transform duration-150 ease-out-strong active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="md:hidden p-2 text-muted-foreground hover:bg-muted rounded-md transition-transform duration-150 ease-out-strong active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onMenuClick}
           aria-label="Abrir menú"
         >
@@ -30,7 +30,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         <div className="flex items-center gap-2.5">
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-medium text-gray-900 leading-tight">{user?.fullName}</span>
+            <span className="text-sm font-medium text-foreground leading-tight">{user?.fullName}</span>
             {user?.role && <RoleBadge role={user.role} />}
           </div>
           <div className="w-8 h-8 rounded-full bg-rescue-50 text-rescue-600 flex items-center justify-center text-sm font-semibold">

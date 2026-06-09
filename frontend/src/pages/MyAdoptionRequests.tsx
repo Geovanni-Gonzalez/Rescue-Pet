@@ -54,7 +54,7 @@ export function MyAdoptionRequests() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-5">Mis Solicitudes de Adopción</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-5">Mis Solicitudes de Adopción</h1>
 
       <div className="flex gap-2 flex-wrap mb-4">
         <Button
@@ -101,7 +101,7 @@ export function MyAdoptionRequests() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-card rounded-xl border border-border shadow-sm">
         <AdoptionRequestTable
           requests={requests}
           onViewDetail={handleViewDetail}

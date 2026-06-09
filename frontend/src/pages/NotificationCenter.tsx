@@ -93,11 +93,11 @@ export function NotificationCenter() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Bell className="w-6 h-6 text-rescue-600" />
             Centro de Notificaciones
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todas leídas'}
           </p>
         </div>
@@ -141,15 +141,15 @@ export function NotificationCenter() {
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
                           {n.type}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(n.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         {!n.readAt && (
                           <span className="w-2 h-2 bg-rescue-500 rounded-full flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">{n.title}</p>
-                      <p className="text-sm text-gray-600 mt-0.5">{n.message}</p>
+                      <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{n.message}</p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {!n.readAt && (
@@ -157,7 +157,7 @@ export function NotificationCenter() {
                           <Check className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => deleteNotif(n.id, !n.readAt)} title="Eliminar" className="text-gray-400 hover:text-red-500">
+                      <Button variant="ghost" size="sm" onClick={() => deleteNotif(n.id, !n.readAt)} title="Eliminar" className="text-muted-foreground hover:text-red-500">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -179,7 +179,7 @@ export function NotificationCenter() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             Página {page} de {totalPages}
           </span>
           <Button

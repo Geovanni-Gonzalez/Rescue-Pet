@@ -139,14 +139,14 @@ export function TaskManagement() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <ClipboardCheck className="w-6 h-6 text-rescue-600" />
             Gestión de Tareas
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Tareas operativas del refugio</p>
+          <p className="text-sm text-muted-foreground mt-1">Tareas operativas del refugio</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+          <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
             {tasks.length} {tasks.length === 1 ? 'tarea' : 'tareas'}
           </span>
           {canCreate && (
@@ -163,11 +163,11 @@ export function TaskManagement() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <Filter className="w-4 h-4 text-gray-400" />
+        <Filter className="w-4 h-4 text-muted-foreground" />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 rounded-md border border-gray-300 px-2 text-sm"
+          className="h-8 rounded-md border border-border px-2 text-sm"
         >
           <option value="">Todos los estados</option>
           <option value="PENDING">Pendientes</option>
@@ -176,7 +176,7 @@ export function TaskManagement() {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="h-8 rounded-md border border-gray-300 px-2 text-sm"
+          className="h-8 rounded-md border border-border px-2 text-sm"
         >
           <option value="">Todos los tipos</option>
           {TASK_TYPES.map((t) => (
@@ -189,14 +189,14 @@ export function TaskManagement() {
       {showCreateForm && (
         <Card className="border-rescue-200 bg-rescue-50/30">
           <CardContent className="pt-4 space-y-3">
-            <h3 className="font-semibold text-gray-900">Nueva Tarea</h3>
+            <h3 className="font-semibold text-foreground">Nueva Tarea</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo</label>
                 <select
                   value={newTask.type}
                   onChange={(e) => setNewTask({ ...newTask, type: e.target.value })}
-                  className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                  className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 >
                   {TASK_TYPES.map((t) => (
                     <option key={t} value={t}>{TASK_TYPE_LABELS[t]}</option>
@@ -204,31 +204,31 @@ export function TaskManagement() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Asignar a</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Asignar a</label>
                 <select
                   value={newTask.assignedRole}
                   onChange={(e) => setNewTask({ ...newTask, assignedRole: e.target.value })}
-                  className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                  className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 >
                   <option value="VETERINARIAN">Veterinario</option>
                   <option value="VOLUNTEER">Voluntario</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Fecha programada</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha programada</label>
                 <input
                   type="datetime-local"
                   value={newTask.scheduledAt}
                   onChange={(e) => setNewTask({ ...newTask, scheduledAt: e.target.value })}
-                  className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                  className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Animal (opcional)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Animal (opcional)</label>
                 <select
                   value={newTask.animalId}
                   onChange={(e) => setNewTask({ ...newTask, animalId: e.target.value })}
-                  className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                  className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 >
                   <option value="">-- Sin animal --</option>
                   {animals.map((a) => (
@@ -238,12 +238,12 @@ export function TaskManagement() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (opcional)</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Descripción (opcional)</label>
               <textarea
                 value={newTask.description}
                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 rows={2}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                className="w-full rounded-md border border-border px-2 py-1.5 text-sm"
                 placeholder="Detalles de la tarea..."
               />
             </div>
@@ -284,7 +284,7 @@ export function TaskManagement() {
                         ) : (
                           <Clock className="w-4 h-4 text-yellow-600 flex-shrink-0" />
                         )}
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground">
                           {TASK_TYPE_LABELS[task.type] || task.type}
                         </span>
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
@@ -298,11 +298,11 @@ export function TaskManagement() {
                         )}
                       </div>
                       {task.description && (
-                        <p className="text-sm text-gray-700">{task.description}</p>
+                        <p className="text-sm text-foreground">{task.description}</p>
                       )}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         {task.animal && (
-                          <span>Animal: <span className="font-medium text-gray-700">{task.animal.name}</span></span>
+                          <span>Animal: <span className="font-medium text-foreground">{task.animal.name}</span></span>
                         )}
                         <span>Programada: {new Date(task.scheduledAt).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                         {task.createdBy && <span>Creada por: {task.createdBy.fullName}</span>}
@@ -321,7 +321,7 @@ export function TaskManagement() {
                               value={completeComment}
                               onChange={(e) => setCompleteComment(e.target.value)}
                               placeholder="Comentario (opcional)"
-                              className="h-8 rounded-md border border-gray-300 px-2 text-xs w-48"
+                              className="h-8 rounded-md border border-border px-2 text-xs w-48"
                             />
                             <div className="flex gap-1">
                               <Button size="sm" onClick={() => handleComplete(task.id)}>

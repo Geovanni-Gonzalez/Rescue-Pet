@@ -31,7 +31,7 @@ export function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm shadow-lg border-gray-200/80">
+      <Card className="w-full max-w-sm shadow-lg border-border">
         <CardHeader className="text-center pb-6">
           <div className="mx-auto w-11 h-11 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-3">
             <PawPrint className="w-6 h-6" />
@@ -68,7 +68,7 @@ export function ForgotPassword() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Enviando...' : 'Enviar instrucciones'}
               </Button>
-              <div className="text-center text-sm text-gray-500">
+              <div className="text-center text-sm text-muted-foreground">
                 <Link to="/login" className="text-rescue-600 font-medium hover:underline">
                   Volver al inicio de sesión
                 </Link>

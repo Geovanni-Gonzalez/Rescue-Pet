@@ -93,8 +93,8 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
   if (allImages.length === 0) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-center h-48 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-          <div className="text-center text-gray-400">
+        <div className="flex items-center justify-center h-48 bg-muted rounded-lg border border-dashed border-border">
+          <div className="text-center text-muted-foreground">
             <ImageOff className="w-10 h-10 mx-auto mb-2" />
             <p className="text-sm">Sin imágenes en galería</p>
           </div>
@@ -115,7 +115,7 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
   return (
     <div className="space-y-3">
       {/* Carousel */}
-      <div className="relative rounded-lg overflow-hidden bg-gray-100 border border-gray-200" style={{ height: '240px' }}>
+      <div className="relative rounded-lg overflow-hidden bg-muted border border-border" style={{ height: '240px' }}>
         <img
           src={currentImage?.fileUrl}
           alt={`Foto ${currentIndex + 1}`}
@@ -178,7 +178,7 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
               aria-label={`Ver foto ${idx + 1}`}
               aria-current={idx === currentIndex}
               className={`flex-shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                idx === currentIndex ? 'border-rescue-500' : 'border-transparent hover:border-gray-300'
+                idx === currentIndex ? 'border-rescue-500' : 'border-transparent hover:border-border'
               }`}
             >
               <img src={img.fileUrl} alt={`Miniatura ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
@@ -218,7 +218,7 @@ function UploadSection({ fileInputRef, isUploading, uploadProgress, uploadError,
         </p>
       )}
       {isUploading && (
-        <div className="w-full bg-gray-200 rounded-full h-1.5">
+        <div className="w-full bg-muted rounded-full h-1.5">
           <div
             className="bg-rescue-600 h-1.5 rounded-full transition-all"
             style={{ width: `${uploadProgress}%` }}
@@ -244,7 +244,7 @@ function UploadSection({ fileInputRef, isUploading, uploadProgress, uploadError,
         <Upload className="w-4 h-4" />
         {isUploading ? `Subiendo... ${uploadProgress}%` : 'Agregar fotos'}
       </Button>
-      <p className="text-xs text-gray-400 text-center">JPG, PNG o WEBP · máx. 5 MB por foto</p>
+      <p className="text-xs text-muted-foreground text-center">JPG, PNG o WEBP · máx. 5 MB por foto</p>
     </div>
   );
 }

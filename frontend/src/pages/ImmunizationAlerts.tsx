@@ -84,13 +84,13 @@ export function ImmunizationAlerts() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Syringe className="w-6 h-6 text-rescue-600" />
             Alertas de Inmunización
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Vacunas pendientes en las próximas 72 horas</p>
+          <p className="text-sm text-muted-foreground mt-1">Vacunas pendientes en las próximas 72 horas</p>
         </div>
-        <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+        <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
           {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
         </span>
       </div>
@@ -117,12 +117,12 @@ export function ImmunizationAlerts() {
                         {overdue
                           ? <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
                           : <Clock className="w-4 h-4 text-yellow-600 flex-shrink-0" />}
-                        <span className="font-semibold text-gray-900">{alert.vaccineType}</span>
+                        <span className="font-semibold text-foreground">{alert.vaccineType}</span>
                         {overdue && (
                           <span className="text-xs font-medium text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Vencida</span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-muted-foreground">
                         <span className="font-medium">Animal:</span>{' '}
                         <button
                           type="button"
@@ -131,12 +131,12 @@ export function ImmunizationAlerts() {
                         >
                           {alert.animal.name}
                         </button>{' '}
-                        <span className="text-gray-400">({alert.animal.species})</span>
+                        <span className="text-muted-foreground">({alert.animal.species})</span>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Aplicada el: {new Date(alert.appliedAt).toLocaleDateString('es-CR')}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Próxima dosis: <span className={overdue ? 'text-red-600 font-medium' : 'text-yellow-700 font-medium'}>
                           {new Date(alert.nextDueAt).toLocaleDateString('es-CR')}
                         </span>
@@ -159,7 +159,7 @@ export function ImmunizationAlerts() {
                               type="date"
                               value={postponeDate}
                               onChange={(e) => setPostponeDate(e.target.value)}
-                              className="h-8 rounded-md border border-gray-300 px-2 text-xs"
+                              className="h-8 rounded-md border border-border px-2 text-xs"
                               min={new Date().toISOString().slice(0, 10)}
                             />
                             <Button size="sm" variant="outline" onClick={() => handlePostpone(alert.id)} disabled={isActing}>

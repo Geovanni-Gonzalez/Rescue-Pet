@@ -83,7 +83,7 @@ export function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-lg shadow-lg border-gray-200/80" style={{ animation: 'stagger-fade-in 500ms var(--ease-out) both' }}>
+      <Card className="w-full max-w-lg shadow-lg border-border" style={{ animation: 'stagger-fade-in 500ms var(--ease-out) both' }}>
         <CardHeader className="text-center pb-6">
           <div className="mx-auto w-11 h-11 bg-rescue-100 text-rescue-600 rounded-full flex items-center justify-center mb-3">
             <PawPrint className="w-6 h-6" />
@@ -141,7 +141,7 @@ export function Register() {
               <UserPlus className="w-4 h-4" />
               {isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
             </Button>
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-muted-foreground">
               ¿Ya tienes cuenta?{' '}
               <Link to="/login" className="text-rescue-600 font-medium hover:underline">
                 Inicia sesión

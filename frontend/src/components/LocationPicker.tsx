@@ -105,7 +105,7 @@ export function LocationPicker({ latitude, longitude, onLocationChange }: Locati
     <div className="space-y-2">
       <div
         ref={containerRef}
-        className="w-full rounded-md border border-gray-300 overflow-hidden"
+        className="w-full rounded-md border border-border overflow-hidden"
         style={{ height: '260px' }}
       />
       {isOutside && (
@@ -113,7 +113,7 @@ export function LocationPicker({ latitude, longitude, onLocationChange }: Locati
           ⚠️ Las coordenadas parecen estar fuera de Costa Rica.
         </p>
       )}
-      <p className="text-xs text-gray-400">Haz clic en el mapa para colocar el marcador de rescate.</p>
+      <p className="text-xs text-muted-foreground">Haz clic en el mapa para colocar el marcador de rescate.</p>
     </div>
   );
 }

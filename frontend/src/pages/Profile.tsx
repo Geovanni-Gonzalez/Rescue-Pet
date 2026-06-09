@@ -114,8 +114,8 @@ export function Profile() {
           <UserCircle className="w-7 h-7" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
-          <p className="text-gray-500">Administra tus datos basicos de contacto.</p>
+          <h1 className="text-2xl font-bold text-foreground">Mi Perfil</h1>
+          <p className="text-muted-foreground">Administra tus datos basicos de contacto.</p>
         </div>
       </div>
 
@@ -147,16 +147,16 @@ export function Profile() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div>
-                <p className="text-sm text-gray-500">Correo electrónico</p>
-                <p className="font-medium text-gray-900">{currentUser?.email}</p>
+                <p className="text-sm text-muted-foreground">Correo electrónico</p>
+                <p className="font-medium text-foreground">{currentUser?.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Rol</p>
+                <p className="text-sm text-muted-foreground mb-1">Rol</p>
                 {currentUser?.role && <RoleBadge role={currentUser.role} />}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100 flex justify-end">
+            <div className="pt-4 border-t border-border flex justify-end">
               <Button type="submit" disabled={isSaving}>
                 <Save className="w-4 h-4" />
                 {isSaving ? 'Guardando...' : 'Guardar cambios'}
@@ -169,7 +169,7 @@ export function Profile() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-gray-500" />
+            <Lock className="w-4 h-4 text-muted-foreground" />
             <CardTitle>Cambiar contraseña</CardTitle>
           </div>
         </CardHeader>

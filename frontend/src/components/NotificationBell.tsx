@@ -136,7 +136,7 @@ export function NotificationBell() {
         aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative transition-transform duration-150 ease-out-strong active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+        className="p-2 text-muted-foreground hover:bg-muted rounded-full relative transition-transform duration-150 ease-out-strong active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -151,8 +151,8 @@ export function NotificationBell() {
 
       {open && (
         <div role="dialog" aria-label="Notificaciones" className="absolute right-0 top-full mt-2 w-96 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden dropdown-enter">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">Notificaciones</h3>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h3 className="font-semibold text-foreground">Notificaciones</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
@@ -165,7 +165,7 @@ export function NotificationBell() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar notificaciones"
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="p-1.5 text-muted-foreground hover:text-muted-foreground rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -174,14 +174,14 @@ export function NotificationBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {isLoading ? (
-              <div className="p-6 text-center text-sm text-gray-500">Cargando...</div>
+              <div className="p-6 text-center text-sm text-muted-foreground">Cargando...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-500">Sin notificaciones</div>
+              <div className="p-6 text-center text-sm text-muted-foreground">Sin notificaciones</div>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${!n.readAt ? 'bg-blue-50/40' : ''}`}
+                  className={`px-4 py-3 border-b border-border hover:bg-muted transition-colors ${!n.readAt ? 'bg-blue-50/40' : ''}`}
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
@@ -189,18 +189,18 @@ export function NotificationBell() {
                         <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${feedbackTagClasses(n.type)}`}>
                           {n.type}
                         </span>
-                        <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
+                        <span className="text-xs text-muted-foreground">{timeAgo(n.createdAt)}</span>
                       </div>
-                      <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                      <p className="text-xs text-gray-500 line-clamp-2">{n.message}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">
                       {!n.readAt && (
-                        <button onClick={() => markRead(n.id)} aria-label="Marcar como leída" className="p-1.5 text-gray-400 hover:text-status-success-fg rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Marcar como leída">
+                        <button onClick={() => markRead(n.id)} aria-label="Marcar como leída" className="p-1.5 text-muted-foreground hover:text-status-success-fg rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Marcar como leída">
                           <Check className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      <button onClick={() => deleteNotif(n.id, !n.readAt)} aria-label="Eliminar notificación" className="p-1.5 text-gray-400 hover:text-destructive rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Eliminar">
+                      <button onClick={() => deleteNotif(n.id, !n.readAt)} aria-label="Eliminar notificación" className="p-1.5 text-muted-foreground hover:text-destructive rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Eliminar">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -210,7 +210,7 @@ export function NotificationBell() {
             )}
           </div>
 
-          <div className="border-t border-gray-100 px-4 py-2">
+          <div className="border-t border-border px-4 py-2">
             <button
               onClick={() => { setOpen(false); navigate('/notifications'); }}
               className="text-sm text-rescue-600 hover:text-rescue-700 font-medium w-full text-center"

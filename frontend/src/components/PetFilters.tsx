@@ -50,7 +50,7 @@ export function PetFilters({
     <div className="space-y-3 mb-6">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             placeholder="Buscar por nombre o raza..."
             className="pl-10"

@@ -25,7 +25,7 @@ interface UserRow {
 
 const USER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   ACTIVE: { label: 'Activo', className: 'bg-green-100 text-green-800 border-green-200' },
-  INACTIVE: { label: 'Inactivo', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  INACTIVE: { label: 'Inactivo', className: 'bg-muted text-muted-foreground border-border' },
   PENDING_VERIFICATION: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
   BLOCKED: { label: 'Bloqueado', className: 'bg-red-100 text-red-800 border-red-200' },
 };
@@ -110,8 +110,8 @@ export function AdminUsers() {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{users.length} usuarios registrados</p>
+          <h1 className="text-2xl font-bold text-foreground">Gestión de Usuarios</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{users.length} usuarios registrados</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={fetchUsers} title="Actualizar">
@@ -159,9 +159,9 @@ export function AdminUsers() {
                 placeholder="+506 8888 8888"
               />
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Rol</label>
+                <label className="block text-sm font-medium text-foreground">Rol</label>
                 <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rescue-500"
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rescue-500"
                   value={formData.role}
                   onChange={(e) => setFormData((f) => ({ ...f, role: e.target.value }))}
                 >
@@ -197,23 +197,23 @@ export function AdminUsers() {
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-muted border-b">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Usuario</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Rol</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Usuario</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Rol</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Estado</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">
                     Registrado
                   </th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50">
+                  <tr key={u.id} className="hover:bg-muted">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{u.fullName}</div>
-                      <div className="text-gray-400 text-xs">{u.email}</div>
+                      <div className="font-medium text-foreground">{u.fullName}</div>
+                      <div className="text-muted-foreground text-xs">{u.email}</div>
                     </td>
                     <td className="px-4 py-3">
                       <RoleBadge role={u.role} />
@@ -221,7 +221,7 @@ export function AdminUsers() {
                     <td className="px-4 py-3">
                       <UserStatusBadge status={u.status} />
                     </td>
-                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
+                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                       {new Date(u.createdAt).toLocaleDateString('es-CR')}
                     </td>
                     <td className="px-4 py-3 text-right">

@@ -155,11 +155,11 @@ export function AdminReports() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <BarChart3 className="w-6 h-6 text-rescue-600" />
             Reportes Administrativos
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Consulta, vista previa y exportación de datos</p>
+          <p className="text-sm text-muted-foreground mt-1">Consulta, vista previa y exportación de datos</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -186,13 +186,13 @@ export function AdminReports() {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setTab('adoptions')}
           className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
             tab === 'adoptions'
               ? 'border-rescue-600 text-rescue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <HeartPulse className="w-4 h-4" /> Adopciones
@@ -202,7 +202,7 @@ export function AdminReports() {
           className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
             tab === 'health'
               ? 'border-rescue-600 text-rescue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Activity className="w-4 h-4" /> Salud
@@ -213,34 +213,34 @@ export function AdminReports() {
       <Card>
         <CardContent className="pt-4">
           <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-4 h-4 text-gray-400" />
-            <span className="text-sm font-medium text-gray-700">Filtros</span>
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Filtros</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Desde</label>
+              <label className="block text-xs text-muted-foreground mb-1">Desde</label>
               <input
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                className="w-full h-9 rounded-md border border-border px-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+              <label className="block text-xs text-muted-foreground mb-1">Hasta</label>
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                className="w-full h-9 rounded-md border border-border px-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Especie</label>
+              <label className="block text-xs text-muted-foreground mb-1">Especie</label>
               <select
                 value={species}
                 onChange={(e) => setSpecies(e.target.value)}
-                className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                className="w-full h-9 rounded-md border border-border px-2 text-sm"
               >
                 <option value="">Todas</option>
                 {speciesList.map((s) => (
@@ -251,11 +251,11 @@ export function AdminReports() {
 
             {tab === 'adoptions' && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Estado</label>
+                <label className="block text-xs text-muted-foreground mb-1">Estado</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full h-9 rounded-md border border-gray-300 px-2 text-sm"
+                  className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 >
                   <option value="">Todos</option>
                   <option value="APPROVED">Aprobadas</option>
@@ -267,23 +267,23 @@ export function AdminReports() {
             {tab === 'health' && (
               <>
                 <div className="flex items-end gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
                     <input
                       type="checkbox"
                       checked={treatmentActive}
                       onChange={(e) => setTreatmentActive(e.target.checked)}
-                      className="rounded border-gray-300"
+                      className="rounded border-border"
                     />
                     En tratamiento
                   </label>
                 </div>
                 <div className="flex items-end gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
                     <input
                       type="checkbox"
                       checked={vaccinePending}
                       onChange={(e) => setVaccinePending(e.target.checked)}
-                      className="rounded border-gray-300"
+                      className="rounded border-border"
                     />
                     Vacunas pendientes
                   </label>
@@ -297,7 +297,7 @@ export function AdminReports() {
       {/* Summary cards */}
       {tab === 'adoptions' && adoptionSummary && (
         <div className="grid grid-cols-3 gap-4">
-          <SummaryCard label="Total" value={adoptionSummary.total} color="text-gray-900" />
+          <SummaryCard label="Total" value={adoptionSummary.total} color="text-foreground" />
           <SummaryCard label="Aprobadas" value={adoptionSummary.approved} color="text-green-600" />
           <SummaryCard label="Rechazadas" value={adoptionSummary.rejected} color="text-red-600" />
         </div>
@@ -305,7 +305,7 @@ export function AdminReports() {
 
       {tab === 'health' && healthSummary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <SummaryCard label="Animales" value={healthSummary.totalAnimals} color="text-gray-900" />
+          <SummaryCard label="Animales" value={healthSummary.totalAnimals} color="text-foreground" />
           <SummaryCard label="En tratamiento" value={healthSummary.inTreatment} color="text-yellow-600" />
           <SummaryCard label="Con vacunas pend." value={healthSummary.withPendingVaccines} color="text-orange-600" />
           <SummaryCard label="Vacunas pendientes" value={healthSummary.totalVaccinesPending} color="text-red-600" />
@@ -336,7 +336,7 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
   return (
     <Card>
       <CardContent className="pt-4 pb-3 text-center">
-        <p className="text-xs text-gray-500 mb-1">{label}</p>
+        <p className="text-xs text-muted-foreground mb-1">{label}</p>
         <p className={`text-2xl font-bold ${color}`}>{value}</p>
       </CardContent>
     </Card>
@@ -347,7 +347,7 @@ function AdoptionTable({ rows }: { rows: AdoptionRow[] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-700">
+        <CardTitle className="text-sm font-medium text-foreground">
           Vista previa ({rows.length} registros)
         </CardTitle>
       </CardHeader>
@@ -355,23 +355,23 @@ function AdoptionTable({ rows }: { rows: AdoptionRow[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Animal</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Especie</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Adoptante</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Email</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Estado</th>
-                <th className="text-right px-4 py-2.5 font-medium text-gray-600">Afinidad</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Fecha</th>
+              <tr className="bg-muted border-b border-border">
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Animal</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Especie</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Adoptante</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Email</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Estado</th>
+                <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Afinidad</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Fecha</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                  <td className="px-4 py-2 font-medium text-gray-900">{r.animal.name}</td>
-                  <td className="px-4 py-2 text-gray-600">{r.animal.species}</td>
-                  <td className="px-4 py-2 text-gray-700">{r.adopter.fullName}</td>
-                  <td className="px-4 py-2 text-gray-500 text-xs">{r.adopter.email}</td>
+                <tr key={r.id} className="border-b border-border hover:bg-muted">
+                  <td className="px-4 py-2 font-medium text-foreground">{r.animal.name}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{r.animal.species}</td>
+                  <td className="px-4 py-2 text-foreground">{r.adopter.fullName}</td>
+                  <td className="px-4 py-2 text-muted-foreground text-xs">{r.adopter.email}</td>
                   <td className="px-4 py-2">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       r.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -383,10 +383,10 @@ function AdoptionTable({ rows }: { rows: AdoptionRow[] }) {
                     {r.compatibilityScore != null ? (
                       <span className="text-xs font-semibold text-rescue-600">{r.compatibilityScore.toFixed(0)}%</span>
                     ) : (
-                      <span className="text-xs text-gray-400">-</span>
+                      <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-xs text-gray-500">
+                  <td className="px-4 py-2 text-xs text-muted-foreground">
                     {new Date(r.updatedAt).toLocaleDateString('es-CR')}
                   </td>
                 </tr>
@@ -403,7 +403,7 @@ function HealthTable({ animals }: { animals: HealthAnimal[] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-700">
+        <CardTitle className="text-sm font-medium text-foreground">
           Vista previa ({animals.length} animales)
         </CardTitle>
       </CardHeader>
@@ -411,13 +411,13 @@ function HealthTable({ animals }: { animals: HealthAnimal[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Animal</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Especie</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Estado</th>
-                <th className="text-right px-4 py-2.5 font-medium text-gray-600">Vacunas pend.</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Último diagnóstico</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-600">Último tratamiento</th>
+              <tr className="bg-muted border-b border-border">
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Animal</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Especie</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Estado</th>
+                <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Vacunas pend.</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Último diagnóstico</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Último tratamiento</th>
               </tr>
             </thead>
             <tbody>
@@ -425,15 +425,15 @@ function HealthTable({ animals }: { animals: HealthAnimal[] }) {
                 const pending = a.vaccines.filter((v) => v.status === 'PENDING').length;
                 const lastEntry = a.clinicalRecord?.entries?.[0];
                 return (
-                  <tr key={a.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                    <td className="px-4 py-2 font-medium text-gray-900">{a.name}</td>
-                    <td className="px-4 py-2 text-gray-600">{a.species}</td>
+                  <tr key={a.id} className="border-b border-border hover:bg-muted">
+                    <td className="px-4 py-2 font-medium text-foreground">{a.name}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{a.species}</td>
                     <td className="px-4 py-2">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         a.status === 'TREATMENT' ? 'bg-yellow-100 text-yellow-700' :
                         a.status === 'QUARANTINE' ? 'bg-red-100 text-red-700' :
                         a.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
+                        'bg-muted text-foreground'
                       }`}>
                         {a.status}
                       </span>
@@ -442,14 +442,14 @@ function HealthTable({ animals }: { animals: HealthAnimal[] }) {
                       {pending > 0 ? (
                         <span className="text-xs font-semibold text-orange-600">{pending}</span>
                       ) : (
-                        <span className="text-xs text-gray-400">0</span>
+                        <span className="text-xs text-muted-foreground">0</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-600 max-w-[200px] truncate">
-                      {lastEntry?.diagnosis ?? <span className="text-gray-400">-</span>}
+                    <td className="px-4 py-2 text-xs text-muted-foreground max-w-[200px] truncate">
+                      {lastEntry?.diagnosis ?? <span className="text-muted-foreground">-</span>}
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-600 max-w-[200px] truncate">
-                      {lastEntry?.treatment ?? <span className="text-gray-400">-</span>}
+                    <td className="px-4 py-2 text-xs text-muted-foreground max-w-[200px] truncate">
+                      {lastEntry?.treatment ?? <span className="text-muted-foreground">-</span>}
                     </td>
                   </tr>
                 );

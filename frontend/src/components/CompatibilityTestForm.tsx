@@ -65,7 +65,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-xl shadow-sm border border-border">
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -78,14 +78,14 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
         </div>
 
         <div className="flex items-center space-x-2 h-10 mt-6">
-          <input type="checkbox" id="hasYard" name="hasYard" checked={formData.hasYard} onChange={handleChange} className="w-4 h-4 text-rescue-600 rounded border-gray-300" />
+          <input type="checkbox" id="hasYard" name="hasYard" checked={formData.hasYard} onChange={handleChange} className="w-4 h-4 text-rescue-600 rounded border-border" />
           <label htmlFor="hasYard" className="text-sm font-medium">¿Tienes patio asegurado?</label>
         </div>
 
         <FormField label="Cantidad de niños en casa" name="childrenCount" type="number" min={0} value={formData.childrenCount} onChange={handleChange} />
 
         <div className="flex items-center space-x-2 h-10 mt-6">
-          <input type="checkbox" id="hasOtherPets" name="hasOtherPets" checked={formData.hasOtherPets} onChange={handleChange} className="w-4 h-4 text-rescue-600 rounded border-gray-300" />
+          <input type="checkbox" id="hasOtherPets" name="hasOtherPets" checked={formData.hasOtherPets} onChange={handleChange} className="w-4 h-4 text-rescue-600 rounded border-border" />
           <label htmlFor="hasOtherPets" className="text-sm font-medium">¿Tienes otras mascotas?</label>
         </div>
 
@@ -105,7 +105,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
         </div>
       </div>
 
-      <div className="pt-4 border-t border-gray-100 flex justify-end">
+      <div className="pt-4 border-t border-border flex justify-end">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Calculando afinidad...' : 'Guardar y Ver Resultados'}
         </Button>

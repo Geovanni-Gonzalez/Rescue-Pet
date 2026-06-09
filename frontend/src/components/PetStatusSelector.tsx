@@ -67,8 +67,8 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
 
   if (isTerminal) {
     return (
-      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-sm text-gray-500 text-center">
+      <div className="p-4 bg-muted border border-border rounded-lg">
+        <p className="text-sm text-muted-foreground text-center">
           Estado terminal — no se permiten más transiciones.
         </p>
       </div>
@@ -76,10 +76,10 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
   }
 
   return (
-    <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
+    <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
       <div>
         <Label>Actualizar Estado</Label>
-        <p className="text-xs text-gray-500 mb-2">
+        <p className="text-xs text-muted-foreground mb-2">
           Selecciona el nuevo estado según la evaluación clínica o proceso de adopción.
         </p>
 
@@ -112,7 +112,7 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
             placeholder="Motivo (opcional)"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm placeholder:text-gray-400"
+            className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm placeholder:text-muted-foreground"
           />
         </div>
 

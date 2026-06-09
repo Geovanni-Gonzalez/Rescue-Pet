@@ -104,8 +104,8 @@ export function Catalog() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Catálogo Inteligente</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Catálogo Inteligente</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             Descubre a tu compañero ideal. Completa el test para orden por afinidad.
           </p>
         </div>
@@ -241,7 +241,7 @@ export function Catalog() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             Página {page} de {totalPages}
           </span>
           <Button

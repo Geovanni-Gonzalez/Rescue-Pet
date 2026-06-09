@@ -78,7 +78,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           <span className="text-base font-bold text-foreground tracking-tight">Rescue Pet</span>
         </div>
         {mobile && onClose && (
-          <button onClick={onClose} aria-label="Cerrar menú" className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button onClick={onClose} aria-label="Cerrar menú" className="p-1.5 text-muted-foreground hover:text-muted-foreground rounded-md md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -86,9 +86,9 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
 
       <nav className="flex-1 px-4 overflow-y-auto py-2">
         {visibleSections.map((section, sectionIndex) => (
-          <div key={section.label ?? 'general'} className={sectionIndex > 0 ? 'mt-5 pt-4 border-t border-gray-100' : ''}>
+          <div key={section.label ?? 'general'} className={sectionIndex > 0 ? 'mt-5 pt-4 border-t border-border' : ''}>
             {section.label && (
-              <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.label}
               </p>
             )}
@@ -103,7 +103,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                     `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isActive
                         ? 'bg-rescue-50 text-rescue-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`
                   }
                 >

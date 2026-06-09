@@ -289,7 +289,7 @@ export function AdoptionRequestDetail() {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Volver
         </Button>
-        <h1 className="text-2xl font-bold text-gray-900">Detalle de Solicitud</h1>
+        <h1 className="text-2xl font-bold text-foreground">Detalle de Solicitud</h1>
       </div>
 
       {error && (
@@ -312,8 +312,8 @@ export function AdoptionRequestDetail() {
                 </div>
               )}
               {isAdmin && (
-                <div className="pt-4 border-t border-gray-100">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Cambiar Estado</p>
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm font-medium text-foreground mb-3">Cambiar Estado</p>
                   <StatusTransitionActions
                     currentStatus={request.status}
                     onStatusChange={handleStatusChange}
@@ -334,7 +334,7 @@ export function AdoptionRequestDetail() {
               </CardHeader>
               <CardContent className="space-y-1 text-sm">
                 <p>
-                  <span className="text-gray-500">Fecha: </span>
+                  <span className="text-muted-foreground">Fecha: </span>
                   <span className="font-medium">
                     {new Date(request.interviewSlot.startsAt).toLocaleDateString('es-CR', {
                       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -342,7 +342,7 @@ export function AdoptionRequestDetail() {
                   </span>
                 </p>
                 <p>
-                  <span className="text-gray-500">Hora: </span>
+                  <span className="text-muted-foreground">Hora: </span>
                   <span className="font-medium">
                     {new Date(request.interviewSlot.startsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
                     {' — '}
@@ -369,7 +369,7 @@ export function AdoptionRequestDetail() {
                 ) : (
                   <>
                     {availableSlots.length === 0 ? (
-                      <p className="text-sm text-gray-500">No hay horarios disponibles en este momento.</p>
+                      <p className="text-sm text-muted-foreground">No hay horarios disponibles en este momento.</p>
                     ) : (
                       <div className="space-y-2">
                         {availableSlots.map((slot) => (
@@ -378,7 +378,7 @@ export function AdoptionRequestDetail() {
                             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                               selectedSlotId === slot.id
                                 ? 'border-rescue-500 bg-rescue-50'
-                                : 'border-gray-200 hover:bg-gray-50'
+                                : 'border-border hover:bg-muted'
                             }`}
                           >
                             <input
@@ -395,7 +395,7 @@ export function AdoptionRequestDetail() {
                                   weekday: 'short', month: 'short', day: 'numeric',
                                 })}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(slot.startsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
                                 {' — '}
                                 {new Date(slot.endsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
@@ -430,10 +430,10 @@ export function AdoptionRequestDetail() {
                 <CardTitle className="flex items-center gap-2"><User className="w-5 h-5" /> Información del Adoptante</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p><span className="text-gray-500">Nombre: </span><span className="font-medium">{request.adopter.fullName}</span></p>
-                <p><span className="text-gray-500">Email: </span><span className="font-medium">{request.adopter.email}</span></p>
+                <p><span className="text-muted-foreground">Nombre: </span><span className="font-medium">{request.adopter.fullName}</span></p>
+                <p><span className="text-muted-foreground">Email: </span><span className="font-medium">{request.adopter.email}</span></p>
                 {request.adopter.phone && (
-                  <p><span className="text-gray-500">Teléfono: </span><span className="font-medium">{request.adopter.phone}</span></p>
+                  <p><span className="text-muted-foreground">Teléfono: </span><span className="font-medium">{request.adopter.phone}</span></p>
                 )}
               </CardContent>
             </Card>
@@ -456,7 +456,7 @@ export function AdoptionRequestDetail() {
                     <select
                       value={docType}
                       onChange={(e) => setDocType(e.target.value as 'ID_CARD' | 'ADDRESS_PROOF')}
-                      className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                      className="h-10 rounded-md border border-border px-3 text-sm"
                     >
                       <option value="ID_CARD">Cédula de identidad</option>
                       <option value="ADDRESS_PROOF">Comprobante de domicilio</option>
@@ -466,11 +466,11 @@ export function AdoptionRequestDetail() {
                       accept=".pdf,.jpg,.jpeg,.png,image/*"
                       capture="environment"
                       onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
-                      className="h-10 rounded-md border border-gray-300 px-3 text-sm file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-rescue-50 file:text-rescue-700"
+                      className="h-10 rounded-md border border-border px-3 text-sm file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-rescue-50 file:text-rescue-700"
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-400">Formatos permitidos: PDF, JPG, PNG — máx. 10 MB</p>
+                  <p className="text-xs text-muted-foreground">Formatos permitidos: PDF, JPG, PNG — máx. 10 MB</p>
                   <Button type="submit" size="sm" disabled={isUploadingDoc || !docFile}>
                     {isUploadingDoc ? 'Cargando...' : 'Subir documento'}
                   </Button>
@@ -487,14 +487,14 @@ export function AdoptionRequestDetail() {
               </CardHeader>
               <CardContent>
                 {request.documents.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">Sin documentos cargados.</p>
+                  <p className="text-sm text-muted-foreground italic">Sin documentos cargados.</p>
                 ) : (
                   <div className="space-y-2">
                     {request.documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div key={doc.id} className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                         <div>
                           <p className="text-sm font-medium">{doc.fileName}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {DOC_TYPE_LABELS[doc.documentType] ?? doc.documentType}
                             {' · '}v{doc.version}
                             {' · '}{new Date(doc.uploadedAt).toLocaleDateString('es-CR')}
@@ -532,7 +532,7 @@ export function AdoptionRequestDetail() {
                     {request.contract.status === 'SIGNED' ? 'Firmado' : 'Pendiente de firma'}
                   </span>
                   {request.contract.signedAt && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-muted-foreground">
                       — {new Date(request.contract.signedAt).toLocaleDateString('es-CR')}
                     </span>
                   )}
@@ -557,19 +557,19 @@ export function AdoptionRequestDetail() {
 
                 {/* Signature canvas for ADOPTER */}
                 {canSignContract && (
-                  <div className="space-y-3 pt-2 border-t border-gray-100">
-                    <p className="text-sm font-medium text-gray-700">Firma el contrato:</p>
+                  <div className="space-y-3 pt-2 border-t border-border">
+                    <p className="text-sm font-medium text-foreground">Firma el contrato:</p>
                     <canvas
                       ref={canvasRef}
                       width={640}
                       height={160}
-                      className="w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white cursor-crosshair"
+                      className="w-full touch-none rounded-lg border-2 border-dashed border-border bg-card cursor-crosshair"
                       onPointerDown={startDrawing}
                       onPointerMove={drawSignature}
                       onPointerUp={() => setIsDrawing(false)}
                       onPointerLeave={() => setIsDrawing(false)}
                     />
-                    <p className="text-xs text-gray-400">Firma usando el ratón o tu dedo (pantalla táctil).</p>
+                    <p className="text-xs text-muted-foreground">Firma usando el ratón o tu dedo (pantalla táctil).</p>
                     <div className="flex flex-wrap gap-2">
                       <Button type="button" variant="outline" size="sm" onClick={clearSignature}>
                         Limpiar
@@ -595,26 +595,26 @@ export function AdoptionRequestDetail() {
                 {request.animal.mainPhotoUrl ? (
                   <img src={request.animal.mainPhotoUrl} alt={request.animal.name} className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">Sin foto</div>
+                  <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">Sin foto</div>
                 )}
                 <div>
                   <p className="font-semibold">{request.animal.name}</p>
-                  <p className="text-sm text-gray-500">{request.animal.species}{request.animal.estimatedBreed ? ` — ${request.animal.estimatedBreed}` : ''}</p>
+                  <p className="text-sm text-muted-foreground">{request.animal.species}{request.animal.estimatedBreed ? ` — ${request.animal.estimatedBreed}` : ''}</p>
                 </div>
               </div>
               <div className="space-y-1 text-sm">
                 {request.animal.energyLevel && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Energía:</span>
+                    <span className="text-muted-foreground">Energía:</span>
                     <span className="font-medium">{request.animal.energyLevel}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Con niños:</span>
+                  <span className="text-muted-foreground">Con niños:</span>
                   <span className="font-medium">{request.animal.goodWithChildren ? 'Sí' : 'No'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Con otras mascotas:</span>
+                  <span className="text-muted-foreground">Con otras mascotas:</span>
                   <span className="font-medium">{request.animal.goodWithPets ? 'Sí' : 'No'}</span>
                 </div>
               </div>
@@ -628,11 +628,11 @@ export function AdoptionRequestDetail() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div>
-                <p className="text-gray-500">Solicitud</p>
+                <p className="text-muted-foreground">Solicitud</p>
                 <p className="font-medium">{new Date(request.createdAt).toLocaleDateString('es-CR')}</p>
               </div>
               <div>
-                <p className="text-gray-500">Última actualización</p>
+                <p className="text-muted-foreground">Última actualización</p>
                 <p className="font-medium">{new Date(request.updatedAt).toLocaleDateString('es-CR')}</p>
               </div>
             </CardContent>
@@ -650,10 +650,10 @@ export function AdoptionRequestDetail() {
                 const uploaded = uploadedTypes.has(type);
                 return (
                   <div key={type} className="flex items-center gap-2 text-sm">
-                    <div className={`w-4 h-4 rounded-full flex-shrink-0 ${uploaded ? 'bg-green-500' : 'bg-gray-200'}`}>
+                    <div className={`w-4 h-4 rounded-full flex-shrink-0 ${uploaded ? 'bg-green-500' : 'bg-muted'}`}>
                       {uploaded && <CheckCircle className="w-4 h-4 text-white" />}
                     </div>
-                    <span className={uploaded ? 'text-green-700' : 'text-gray-500'}>
+                    <span className={uploaded ? 'text-green-700' : 'text-muted-foreground'}>
                       {DOC_TYPE_LABELS[type]}
                     </span>
                   </div>

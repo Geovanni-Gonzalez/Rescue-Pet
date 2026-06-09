@@ -305,14 +305,14 @@ export function PetDetail() {
   const vaccineStatusColor: Record<string, string> = {
     PENDING: 'text-yellow-600 bg-yellow-50',
     COMPLETED: 'text-green-600 bg-green-50',
-    POSTPONED: 'text-gray-500 bg-gray-100',
+    POSTPONED: 'text-muted-foreground bg-muted',
   };
 
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">{pet.name}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{pet.name}</h1>
         {canEdit && (
           <Button variant="outline" onClick={() => navigate(`/admin/pets/${id}/edit`)}>
             <Edit className="w-4 h-4 mr-2" /> Editar Perfil
@@ -346,20 +346,20 @@ export function PetDetail() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex gap-4">
-                <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                   {pet.mainPhotoUrl ? (
                     <img src={pet.mainPhotoUrl} alt={pet.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Sin foto</div>
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Sin foto</div>
                   )}
                 </div>
                 <div className="space-y-3 flex-1">
                   <StatusBadge status={pet.status} />
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><p className="text-gray-500">Especie</p><p className="font-medium">{pet.species}</p></div>
-                    <div><p className="text-gray-500">Raza</p><p className="font-medium">{pet.estimatedBreed || 'Desconocida'}</p></div>
-                    <div><p className="text-gray-500">Edad est.</p><p className="font-medium">{pet.estimatedAge ? `${pet.estimatedAge} meses` : 'N/D'}</p></div>
-                    <div><p className="text-gray-500">Tamaño</p><p className="font-medium">{pet.size || 'N/D'}</p></div>
+                    <div><p className="text-muted-foreground">Especie</p><p className="font-medium">{pet.species}</p></div>
+                    <div><p className="text-muted-foreground">Raza</p><p className="font-medium">{pet.estimatedBreed || 'Desconocida'}</p></div>
+                    <div><p className="text-muted-foreground">Edad est.</p><p className="font-medium">{pet.estimatedAge ? `${pet.estimatedAge} meses` : 'N/D'}</p></div>
+                    <div><p className="text-muted-foreground">Tamaño</p><p className="font-medium">{pet.size || 'N/D'}</p></div>
                   </div>
                 </div>
               </div>
@@ -371,7 +371,7 @@ export function PetDetail() {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 Galería de fotos
-                <span className="text-xs font-normal text-gray-400">({gallery.length} imágenes)</span>
+                <span className="text-xs font-normal text-muted-foreground">({gallery.length} imágenes)</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -400,15 +400,15 @@ export function PetDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               {pet.rescueLocationText && (
-                <p className="text-sm text-gray-700">{pet.rescueLocationText}</p>
+                <p className="text-sm text-foreground">{pet.rescueLocationText}</p>
               )}
               {pet.rescueLatitude && pet.rescueLongitude && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   {pet.rescueLatitude}, {pet.rescueLongitude}
                 </p>
               )}
               {!pet.rescueLocationText && !pet.rescueLatitude && (
-                <p className="text-sm text-gray-400 italic">Sin localización registrada.</p>
+                <p className="text-sm text-muted-foreground italic">Sin localización registrada.</p>
               )}
 
               {showLocationEdit && (
@@ -418,9 +418,9 @@ export function PetDetail() {
                     placeholder="Dirección de texto (opcional)"
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
-                    className="w-full h-9 rounded-md border border-gray-300 px-3 text-sm"
+                    className="w-full h-9 rounded-md border border-border px-3 text-sm"
                   />
-                  <Suspense fallback={<div className="h-64 bg-gray-100 rounded animate-pulse" />}>
+                  <Suspense fallback={<div className="h-64 bg-muted rounded animate-pulse" />}>
                     <LocationPicker
                       latitude={locationLat}
                       longitude={locationLng}
@@ -439,15 +439,15 @@ export function PetDetail() {
               {/* Location history */}
               {locationHistory.length > 0 && (
                 <div className="border-t pt-3 space-y-2">
-                  <p className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                     <History className="w-3 h-3" /> Historial
                   </p>
                   {locationHistory.map((h) => (
-                    <div key={h.id} className="text-xs text-gray-400 flex items-start gap-2">
+                    <div key={h.id} className="text-xs text-muted-foreground flex items-start gap-2">
                       <Clock className="w-3 h-3 mt-0.5 flex-shrink-0" />
                       <div>
                         <span>{h.locationText || `${h.latitude}, ${h.longitude}`}</span>
-                        <span className="ml-2 text-gray-300">
+                        <span className="ml-2 text-muted-foreground">
                           — {new Date(h.createdAt).toLocaleDateString('es-CR')} · {h.changedBy.fullName}
                         </span>
                       </div>
@@ -466,7 +466,7 @@ export function PetDetail() {
                   <CardTitle className="text-base flex items-center gap-2">
                     <Stethoscope className="w-4 h-4" /> Expediente Clínico
                   </CardTitle>
-                  <span className="text-sm text-gray-500">{clinicalEntries.length} {clinicalEntries.length === 1 ? 'entrada' : 'entradas'}</span>
+                  <span className="text-sm text-muted-foreground">{clinicalEntries.length} {clinicalEntries.length === 1 ? 'entrada' : 'entradas'}</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -477,68 +477,68 @@ export function PetDetail() {
                   </summary>
                   <form onSubmit={handleClinicalSubmit} className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="md:col-span-2">
-                      <label className="text-xs text-gray-500 block mb-1">Fecha y hora *</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Fecha y hora *</label>
                       <input
                         type="datetime-local"
                         value={clinicalForm.datetime}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, datetime: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Diagnóstico *</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Diagnóstico *</label>
                       <input
                         value={clinicalForm.diagnosis}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, diagnosis: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         placeholder="Diagnóstico"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Tratamiento *</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Tratamiento *</label>
                       <input
                         value={clinicalForm.treatment}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, treatment: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         placeholder="Tratamiento"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Medicamento</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Medicamento</label>
                       <input
                         value={clinicalForm.medicine}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, medicine: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         placeholder="Nombre del medicamento"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Dosis</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Dosis</label>
                       <input
                         value={clinicalForm.dose}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, dose: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         placeholder="Ej: 5 mg/kg"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Duración del tratamiento</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Duración del tratamiento</label>
                       <input
                         value={clinicalForm.duration}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, duration: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         placeholder="Ej: 7 días"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="text-xs text-gray-500 block mb-1">Observaciones</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Observaciones</label>
                       <textarea
                         value={clinicalForm.observations}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, observations: e.target.value }))}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm resize-none"
+                        className="w-full rounded-md border border-border px-3 py-2 text-sm resize-none"
                         rows={2}
                         placeholder="Observaciones adicionales"
                       />
@@ -554,42 +554,42 @@ export function PetDetail() {
                 {/* Entries list */}
                 <div className="space-y-2">
                   {clinicalEntries.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic">Sin entradas clínicas registradas.</p>
+                    <p className="text-sm text-muted-foreground italic">Sin entradas clínicas registradas.</p>
                   ) : (
                     clinicalEntries.map((entry) => (
-                      <div key={entry.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                      <div key={entry.id} className="rounded-lg border border-border bg-muted p-3 text-sm">
                         <button
                           type="button"
                           className="w-full text-left"
                           onClick={() => setExpandedEntry(expandedEntry === entry.id ? null : entry.id)}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <p className="font-medium text-gray-900">{entry.diagnosis}</p>
+                            <p className="font-medium text-foreground">{entry.diagnosis}</p>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-muted-foreground">
                                 {new Date(entry.datetime).toLocaleDateString('es-CR')}
                               </span>
                               {expandedEntry === entry.id
-                                ? <ChevronUp className="w-3 h-3 text-gray-400" />
-                                : <ChevronDown className="w-3 h-3 text-gray-400" />}
+                                ? <ChevronUp className="w-3 h-3 text-muted-foreground" />
+                                : <ChevronDown className="w-3 h-3 text-muted-foreground" />}
                             </div>
                           </div>
                           {entry.veterinarian && (
-                            <p className="text-xs text-gray-400 mt-0.5">Vet: {entry.veterinarian.fullName}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Vet: {entry.veterinarian.fullName}</p>
                           )}
                         </button>
                         {expandedEntry === entry.id && (
-                          <div className="mt-2 pt-2 border-t border-gray-200 space-y-1">
-                            <p className="text-gray-700"><span className="font-medium">Tratamiento:</span> {entry.treatment}</p>
-                            {entry.medicine && <p className="text-gray-600"><span className="font-medium">Medicamento:</span> {entry.medicine}</p>}
-                            {entry.dose && <p className="text-gray-600"><span className="font-medium">Dosis:</span> {entry.dose}</p>}
-                            {entry.duration && <p className="text-gray-600"><span className="font-medium">Duración:</span> {entry.duration}</p>}
-                            {entry.observations && <p className="text-gray-500 mt-1"><span className="font-medium">Obs:</span> {entry.observations}</p>}
+                          <div className="mt-2 pt-2 border-t border-border space-y-1">
+                            <p className="text-foreground"><span className="font-medium">Tratamiento:</span> {entry.treatment}</p>
+                            {entry.medicine && <p className="text-muted-foreground"><span className="font-medium">Medicamento:</span> {entry.medicine}</p>}
+                            {entry.dose && <p className="text-muted-foreground"><span className="font-medium">Dosis:</span> {entry.dose}</p>}
+                            {entry.duration && <p className="text-muted-foreground"><span className="font-medium">Duración:</span> {entry.duration}</p>}
+                            {entry.observations && <p className="text-muted-foreground mt-1"><span className="font-medium">Obs:</span> {entry.observations}</p>}
                             {entry.vaccines && entry.vaccines.length > 0 && (
                               <div className="mt-2">
-                                <p className="text-xs font-medium text-gray-500">Vacunas en esta entrada:</p>
+                                <p className="text-xs font-medium text-muted-foreground">Vacunas en esta entrada:</p>
                                 {entry.vaccines.map((v) => (
-                                  <p key={v.id} className="text-xs text-gray-500">• {v.vaccineType} — {new Date(v.appliedAt).toLocaleDateString('es-CR')}</p>
+                                  <p key={v.id} className="text-xs text-muted-foreground">• {v.vaccineType} — {new Date(v.appliedAt).toLocaleDateString('es-CR')}</p>
                                 ))}
                               </div>
                             )}
@@ -620,32 +620,32 @@ export function PetDetail() {
                 {showVaccineForm && (
                   <form onSubmit={handleVaccineSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 border-b pb-4">
                     <div className="md:col-span-2">
-                      <label className="text-xs text-gray-500 block mb-1">Tipo de vacuna *</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Tipo de vacuna *</label>
                       <input
                         value={vaccineForm.vaccineType}
                         onChange={(e) => setVaccineForm((p) => ({ ...p, vaccineType: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         placeholder="Ej: Rabia, Parvovirus, Moquillo"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Fecha de aplicación *</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Fecha de aplicación *</label>
                       <input
                         type="date"
                         value={vaccineForm.appliedAt}
                         onChange={(e) => setVaccineForm((p) => ({ ...p, appliedAt: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Próxima dosis</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Próxima dosis</label>
                       <input
                         type="date"
                         value={vaccineForm.nextDueAt}
                         onChange={(e) => setVaccineForm((p) => ({ ...p, nextDueAt: e.target.value }))}
-                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        className="w-full h-10 rounded-md border border-border px-3 text-sm"
                       />
                     </div>
                     <div className="md:col-span-2 flex gap-2">
@@ -660,15 +660,15 @@ export function PetDetail() {
                 )}
                 <div className="space-y-2">
                   {vaccines.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic">Sin vacunas registradas.</p>
+                    <p className="text-sm text-muted-foreground italic">Sin vacunas registradas.</p>
                   ) : (
                     vaccines.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                      <div key={v.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
                         <div>
-                          <p className="font-medium text-gray-900">{v.vaccineType}</p>
-                          <p className="text-xs text-gray-400">Aplicada: {new Date(v.appliedAt).toLocaleDateString('es-CR')}</p>
+                          <p className="font-medium text-foreground">{v.vaccineType}</p>
+                          <p className="text-xs text-muted-foreground">Aplicada: {new Date(v.appliedAt).toLocaleDateString('es-CR')}</p>
                           {v.nextDueAt && (
-                            <p className="text-xs text-gray-400">Próxima: {new Date(v.nextDueAt).toLocaleDateString('es-CR')}</p>
+                            <p className="text-xs text-muted-foreground">Próxima: {new Date(v.nextDueAt).toLocaleDateString('es-CR')}</p>
                           )}
                         </div>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${vaccineStatusColor[v.status]}`}>
@@ -695,28 +695,28 @@ export function PetDetail() {
                   <>
                     <div className="flex gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500">Entradas clínicas</p>
-                        <p className="font-semibold text-gray-900">{medicalSummary.entryCount}</p>
+                        <p className="text-muted-foreground">Entradas clínicas</p>
+                        <p className="font-semibold text-foreground">{medicalSummary.entryCount}</p>
                       </div>
                     </div>
                     {medicalSummary.recentEntries.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-xs font-medium text-gray-500">Últimas consultas:</p>
+                        <p className="text-xs font-medium text-muted-foreground">Últimas consultas:</p>
                         {medicalSummary.recentEntries.map((e) => (
-                          <div key={e.id} className="text-xs text-gray-600 flex items-center gap-2">
+                          <div key={e.id} className="text-xs text-muted-foreground flex items-center gap-2">
                             <Clock className="w-3 h-3 flex-shrink-0" />
                             {new Date(e.datetime).toLocaleDateString('es-CR')}
-                            {e.veterinarian && <span className="text-gray-400">— {e.veterinarian.fullName}</span>}
+                            {e.veterinarian && <span className="text-muted-foreground">— {e.veterinarian.fullName}</span>}
                           </div>
                         ))}
                       </div>
                     )}
                     {!medicalSummary.hasRecord && (
-                      <p className="text-sm text-gray-500 italic">Sin expediente clínico registrado.</p>
+                      <p className="text-sm text-muted-foreground italic">Sin expediente clínico registrado.</p>
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">Sin expediente clínico registrado.</p>
+                  <p className="text-sm text-muted-foreground italic">Sin expediente clínico registrado.</p>
                 )}
               </CardContent>
             </Card>
@@ -732,16 +732,16 @@ export function PetDetail() {
               </CardHeader>
               <CardContent>
                 {vaccines.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">Sin vacunas registradas.</p>
+                  <p className="text-sm text-muted-foreground italic">Sin vacunas registradas.</p>
                 ) : (
                   <div className="space-y-2">
                     {vaccines.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                      <div key={v.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
                         <div>
-                          <p className="font-medium text-gray-900">{v.vaccineType}</p>
-                          <p className="text-xs text-gray-400">Aplicada: {new Date(v.appliedAt).toLocaleDateString('es-CR')}</p>
+                          <p className="font-medium text-foreground">{v.vaccineType}</p>
+                          <p className="text-xs text-muted-foreground">Aplicada: {new Date(v.appliedAt).toLocaleDateString('es-CR')}</p>
                           {v.nextDueAt && (
-                            <p className="text-xs text-gray-400">Próxima: {new Date(v.nextDueAt).toLocaleDateString('es-CR')}</p>
+                            <p className="text-xs text-muted-foreground">Próxima: {new Date(v.nextDueAt).toLocaleDateString('es-CR')}</p>
                           )}
                         </div>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${vaccineStatusColor[v.status]}`}>
@@ -792,7 +792,7 @@ export function PetDetail() {
                   <QRDisplay qrCodeUrl={qrUrl} petName={pet.name} />
                 ) : (
                   <div className="py-6">
-                    <p className="text-sm text-gray-500 mb-4">Sin código QR generado.</p>
+                    <p className="text-sm text-muted-foreground mb-4">Sin código QR generado.</p>
                     <Button onClick={generateQR} variant="outline" className="w-full">
                       <QrIcon className="w-4 h-4 mr-2" /> Generar QR
                     </Button>

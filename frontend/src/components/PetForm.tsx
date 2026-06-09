@@ -133,7 +133,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 max-w-2xl mx-auto bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
+      className="space-y-6 max-w-2xl mx-auto bg-card p-6 rounded-xl border border-border shadow-sm"
     >
       {error && (
         <Alert variant="danger">{error}</Alert>
@@ -141,18 +141,18 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
 
       {/* Photo upload */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-foreground">
           Fotografía principal {!isEdit && <span className="text-red-500">*</span>}
         </label>
         <div className="flex items-start gap-4">
           <div
-            className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="w-32 h-32 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted cursor-pointer hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => fileInputRef.current?.click()}
           >
             {photoPreview ? (
               <img src={photoPreview} alt="Vista previa" className="w-full h-full object-cover" />
             ) : (
-              <div className="text-center text-gray-400 p-2">
+              <div className="text-center text-muted-foreground p-2">
                 <Upload className="w-6 h-6 mx-auto mb-1" />
                 <p className="text-xs">Subir foto</p>
               </div>
@@ -176,7 +176,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
               <Upload className="w-4 h-4" />
               {photoFile ? 'Cambiar foto' : isEdit ? 'Cambiar foto principal' : 'Seleccionar foto'}
             </Button>
-            <p className="text-xs text-gray-400">JPG, PNG o WEBP · máx. 5 MB</p>
+            <p className="text-xs text-muted-foreground">JPG, PNG o WEBP · máx. 5 MB</p>
             {photoFile && (
               <p className="text-xs text-green-600">✓ {photoFile.name}</p>
             )}
@@ -216,7 +216,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           onChange={handleChange}
         />
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Tamaño</label>
+          <label className="text-sm font-medium text-foreground">Tamaño</label>
           <select
             name="size"
             value={formData.size}
@@ -230,7 +230,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Nivel de energía</label>
+          <label className="text-sm font-medium text-foreground">Nivel de energía</label>
           <select
             name="energyLevel"
             value={formData.energyLevel}
@@ -244,7 +244,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Necesidad de espacio</label>
+          <label className="text-sm font-medium text-foreground">Necesidad de espacio</label>
           <select
             name="spaceNeed"
             value={formData.spaceNeed}
@@ -258,23 +258,23 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           </select>
         </div>
         <div className="space-y-2 flex items-end">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={formData.goodWithChildren}
               onChange={(e) => setFormData((prev) => ({ ...prev, goodWithChildren: e.target.checked }))}
-              className="rounded border-gray-300 text-rescue-600 focus:ring-rescue-500"
+              className="rounded border-border text-rescue-600 focus:ring-rescue-500"
             />
             Compatible con niños
           </label>
         </div>
         <div className="space-y-2 flex items-end">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={formData.goodWithPets}
               onChange={(e) => setFormData((prev) => ({ ...prev, goodWithPets: e.target.checked }))}
-              className="rounded border-gray-300 text-rescue-600 focus:ring-rescue-500"
+              className="rounded border-border text-rescue-600 focus:ring-rescue-500"
             />
             Compatible con otras mascotas
           </label>
@@ -284,7 +284,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
       {/* Location */}
       <div className="space-y-3 border-t pt-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+          <label className="text-sm font-medium text-foreground flex items-center gap-1">
             <MapPin className="w-4 h-4" />
             Localización de rescate
           </label>
@@ -308,7 +308,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
         />
 
         {showMap && (
-          <Suspense fallback={<div className="h-64 bg-gray-100 rounded animate-pulse" />}>
+          <Suspense fallback={<div className="h-64 bg-muted rounded animate-pulse" />}>
             <LocationPicker
               latitude={formData.rescueLatitude}
               longitude={formData.rescueLongitude}
@@ -320,7 +320,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
         )}
 
         {formData.rescueLatitude !== undefined && formData.rescueLongitude !== undefined && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Coordenadas: {formData.rescueLatitude}, {formData.rescueLongitude}
           </p>
         )}

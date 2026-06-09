@@ -49,17 +49,17 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 font-medium text-gray-700">Mascota</th>
-            {isAdmin && <th className="text-left py-3 px-4 font-medium text-gray-700">Adoptante</th>}
-            <th className="text-left py-3 px-4 font-medium text-gray-700">Estado</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-700">Fecha</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-700">Acciones</th>
+          <tr className="border-b border-border">
+            <th className="text-left py-3 px-4 font-medium text-foreground">Mascota</th>
+            {isAdmin && <th className="text-left py-3 px-4 font-medium text-foreground">Adoptante</th>}
+            <th className="text-left py-3 px-4 font-medium text-foreground">Estado</th>
+            <th className="text-left py-3 px-4 font-medium text-foreground">Fecha</th>
+            <th className="text-left py-3 px-4 font-medium text-foreground">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {requests.map((request) => (
-            <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
+            <tr key={request.id} className="border-b border-border hover:bg-muted">
               <td className="py-3 px-4">
                 <div className="flex items-center gap-3">
                   {request.animal.mainPhotoUrl && (
@@ -71,16 +71,16 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
                     />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900">{request.animal.name}</p>
-                    <p className="text-sm text-gray-500">{request.animal.species} {request.animal.estimatedBreed || ''}</p>
+                    <p className="font-medium text-foreground">{request.animal.name}</p>
+                    <p className="text-sm text-muted-foreground">{request.animal.species} {request.animal.estimatedBreed || ''}</p>
                   </div>
                 </div>
               </td>
               {isAdmin && request.adopter && (
                 <td className="py-3 px-4">
                   <div>
-                    <p className="font-medium text-gray-900">{request.adopter.fullName}</p>
-                    <p className="text-sm text-gray-500">{request.adopter.email}</p>
+                    <p className="font-medium text-foreground">{request.adopter.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{request.adopter.email}</p>
                   </div>
                 </td>
               )}
@@ -92,7 +92,7 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
                   <p className="text-xs text-status-danger-fg mt-1 max-w-xs truncate">{request.rejectionReason}</p>
                 )}
               </td>
-              <td className="py-3 px-4 text-sm text-gray-600">
+              <td className="py-3 px-4 text-sm text-muted-foreground">
                 {new Date(request.createdAt).toLocaleDateString('es-CR')}
               </td>
               <td className="py-3 px-4">
