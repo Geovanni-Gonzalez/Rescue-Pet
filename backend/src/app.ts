@@ -22,6 +22,13 @@ import auditRoutes from './routes/auditRoutes';
 const app = express();
 const serviceRoutePrefix = '/_/backend';
 
+// Behind Vercel's proxy, the client IP arrives via X-Forwarded-For. Trust the
+// first proxy hop so express-rate-limit reads the real client IP instead of
+// throwing a ValidationError. Only enabled on Vercel to keep local dev strict.
+if (process.env.VERCEL) {
+  app.set('trust proxy', 1);
+}
+
 app.use((req, _res, next) => {
   if (req.url === serviceRoutePrefix) {
     req.url = '/';
