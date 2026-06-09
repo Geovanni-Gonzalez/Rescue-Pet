@@ -324,11 +324,41 @@ async function writeBlobDb(db: Db) {
   });
 }
 
+// ─── In-memory write-through cache ────────────────────────────────────────────
+// Vercel Blob's list()/get() are eventually consistent: right after a put(),
+// a read can still return the previous version. Since controllers routinely do
+// read-after-write within a single request (e.g. create an animal, then update
+// it), reading straight from Blob each time caused "not found" errors.
+//
+// The cache makes the in-process copy the source of truth: writes update it
+// synchronously (so the next read in the same process sees them immediately)
+// and persist to Blob for durability. A short TTL lets a long-lived serverless
+// instance pick up changes written by other instances. After any local write
+// the timestamp is bumped, so read-after-write is never served stale data.
+let _dbCache: Db | null = null;
+let _dbCacheAt = 0;
+const DB_CACHE_TTL_MS = 3000;
+
 async function readDb(): Promise<Db> {
   if (!isBlobEnabled()) return readLocalDb();
+
+  if (_dbCache && Date.now() - _dbCacheAt < DB_CACHE_TTL_MS) {
+    return clone(_dbCache);
+  }
+
   try {
-    return await readBlobDb();
+    const db = await readBlobDb();
+    _dbCache = clone(db);
+    _dbCacheAt = Date.now();
+    return db;
   } catch (error) {
+    // Fall back to the cached copy rather than failing the whole request.
+    if (_dbCache) {
+      logger.error('Failed to read JSON database from Vercel Blob, serving cached copy', {
+        error: (error as Error).message,
+      });
+      return clone(_dbCache);
+    }
     logger.error('Failed to read JSON database from Vercel Blob', { error: (error as Error).message });
     throw error;
   }
@@ -339,6 +369,10 @@ async function writeDb(db: Db) {
     writeLocalDb(db);
     return;
   }
+  // Update the cache first so read-after-write within this process is always
+  // consistent, independent of Blob's eventual consistency.
+  _dbCache = clone(db);
+  _dbCacheAt = Date.now();
   try {
     await writeBlobDb(db);
   } catch (error) {
