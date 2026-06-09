@@ -230,10 +230,18 @@ function isBlobEnabled() {
   return Boolean(process.env['BLOB_READ_WRITE_TOKEN']);
 }
 
+// Shape of the value returned by @vercel/blob's get():
+//   • v1 returned a fetch Response (has .text()/.arrayBuffer())
+//   • v2 returns { statusCode, stream, headers, blob } or null on 404
+type BlobGetResult =
+  | { text: () => Promise<string> } // v1
+  | { stream: ReadableStream | null } // v2
+  | null;
+
 function loadBlobSdk(): {
   put: (pathname: string, body: string, options: Row) => Promise<{ url: string }>;
-  list: (options: Row) => Promise<{ blobs: { url: string; downloadUrl: string; uploadedAt?: Date | string }[] }>;
-  get: (url: string, options: Row) => Promise<{ text: () => Promise<string> }>;
+  list: (options: Row) => Promise<{ blobs: { url: string; downloadUrl?: string; uploadedAt?: Date | string }[] }>;
+  get: (url: string, options: Row) => Promise<BlobGetResult>;
 } {
   try {
     // Vercel installs this dependency in production. Local development can use JSON files without it.
@@ -243,6 +251,23 @@ function loadBlobSdk(): {
       'BLOB_READ_WRITE_TOKEN esta definido, pero falta @vercel/blob. Ejecuta npm install en el proyecto antes de desplegar.',
     );
   }
+}
+
+/**
+ * Read a blob's content as text, working with both @vercel/blob v1 and v2.
+ * v1 get() returned a fetch Response (.text()); v2 returns { stream }.
+ */
+async function readBlobText(result: BlobGetResult): Promise<string> {
+  if (!result) throw new Error('Blob no encontrado');
+  // v1: fetch Response
+  if ('text' in result && typeof result.text === 'function') {
+    return result.text();
+  }
+  // v2: { stream }
+  if ('stream' in result && result.stream) {
+    return new Response(result.stream).text();
+  }
+  throw new Error('Formato de respuesta de blob no reconocido');
 }
 
 function clone<T>(value: T): T {
@@ -277,8 +302,14 @@ async function readBlobDb(): Promise<Db> {
     return seeded;
   }
 
-  const response = await get(blob.url, { access: 'private' });
-  const parsed = JSON.parse(await response.text()) as Partial<Db>;
+  const result = await get(blob.url, { access: 'private' });
+  if (!result) {
+    // Blob vanished between list() and get() — reseed defensively.
+    const seeded = createSeedDb();
+    await writeBlobDb(seeded);
+    return seeded;
+  }
+  const parsed = JSON.parse(await readBlobText(result)) as Partial<Db>;
   const db = emptyDb();
   for (const name of modelNames) db[name] = reviveDates(parsed[name] ?? []);
   return db;

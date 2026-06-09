@@ -89,7 +89,8 @@ app.get('/uploads/:subdir/:filename', async (req, res, next) => {
   }
 
   try {
-    const { list } = require('@vercel/blob');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { list, get } = require('@vercel/blob');
     const pathname = `uploads/${subdir}/${req.params['filename']}`;
     const { blobs } = await list({ prefix: pathname, limit: 1 });
     const blob = blobs.find((b: any) => b.url && b.pathname === pathname);
@@ -98,21 +99,26 @@ app.get('/uploads/:subdir/:filename', async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'Imagen no encontrada en almacenamiento' });
     }
 
-    // For private stores, we must fetch the blob using the token and proxy it.
-    // The blob.downloadUrl (or blob.url with token) lets us read the content.
-    const blobResponse = await fetch(blob.downloadUrl || blob.url, {
-      headers: { Authorization: `Bearer ${process.env['BLOB_READ_WRITE_TOKEN']}` },
-    });
-
-    if (!blobResponse.ok) {
-      console.error('[BLOB_FALLBACK] Failed to fetch blob:', blobResponse.status);
-      return res.status(502).json({ success: false, error: 'Error al obtener imagen' });
+    // Use the SDK's get() — it handles auth for private stores. v2 returns
+    // { statusCode, stream, headers, blob }; v1 returned a fetch Response.
+    const result: any = await get(blob.url, { access: 'private' });
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Imagen no encontrada en almacenamiento' });
     }
 
-    // Set appropriate headers and stream the response
-    res.set('Content-Type', blob.contentType || 'application/octet-stream');
+    res.set('Content-Type', result.blob?.contentType || blob.contentType || 'application/octet-stream');
     res.set('Cache-Control', 'public, max-age=31536000, immutable');
-    const buffer = Buffer.from(await blobResponse.arrayBuffer());
+
+    // Read the body (v2: result.stream; v1: result.arrayBuffer())
+    let buffer: Buffer;
+    if (result.stream) {
+      buffer = Buffer.from(await new Response(result.stream).arrayBuffer());
+    } else if (typeof result.arrayBuffer === 'function') {
+      buffer = Buffer.from(await result.arrayBuffer());
+    } else {
+      console.error('[BLOB_FALLBACK] Unrecognized get() response shape');
+      return res.status(502).json({ success: false, error: 'Error al obtener imagen' });
+    }
     return res.send(buffer);
   } catch (err) {
     console.error('[BLOB_FALLBACK] Error accessing Blob:', (err as Error).message);
