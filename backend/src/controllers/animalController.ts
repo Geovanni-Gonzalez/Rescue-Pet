@@ -28,7 +28,7 @@ const animalBodySchema = z.object({
   estimatedBreed: z.string().optional(),
   estimatedAge: z.coerce.number().int().nonnegative().optional(),
   size: z.string().optional(),
-  mainPhotoUrl: z.string().url().optional(),
+  mainPhotoUrl: z.string().min(1).optional(),
   rescueLocationText: z.string().optional(),
   rescueLatitude: z.coerce.number().optional(),
   rescueLongitude: z.coerce.number().optional(),
