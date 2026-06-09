@@ -232,8 +232,8 @@ function isBlobEnabled() {
 
 function loadBlobSdk(): {
   put: (pathname: string, body: string, options: Row) => Promise<{ url: string }>;
-  list: (options: Row) => Promise<{ blobs: { url: string; uploadedAt?: Date | string }[] }>;
-  get: (url: string) => Promise<{ text: () => Promise<string> }>;
+  list: (options: Row) => Promise<{ blobs: { url: string; downloadUrl: string; uploadedAt?: Date | string }[] }>;
+  get: (url: string, options: Row) => Promise<{ text: () => Promise<string> }>;
 } {
   try {
     // Vercel installs this dependency in production. Local development can use JSON files without it.
@@ -277,7 +277,7 @@ async function readBlobDb(): Promise<Db> {
     return seeded;
   }
 
-  const response = await get(blob.url);
+  const response = await get(blob.url, { access: 'private' });
   const parsed = JSON.parse(await response.text()) as Partial<Db>;
   const db = emptyDb();
   for (const name of modelNames) db[name] = reviveDates(parsed[name] ?? []);
