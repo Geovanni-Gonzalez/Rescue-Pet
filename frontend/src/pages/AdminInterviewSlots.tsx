@@ -30,7 +30,7 @@ export function AdminInterviewSlots() {
       const res = await apiClient.get('/interview-slots/available');
       setSlots(res.data.slots ?? []);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cargar los slots'));
+      setError(getApiErrorMessage(err, 'No se pudieron cargar los horarios de entrevista.'));
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +52,7 @@ export function AdminInterviewSlots() {
       setShowForm(false);
       await fetchSlots();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al crear el slot'));
+      setError(getApiErrorMessage(err, 'No se pudo crear el horario.'));
     } finally {
       setIsCreating(false);
     }
@@ -64,7 +64,7 @@ export function AdminInterviewSlots() {
       await apiClient.patch(`/interview-slots/${id}/cancel`);
       setSlots((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cancelar el slot'));
+      setError(getApiErrorMessage(err, 'No se pudo cancelar el horario.'));
     } finally {
       setCancellingId(null);
     }

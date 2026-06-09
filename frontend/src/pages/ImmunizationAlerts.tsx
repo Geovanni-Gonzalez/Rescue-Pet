@@ -36,7 +36,7 @@ export function ImmunizationAlerts() {
         const res = await apiClient.get('/tasks/immunization-alerts');
         setAlerts(res.data.alerts ?? []);
       } catch (err) {
-        setError(getApiErrorMessage(err, 'Error al cargar las alertas'));
+        setError(getApiErrorMessage(err, 'No se pudieron cargar las alertas de vacunación.'));
       } finally {
         setIsLoading(false);
       }
@@ -50,7 +50,7 @@ export function ImmunizationAlerts() {
       await apiClient.post(`/tasks/immunization-alerts/${id}/complete`);
       setAlerts((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al confirmar la vacuna'));
+      setError(getApiErrorMessage(err, 'No se pudo confirmar la vacuna.'));
     } finally {
       setIsActing(false);
     }
@@ -70,7 +70,7 @@ export function ImmunizationAlerts() {
       setPostponeId(null);
       setPostponeDate('');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al postergar la vacuna'));
+      setError(getApiErrorMessage(err, 'No se pudo postergar la vacuna.'));
     } finally {
       setIsActing(false);
     }

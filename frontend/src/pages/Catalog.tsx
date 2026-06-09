@@ -56,7 +56,7 @@ export function Catalog() {
       setTotal(res.data.total ?? 0);
       setSortedByCompatibility(res.data.sortedByCompatibility ?? false);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cargar el catálogo'));
+      setError(getApiErrorMessage(err, 'No se pudo cargar el catálogo.'));
       setCatalog([]);
     } finally {
       setIsLoading(false);

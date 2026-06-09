@@ -138,7 +138,7 @@ export function Profile() {
                 required
               />
               <FormField
-                label="Telefono"
+                label="Teléfono"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
                 placeholder="+506 8888 8888"

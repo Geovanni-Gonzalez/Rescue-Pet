@@ -59,7 +59,7 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
       setPendingStatus(null);
       setReason('');
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al actualizar el estado'));
+      setError(getApiErrorMessage(err, 'No se pudo actualizar el estado.'));
     } finally {
       setIsLoading(false);
     }

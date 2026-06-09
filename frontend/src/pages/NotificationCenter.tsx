@@ -46,7 +46,7 @@ export function NotificationCenter() {
       setUnreadCount(res.data.unreadCount);
       setTotal(res.data.total);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cargar notificaciones'));
+      setError(getApiErrorMessage(err, 'No se pudieron cargar las notificaciones.'));
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +60,7 @@ export function NotificationCenter() {
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, readAt: new Date().toISOString() } : n));
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error'));
+      setError(getApiErrorMessage(err, 'No se pudo marcar la notificación como leída.'));
     }
   };
 
@@ -70,7 +70,7 @@ export function NotificationCenter() {
       setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt || new Date().toISOString() })));
       setUnreadCount(0);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error'));
+      setError(getApiErrorMessage(err, 'No se pudieron marcar todas las notificaciones como leídas.'));
     }
   };
 
@@ -81,7 +81,7 @@ export function NotificationCenter() {
       setTotal((t) => t - 1);
       if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error'));
+      setError(getApiErrorMessage(err, 'No se pudo eliminar la notificación.'));
     }
   };
 

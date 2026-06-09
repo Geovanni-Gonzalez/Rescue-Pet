@@ -67,7 +67,7 @@ export function TaskManagement() {
       const res = await apiClient.get(`/tasks?${params}`);
       setTasks(res.data.tasks);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cargar tareas'));
+      setError(getApiErrorMessage(err, 'No se pudieron cargar las tareas.'));
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +104,7 @@ export function TaskManagement() {
       setNewTask({ type: 'HEALTH', assignedRole: 'VETERINARIAN', scheduledAt: '', description: '', animalId: '' });
       load();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al crear tarea'));
+      setError(getApiErrorMessage(err, 'No se pudo crear la tarea.'));
     } finally {
       setIsCreating(false);
     }
@@ -126,7 +126,7 @@ export function TaskManagement() {
         load();
         return;
       }
-      setError(getApiErrorMessage(err, 'Error al completar tarea'));
+      setError(getApiErrorMessage(err, 'No se pudo completar la tarea.'));
     }
   };
 

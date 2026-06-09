@@ -145,7 +145,7 @@ export function AdoptionRequestDetail() {
       setRequest(res.data.application); // ← fix: was res.data.request
       setShowRejectionDialog(false);
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al actualizar el estado'));
+      setError(getApiErrorMessage(err, 'No se pudo actualizar el estado de la solicitud.'));
     } finally {
       setIsUpdating(false);
     }
@@ -168,7 +168,7 @@ export function AdoptionRequestDetail() {
       setDocFile(null);
       await fetchRequest();
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al cargar el documento'));
+      setError(getApiErrorMessage(err, 'No se pudo cargar el documento.'));
     } finally {
       setIsUploadingDoc(false);
     }
@@ -196,7 +196,7 @@ export function AdoptionRequestDetail() {
       setSelectedSlotId('');
       await fetchRequest();
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al agendar la entrevista'));
+      setError(getApiErrorMessage(err, 'No se pudo agendar la entrevista.'));
     } finally {
       setIsScheduling(false);
     }
@@ -261,7 +261,7 @@ export function AdoptionRequestDetail() {
       });
       await fetchRequest();
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al firmar el contrato'));
+      setError(getApiErrorMessage(err, 'No se pudo firmar el contrato.'));
     } finally {
       setIsSigning(false);
     }

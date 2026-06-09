@@ -58,7 +58,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
         navigate('/catalog');
       }
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al guardar el test'));
+      setError(getApiErrorMessage(err, 'No se pudo guardar el test de afinidad.'));
     } finally {
       setIsLoading(false);
     }

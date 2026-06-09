@@ -255,4 +255,6 @@ No bounce, no elastic. Exponential ease-out throughout, consistent with the shar
 - Remaining gaps: native `<select>` controls (PetStatusSelector, PetFilters) are styled manually outside the Input primitive; touch targets in the dense notification list are improved (`p-1.5`) but still below 44px.
 
 ## Language
-All UI copy is in Spanish, hardcoded in components, no i18n framework. Accents are mostly correct in the current components (Adopción, Auditoría, Cerrar sesión, Notificaciones).
+All UI copy is in Spanish, hardcoded in components, no i18n framework. Accents are correct (Adopción, Auditoría, Cerrar sesión, Notificaciones; the `Telefono` label was fixed to `Teléfono`).
+
+Error messages follow one voice: `No se pudo [acción].` / `No se pudieron [acción].`, warm and specific, no English jargon (the old terse `Error al ...` fallbacks and the `slot` wording were rewritten, e.g. `horarios de entrevista`). The three bare `Error` fallbacks in NotificationCenter now name the failed action. Empty states are inviting and action-oriented (`Crea el primer usuario del equipo para comenzar.`).

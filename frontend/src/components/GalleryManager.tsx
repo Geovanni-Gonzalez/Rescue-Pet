@@ -71,7 +71,7 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
       onGalleryChange([...allImages, ...res.data.images]);
       setCurrentIndex(allImages.length); // Jump to first new image
     } catch (err) {
-      setUploadError(getApiErrorMessage(err, 'Error al subir las imágenes.'));
+      setUploadError(getApiErrorMessage(err, 'No se pudieron subir las imágenes.'));
     } finally {
       setIsUploading(false);
       setUploadProgress(0);

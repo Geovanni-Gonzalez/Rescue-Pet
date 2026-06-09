@@ -103,7 +103,7 @@ export function AdminReports() {
         setHealthSummary(res.data.summary);
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cargar el reporte'));
+      setError(getApiErrorMessage(err, 'No se pudo cargar el reporte.'));
     } finally {
       setIsLoading(false);
     }

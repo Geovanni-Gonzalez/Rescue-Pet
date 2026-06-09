@@ -124,7 +124,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
         navigate(`/pets/${res.data.animal.id}`);
       }
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al guardar la mascota'));
+      setError(getApiErrorMessage(err, 'No se pudo guardar la mascota.'));
     } finally {
       setIsLoading(false);
     }

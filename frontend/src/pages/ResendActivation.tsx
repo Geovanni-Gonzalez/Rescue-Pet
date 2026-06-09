@@ -23,7 +23,7 @@ export function ResendActivation() {
       const res = await apiClient.post<{ message: string }>('/auth/resend-activation', { email });
       setMessage(res.data.message);
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al procesar la solicitud.'));
+      setError(getApiErrorMessage(err, 'No se pudo procesar la solicitud.'));
     } finally {
       setIsLoading(false);
     }

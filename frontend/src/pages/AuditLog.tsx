@@ -64,7 +64,7 @@ export function AuditLog() {
       setLogs(res.data.logs);
       setTotal(res.data.total);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al cargar registros de auditoría'));
+      setError(getApiErrorMessage(err, 'No se pudieron cargar los registros de auditoría.'));
     } finally {
       setIsLoading(false);
     }

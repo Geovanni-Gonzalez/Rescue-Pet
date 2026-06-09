@@ -192,7 +192,7 @@ export function PetDetail() {
       if (axios.isAxiosError<{ existingRequestId?: string }>(err) && err.response?.data?.existingRequestId) {
         setExistingRequest({ id: err.response.data.existingRequestId, animalId: id ?? '', status: 'RECEIVED' });
       }
-      setError(getApiErrorMessage(err, 'Error al crear la solicitud'));
+      setError(getApiErrorMessage(err, 'No se pudo enviar la solicitud de adopción.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -223,7 +223,7 @@ export function PetDetail() {
         observations: '',
       });
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al guardar la entrada clínica'));
+      setError(getApiErrorMessage(err, 'No se pudo guardar la entrada clínica.'));
     } finally {
       setIsSavingClinical(false);
     }
@@ -243,7 +243,7 @@ export function PetDetail() {
       setVaccineForm({ vaccineType: '', appliedAt: new Date().toISOString().slice(0, 10), nextDueAt: '' });
       setShowVaccineForm(false);
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al guardar la vacuna'));
+      setError(getApiErrorMessage(err, 'No se pudo guardar la vacuna.'));
     } finally {
       setIsSavingVaccine(false);
     }
@@ -269,7 +269,7 @@ export function PetDetail() {
       setError('');
       return res;
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Error al guardar la localización'));
+      setError(getApiErrorMessage(err, 'No se pudo guardar la ubicación.'));
     } finally {
       setIsSavingLocation(false);
     }
