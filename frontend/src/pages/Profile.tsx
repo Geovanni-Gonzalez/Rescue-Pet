@@ -5,6 +5,7 @@ import { Save, UserCircle, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { FormField } from '../components/FormField';
 import { RoleBadge } from '../components/RoleBadge';
@@ -124,16 +125,8 @@ export function Profile() {
           <CardDescription>El correo y el rol son gestionados por el sistema.</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
-              {error}
-            </div>
-          )}
-          {successMessage && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
-              {successMessage}
-            </div>
-          )}
+          {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+          {successMessage && <Alert variant="success" className="mb-4">{successMessage}</Alert>}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -181,16 +174,8 @@ export function Profile() {
           </div>
         </CardHeader>
         <CardContent>
-          {pwdError && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
-              {pwdError}
-            </div>
-          )}
-          {pwdSuccess && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
-              {pwdSuccess}
-            </div>
-          )}
+          {pwdError && <Alert variant="danger" className="mb-4">{pwdError}</Alert>}
+          {pwdSuccess && <Alert variant="success" className="mb-4">{pwdSuccess}</Alert>}
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <FormField

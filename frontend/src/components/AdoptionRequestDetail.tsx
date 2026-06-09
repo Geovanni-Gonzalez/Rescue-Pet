@@ -7,8 +7,9 @@ import { AdoptionStatusTimeline } from './AdoptionStatusTimeline';
 import { StatusTransitionActions } from './StatusTransitionActions';
 import { RejectionReasonDialog } from './RejectionReasonDialog';
 import { Button } from './ui/button';
+import { Alert } from './ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ArrowLeft, User, Calendar, FileText, Clock, Upload, CheckCircle, AlertTriangle, Download } from 'lucide-react';
+import { ArrowLeft, User, Calendar, FileText, Clock, Upload, CheckCircle, Download } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import type { AdoptionRequestStatusType } from './AdoptionRequestTable';
 
@@ -292,7 +293,7 @@ export function AdoptionRequestDetail() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger">{error}</Alert>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -446,10 +447,9 @@ export function AdoptionRequestDetail() {
               </CardHeader>
               <CardContent>
                 {missingDocs.length > 0 && (
-                  <div className="mb-3 flex items-start gap-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200 text-xs text-yellow-800">
-                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                    <span>Pendientes: {missingDocs.map((t) => DOC_TYPE_LABELS[t]).join(', ')}</span>
-                  </div>
+                  <Alert variant="caution" className="mb-3 p-2 text-xs rounded-lg">
+                    Pendientes: {missingDocs.map((t) => DOC_TYPE_LABELS[t]).join(', ')}
+                  </Alert>
                 )}
                 <form onSubmit={handleDocumentUpload} className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -2,6 +2,7 @@ import { useState, useRef, lazy, Suspense } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { FormField } from './FormField';
 import { Button } from './ui/button';
+import { Alert } from './ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import { Upload, MapPin } from 'lucide-react';
@@ -135,7 +136,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
       className="space-y-6 max-w-2xl mx-auto bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
     >
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger">{error}</Alert>
       )}
 
       {/* Photo upload */}

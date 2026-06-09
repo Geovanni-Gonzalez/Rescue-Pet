@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
 import { apiClient, getApiErrorMessage, isNetworkError } from '../lib/api';
@@ -79,15 +80,9 @@ export function Login() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             {resetSuccess && (
-              <div className="p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
-                Contraseña restablecida. Ya puedes iniciar sesión.
-              </div>
+              <Alert variant="success">Contraseña restablecida. Ya puedes iniciar sesión.</Alert>
             )}
-            {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
-                {error}
-              </div>
-            )}
+            {error && <Alert variant="danger">{error}</Alert>}
 
             <FormField
               label="Correo electrónico"

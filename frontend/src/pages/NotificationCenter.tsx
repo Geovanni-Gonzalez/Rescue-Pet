@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Bell, Check, CheckCheck, Trash2, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Card, CardContent } from '../components/ui/card';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
@@ -118,7 +119,7 @@ export function NotificationCenter() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger">{error}</Alert>
       )}
 
       {notifications.length === 0 ? (

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Card, CardContent } from '../components/ui/card';
 import { Syringe, AlertTriangle, CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
@@ -95,7 +96,7 @@ export function ImmunizationAlerts() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger">{error}</Alert>
       )}
 
       {alerts.length === 0 ? (

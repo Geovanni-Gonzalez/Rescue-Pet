@@ -4,6 +4,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { FormField } from '../components/FormField';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
@@ -62,7 +63,7 @@ export function ResetPassword() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+              <Alert variant="danger">{error}</Alert>
             )}
             <FormField
               label="Nueva contraseña"

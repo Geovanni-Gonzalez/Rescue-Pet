@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Plus, UserX, RefreshCw } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { FormField } from '../components/FormField';
@@ -124,7 +125,7 @@ export function AdminUsers() {
       </div>
 
       {error && (
-        <div className="p-3 mb-4 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger" className="mb-4">{error}</Alert>
       )}
 
       {showForm && (
@@ -134,9 +135,7 @@ export function AdminUsers() {
           </CardHeader>
           <CardContent>
             {formError && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
-                {formError}
-              </div>
+              <Alert variant="danger" className="mb-4">{formError}</Alert>
             )}
             <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField

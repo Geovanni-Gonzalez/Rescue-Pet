@@ -63,7 +63,7 @@ Utility classes: `bg-status-{role}`, `text-status-{role}-fg`, `border-status-{ro
 Consumers refactored to the token system: StatusBadge, AdoptionRequestTable, AdoptionStatusTimeline, StatusTransitionActions (labels), NotificationBell (type tags), CompatibilityScoreBadge.
 
 ### Raw Palette Still in Use
-Page-level chrome and one-off accents still reach for the raw Tailwind palette and bypass tokens: auth success/error banners (Login, Register, ForgotPassword, ResetPassword, ActivateAccount), table and section chrome and `gray-*` neutrals across pages, and the `gray-*`/`bg-white` surfaces in PetStatusSelector. These are not duplicated semantics, so they were left for a separate neutrals-and-banners pass.
+Feedback banners are now the `Alert` primitive. What still reaches for the raw Tailwind palette and bypasses tokens: table and section chrome and `gray-*` neutrals across pages, the `gray-*`/`bg-white` surfaces in PetStatusSelector, the urgency-tinted Card in ImmunizationAlerts, the `NotificationCenter` type-style map, and the compact `amber-*` hints in GalleryManager and LocationPicker. These are mostly neutrals and one-offs, left for a separate neutrals pass (`polish`).
 
 ### Color Strategy
 **Restrained.** Teal-green tinted neutrals (hue 175) carry the surface, `rescue-600` is the single brand accent, and the `warm-*` amber appears in roughly 10% of cases (afinidad scores, unread count). This fits the product register and the brand voice ("warm but professional"). It also threads the anti-references: not the cold gray SaaS dashboard, not the pastel pet-shop.
@@ -150,6 +150,7 @@ shadcn/ui pattern: CVA variants in `*-variants.ts`, Radix primitives where neede
 | Input | (none) | `h-9 rounded-md`, `text-base md:text-sm`, `focus-visible:border-ring`, `ease-out-strong` |
 | Label | (none) | `text-sm font-medium` |
 | Dialog | (none) | Radix; overlay `bg-black/60 backdrop-blur-[2px]`; enter/exit fade + zoom + slide via `tailwindcss-animate` |
+| Alert | success, danger, info, caution | Inline feedback banner. Colors from the status roles (`design/status.ts`), leading variant icon, auto `role` (`alert` for danger, `status` otherwise). Replaced ~27 hardcoded `bg-*-50` banners across 18 files. |
 
 > Hygiene note: a stray `frontend/@/components/ui/` directory duplicates button, badge, card, input, label, and dialog. It is an artifact of the `@/` path alias being written to a literal `@` folder. The app imports from `src/components/ui/`; the `@/` copy is dead and should be deleted.
 
@@ -240,15 +241,18 @@ No bounce, no elastic. Exponential ease-out throughout, consistent with the shar
 - Grids collapse 4 to 3 to 2 to 1.
 - Topbar greeting and user name hide under `sm`.
 - Login left panel hides under `lg`, with a mobile brand badge as fallback.
-- Tables still assume horizontal scroll rather than reflowing on mobile.
+- Tables scroll horizontally (`overflow-x-auto`) rather than reflowing on mobile. Acceptable since tables are staff/desktop-facing; the mobile-first adopter sees card grids.
 
 ## Accessibility
-- `lang="es"` on the document.
-- `aria-label="Abrir menú"` on the hamburger; `sr-only` text on the Dialog close.
-- Focus rings via `focus-visible:ring-1 focus-visible:ring-ring` on inputs and buttons; `focus-visible:ring-2` on PetCard.
+- `lang="es"` on the document; semantic landmarks (`header`, `nav`, `main`, `aside`); one `<h1>` per page.
+- Skip-to-content link in AppLayout (`sr-only` until focused) targeting `#main-content` (focusable `<main>`).
+- Icon-only buttons carry `aria-label`: NotificationBell (bell, mark-read, delete, close), the table view action, Sidebar/Topbar/Gallery controls. The hamburger and Dialog close were already labelled.
+- NotificationBell is an accessible disclosure: `aria-haspopup`/`aria-expanded` on the trigger, `role="dialog"` + label on the panel, Escape closes and returns focus, and a `sr-only aria-live="polite"` region announces the unread count.
+- Focus rings: `focus-visible:ring` on all primitives, PetCard, Dashboard cards, and now Sidebar nav/logout, Topbar, NotificationBell, and Gallery controls.
 - `prefers-reduced-motion` fully honored.
-- Gaps: no skip-to-content link; custom widgets (NotificationBell dropdown, status timeline) lack ARIA roles; status indicators are largely color-coded, though the timeline adds Check/Circle icons as a secondary cue and badges carry text labels.
-- Native `<select>` controls in PetStatusSelector are styled manually rather than through the Input/primitive layer.
+- Contrast verified (OKLCH to WCAG): all status soft badges pass AA (5.1 to 9.8); `--primary`, `rescue-600`, and `--destructive` were tuned so white-on-color and link text clear 4.5:1. Solid status fills (timeline) meet the 3:1 graphical threshold and carry icons only.
+- Status indicators pair color with text labels (badges) or icons (timeline Check/Circle), so they are not color-only.
+- Remaining gaps: native `<select>` controls (PetStatusSelector, PetFilters) are styled manually outside the Input primitive; touch targets in the dense notification list are improved (`p-1.5`) but still below 44px.
 
 ## Language
 All UI copy is in Spanish, hardcoded in components, no i18n framework. Accents are mostly correct in the current components (Adopción, Auditoría, Cerrar sesión, Notificaciones).

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Calendar, Plus, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
@@ -93,7 +94,7 @@ export function AdminInterviewSlots() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger">{error}</Alert>
       )}
 
       {/* Create form */}

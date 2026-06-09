@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { FormField } from '../components/FormField';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
@@ -41,9 +42,7 @@ export function ResendActivation() {
 
         {message ? (
           <CardContent className="space-y-4">
-            <div className="p-3 bg-green-50 text-green-700 text-sm rounded-md border border-green-200">
-              {message}
-            </div>
+            <Alert variant="success">{message}</Alert>
             <div className="text-center text-sm">
               <Link to="/login" className="text-rescue-600 font-medium hover:underline">
                 Volver al inicio de sesión
@@ -54,7 +53,7 @@ export function ResendActivation() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
-                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+                <Alert variant="danger">{error}</Alert>
               )}
               <FormField
                 label="Correo electrónico"

@@ -8,6 +8,7 @@ import { EmptyState } from '../components/EmptyState';
 import { CompatibilityScoreBadge } from '../components/CompatibilityScoreBadge';
 import { CompatibilityExplanation } from '../components/CompatibilityExplanation';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Sparkles, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
@@ -157,7 +158,7 @@ export function Catalog() {
       )}
 
       {error && (
-        <div className="p-3 mb-4 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger" className="mb-4">{error}</Alert>
       )}
 
       {/* Filters */}

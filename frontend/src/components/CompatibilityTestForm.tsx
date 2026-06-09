@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Button } from './ui/button';
+import { Alert } from './ui/alert';
 import { FormField } from './FormField';
 import { apiClient } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
@@ -65,7 +66,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-      {error && <div className="p-3 bg-red-50 text-red-600 rounded">{error}</div>}
+      {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">

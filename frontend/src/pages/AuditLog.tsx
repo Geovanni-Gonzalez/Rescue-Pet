@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Shield, ChevronLeft, ChevronRight, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Card, CardContent } from '../components/ui/card';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
@@ -96,7 +97,7 @@ export function AuditLog() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger">{error}</Alert>
       )}
 
       {/* Filters */}

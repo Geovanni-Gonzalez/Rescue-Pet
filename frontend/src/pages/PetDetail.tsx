@@ -9,6 +9,7 @@ import { QRDisplay } from '../components/QRDisplay';
 import { GalleryManager } from '../components/GalleryManager';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Button } from '../components/ui/button';
+import { Alert } from '../components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Edit, QrCode as QrIcon, Heart, MapPin, Clock, History, Syringe, Stethoscope, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
@@ -320,7 +321,7 @@ export function PetDetail() {
       </div>
 
       {error && (
-        <div className="p-3 mb-4 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{error}</div>
+        <Alert variant="danger" className="mb-4">{error}</Alert>
       )}
 
       {/* Mobile CTA: adoption button visible before scroll */}
