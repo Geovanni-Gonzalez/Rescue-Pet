@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { LoadingState } from './LoadingState';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-3 focus:left-3 focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:shadow-lg"
+      >
+        Saltar al contenido
+      </a>
+
       {/* Desktop sidebar */}
       <Sidebar />
 
@@ -26,9 +34,11 @@ export function AppLayout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8 focus:outline-none">
           <div className="max-w-7xl mx-auto">
-            <Outlet />
+            <Suspense fallback={<LoadingState />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

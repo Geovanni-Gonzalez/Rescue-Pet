@@ -78,7 +78,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           <span className="text-base font-bold text-foreground tracking-tight">Rescue Pet</span>
         </div>
         {mobile && onClose && (
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 md:hidden">
+          <button onClick={onClose} aria-label="Cerrar menú" className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -100,7 +100,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                   end={link.to === '/admin'}
                   onClick={handleNavClick}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] ${
+                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isActive
                         ? 'bg-rescue-50 text-rescue-600'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -119,7 +119,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
       <div className="p-4 border-t border-border">
         <button
           onClick={() => { logout(); handleNavClick(); }}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97]"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesión

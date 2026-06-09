@@ -1,5 +1,5 @@
 import { Button } from './ui/button';
-import type { AdoptionRequestStatusType } from './AdoptionRequestTable';
+import { ADOPTION_STATUS, type AdoptionRequestStatusType } from '../design/status';
 
 interface StatusTransitionActionsProps {
   currentStatus: AdoptionRequestStatusType;
@@ -13,14 +13,6 @@ const TRANSITIONS: Record<AdoptionRequestStatusType, AdoptionRequestStatusType[]
   VISIT: ['APPROVED', 'REJECTED'],
   APPROVED: [],
   REJECTED: [],
-};
-
-const STATUS_LABELS: Record<AdoptionRequestStatusType, string> = {
-  RECEIVED: 'Recibida',
-  INTERVIEW: 'Entrevista',
-  VISIT: 'Visita',
-  APPROVED: 'Aprobada',
-  REJECTED: 'Rechazada',
 };
 
 export function StatusTransitionActions({ currentStatus, onStatusChange, isRejecting }: StatusTransitionActionsProps) {
@@ -54,7 +46,7 @@ export function StatusTransitionActions({ currentStatus, onStatusChange, isRejec
             size="sm"
             onClick={() => onStatusChange(status)}
           >
-            {STATUS_LABELS[status]}
+            {ADOPTION_STATUS[status].label}
           </Button>
         );
       })}

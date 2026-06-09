@@ -1,8 +1,9 @@
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Eye } from 'lucide-react';
+import { ADOPTION_STATUS, roleClasses, type AdoptionRequestStatusType } from '../design/status';
 
-export type AdoptionRequestStatusType = 'RECEIVED' | 'INTERVIEW' | 'VISIT' | 'APPROVED' | 'REJECTED';
+export type { AdoptionRequestStatusType };
 
 interface AdoptionRequest {
   id: string;
@@ -29,14 +30,6 @@ interface AdoptionRequestTableProps {
   onViewDetail: (id: string) => void;
   isAdmin?: boolean;
 }
-
-const statusConfig: Record<AdoptionRequestStatusType, { label: string; className: string }> = {
-  RECEIVED: { label: 'Recibida', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-  INTERVIEW: { label: 'Entrevista', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  VISIT: { label: 'Visita', className: 'bg-purple-100 text-purple-800 border-purple-200' },
-  APPROVED: { label: 'Aprobada', className: 'bg-green-100 text-green-800 border-green-200' },
-  REJECTED: { label: 'Rechazada', className: 'bg-red-100 text-red-800 border-red-200' },
-};
 
 export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }: AdoptionRequestTableProps) {
   if (requests.length === 0) {
@@ -92,11 +85,11 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
                 </td>
               )}
               <td className="py-3 px-4">
-                <Badge variant="outline" className={statusConfig[request.status].className}>
-                  {statusConfig[request.status].label}
+                <Badge variant="outline" className={roleClasses[ADOPTION_STATUS[request.status].role]}>
+                  {ADOPTION_STATUS[request.status].label}
                 </Badge>
                 {request.status === 'REJECTED' && request.rejectionReason && (
-                  <p className="text-xs text-red-600 mt-1 max-w-xs truncate">{request.rejectionReason}</p>
+                  <p className="text-xs text-status-danger-fg mt-1 max-w-xs truncate">{request.rejectionReason}</p>
                 )}
               </td>
               <td className="py-3 px-4 text-sm text-gray-600">
@@ -107,6 +100,7 @@ export function AdoptionRequestTable({ requests, onViewDetail, isAdmin = false }
                   variant="ghost"
                   size="sm"
                   onClick={() => onViewDetail(request.id)}
+                  aria-label={`Ver detalle de la solicitud de ${request.animal.name}`}
                 >
                   <Eye className="w-4 h-4" />
                 </Button>

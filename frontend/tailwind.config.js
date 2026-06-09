@@ -57,7 +57,7 @@ module.exports = {
           50: 'oklch(0.96 0.02 175)',
           100: 'oklch(0.92 0.04 175)',
           500: 'oklch(0.60 0.14 175)',
-          600: 'oklch(0.55 0.14 175)',
+          600: 'oklch(0.51 0.14 175)',
           700: 'oklch(0.48 0.12 175)',
           900: 'oklch(0.25 0.06 175)',
         },
@@ -67,6 +67,42 @@ module.exports = {
           500: 'oklch(0.75 0.16 70)',
           600: 'oklch(0.68 0.16 70)',
           700: 'oklch(0.60 0.14 70)',
+        },
+        status: {
+          success: {
+            DEFAULT: 'var(--status-success-bg)',
+            fg: 'var(--status-success-fg)',
+            bd: 'var(--status-success-bd)',
+            solid: 'var(--status-success-solid)',
+          },
+          caution: {
+            DEFAULT: 'var(--status-caution-bg)',
+            fg: 'var(--status-caution-fg)',
+            bd: 'var(--status-caution-bd)',
+          },
+          info: {
+            DEFAULT: 'var(--status-info-bg)',
+            fg: 'var(--status-info-fg)',
+            bd: 'var(--status-info-bd)',
+            solid: 'var(--status-info-solid)',
+          },
+          adopted: {
+            DEFAULT: 'var(--status-adopted-bg)',
+            fg: 'var(--status-adopted-fg)',
+            bd: 'var(--status-adopted-bd)',
+          },
+          neutral: {
+            DEFAULT: 'var(--status-neutral-bg)',
+            fg: 'var(--status-neutral-fg)',
+            bd: 'var(--status-neutral-bd)',
+          },
+          danger: {
+            DEFAULT: 'var(--status-danger-bg)',
+            fg: 'var(--status-danger-fg)',
+            bd: 'var(--status-danger-bd)',
+            solid: 'var(--status-danger-solid)',
+          },
+          'on-solid': 'var(--status-on-solid)',
         },
       },
       transitionTimingFunction: {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { requestPushPermission, showBrowserNotification, getPushPermission } from '../lib/pushNotifications';
+import { feedbackTagClasses } from '../design/status';
 
 interface Notification {
   id: string;
@@ -15,13 +16,6 @@ interface Notification {
   createdAt: string;
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  INFO: 'bg-blue-100 text-blue-700',
-  WARNING: 'bg-yellow-100 text-yellow-700',
-  SUCCESS: 'bg-green-100 text-green-700',
-  ERROR: 'bg-red-100 text-red-700',
-};
-
 export function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -29,6 +23,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
 
   const prevCountRef = useRef(0);
   const pushAskedRef = useRef(false);
@@ -85,8 +80,18 @@ export function NotificationBell() {
         setOpen(false);
       }
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        bellRef.current?.focus();
+      }
+    };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
   }, []);
 
   const markRead = async (id: string) => {
@@ -126,19 +131,26 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={bellRef}
         onClick={() => setOpen(!open)}
-        className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative transition-transform duration-150 ease-out-strong active:scale-[0.93]"
+        aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative transition-transform duration-150 ease-out-strong active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-warm-600 text-white text-xs font-bold rounded-full border-2 border-white px-1">
+          <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-warm-600 text-white text-xs font-bold rounded-full border-2 border-white px-1">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
+      <span className="sr-only" aria-live="polite">
+        {unreadCount > 0 ? `${unreadCount} notificaciones sin leer` : ''}
+      </span>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-96 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden dropdown-enter">
+        <div role="dialog" aria-label="Notificaciones" className="absolute right-0 top-full mt-2 w-96 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden dropdown-enter">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Notificaciones</h3>
             <div className="flex items-center gap-2">
@@ -152,7 +164,8 @@ export function NotificationBell() {
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                aria-label="Cerrar notificaciones"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -173,7 +186,7 @@ export function NotificationBell() {
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[n.type] || TYPE_COLORS['INFO']}`}>
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${feedbackTagClasses(n.type)}`}>
                           {n.type}
                         </span>
                         <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
@@ -183,11 +196,11 @@ export function NotificationBell() {
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">
                       {!n.readAt && (
-                        <button onClick={() => markRead(n.id)} className="p-1 text-gray-400 hover:text-green-600" title="Marcar como leída">
+                        <button onClick={() => markRead(n.id)} aria-label="Marcar como leída" className="p-1.5 text-gray-400 hover:text-status-success-fg rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Marcar como leída">
                           <Check className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      <button onClick={() => deleteNotif(n.id, !n.readAt)} className="p-1 text-gray-400 hover:text-red-500" title="Eliminar">
+                      <button onClick={() => deleteNotif(n.id, !n.readAt)} aria-label="Eliminar notificación" className="p-1.5 text-gray-400 hover:text-destructive rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Eliminar">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>

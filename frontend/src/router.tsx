@@ -1,41 +1,55 @@
+import { lazy, Suspense } from 'react';
+import type { ReactNode } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SmartRedirect } from './components/SmartRedirect';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { ForgotPassword } from './pages/ForgotPassword';
-import { ResetPassword } from './pages/ResetPassword';
-import { ActivateAccount } from './pages/ActivateAccount';
-import { ResendActivation } from './pages/ResendActivation';
-import { Profile } from './pages/Profile';
-import { Dashboard } from './pages/Dashboard';
-import { Pets } from './pages/Pets';
-import { PetDetail } from './pages/PetDetail';
-import { PetNew } from './pages/PetNew';
-import { PetEdit } from './pages/PetEdit';
-import { Catalog } from './pages/Catalog';
-import { CompatibilityTestPage } from './pages/CompatibilityTestPage';
-import { MyAdoptionRequests } from './pages/MyAdoptionRequests';
-import { AdminAdoptionRequests } from './pages/AdminAdoptionRequests';
-import { AdminAdoptionRequestDetail } from './pages/AdminAdoptionRequestDetail';
-import { AdminUsers } from './pages/AdminUsers';
-import { AdoptionRequestDetail } from './components/AdoptionRequestDetail';
-import { ImmunizationAlerts } from './pages/ImmunizationAlerts';
-import { AdminInterviewSlots } from './pages/AdminInterviewSlots';
-import { NotificationCenter } from './pages/NotificationCenter';
-import { TaskManagement } from './pages/TaskManagement';
-import { AuditLog } from './pages/AuditLog';
-import { AdminReports } from './pages/AdminReports';
+import { LoadingState } from './components/LoadingState';
+
+// Pages are code-split per route. AppLayout, ProtectedRoute, and SmartRedirect
+// stay eager: they are structural and tiny, and AppLayout hosts the Suspense
+// boundary for every protected page. Public pages get their own boundary below.
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then((m) => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
+const ActivateAccount = lazy(() => import('./pages/ActivateAccount').then((m) => ({ default: m.ActivateAccount })));
+const ResendActivation = lazy(() => import('./pages/ResendActivation').then((m) => ({ default: m.ResendActivation })));
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const Pets = lazy(() => import('./pages/Pets').then((m) => ({ default: m.Pets })));
+const PetDetail = lazy(() => import('./pages/PetDetail').then((m) => ({ default: m.PetDetail })));
+const PetNew = lazy(() => import('./pages/PetNew').then((m) => ({ default: m.PetNew })));
+const PetEdit = lazy(() => import('./pages/PetEdit').then((m) => ({ default: m.PetEdit })));
+const Catalog = lazy(() => import('./pages/Catalog').then((m) => ({ default: m.Catalog })));
+const CompatibilityTestPage = lazy(() => import('./pages/CompatibilityTestPage').then((m) => ({ default: m.CompatibilityTestPage })));
+const MyAdoptionRequests = lazy(() => import('./pages/MyAdoptionRequests').then((m) => ({ default: m.MyAdoptionRequests })));
+const AdminAdoptionRequests = lazy(() => import('./pages/AdminAdoptionRequests').then((m) => ({ default: m.AdminAdoptionRequests })));
+const AdminAdoptionRequestDetail = lazy(() => import('./pages/AdminAdoptionRequestDetail').then((m) => ({ default: m.AdminAdoptionRequestDetail })));
+const AdminUsers = lazy(() => import('./pages/AdminUsers').then((m) => ({ default: m.AdminUsers })));
+const AdoptionRequestDetail = lazy(() => import('./components/AdoptionRequestDetail').then((m) => ({ default: m.AdoptionRequestDetail })));
+const ImmunizationAlerts = lazy(() => import('./pages/ImmunizationAlerts').then((m) => ({ default: m.ImmunizationAlerts })));
+const AdminInterviewSlots = lazy(() => import('./pages/AdminInterviewSlots').then((m) => ({ default: m.AdminInterviewSlots })));
+const NotificationCenter = lazy(() => import('./pages/NotificationCenter').then((m) => ({ default: m.NotificationCenter })));
+const TaskManagement = lazy(() => import('./pages/TaskManagement').then((m) => ({ default: m.TaskManagement })));
+const AuditLog = lazy(() => import('./pages/AuditLog').then((m) => ({ default: m.AuditLog })));
+const AdminReports = lazy(() => import('./pages/AdminReports').then((m) => ({ default: m.AdminReports })));
+
+// Suspense boundary for public pages (rendered outside AppLayout).
+const publicEl = (el: ReactNode) => (
+  <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><LoadingState /></div>}>
+    {el}
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
   // Public routes
-  { path: '/login', element: <Login /> },
-  { path: '/register', element: <Register /> },
-  { path: '/forgot-password', element: <ForgotPassword /> },
-  { path: '/reset-password', element: <ResetPassword /> },
-  { path: '/activate', element: <ActivateAccount /> },
-  { path: '/resend-activation', element: <ResendActivation /> },
+  { path: '/login', element: publicEl(<Login />) },
+  { path: '/register', element: publicEl(<Register />) },
+  { path: '/forgot-password', element: publicEl(<ForgotPassword />) },
+  { path: '/reset-password', element: publicEl(<ResetPassword />) },
+  { path: '/activate', element: publicEl(<ActivateAccount />) },
+  { path: '/resend-activation', element: publicEl(<ResendActivation />) },
 
   // Protected routes
   {

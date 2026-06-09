@@ -128,13 +128,15 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
           <>
             <button
               onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 transition-colors"
+              aria-label="Foto anterior"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 transition-colors"
+              aria-label="Foto siguiente"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -157,7 +159,8 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
         {canManage && currentImage && !currentImage.isMain && (
           <button
             onClick={() => handleDelete(currentImage.id)}
-            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+            aria-label="Eliminar imagen"
+            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             title="Eliminar imagen"
           >
             <Trash2 className="w-4 h-4" />
@@ -172,11 +175,13 @@ export function GalleryManager({ animalId, images, canManage, onGalleryChange }:
             <button
               key={img.id}
               onClick={() => setCurrentIndex(idx)}
-              className={`flex-shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 transition-colors ${
+              aria-label={`Ver foto ${idx + 1}`}
+              aria-current={idx === currentIndex}
+              className={`flex-shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 idx === currentIndex ? 'border-rescue-500' : 'border-transparent hover:border-gray-300'
               }`}
             >
-              <img src={img.fileUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+              <img src={img.fileUrl} alt={`Miniatura ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

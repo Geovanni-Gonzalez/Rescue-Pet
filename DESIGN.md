@@ -1,213 +1,254 @@
 # Rescue Pet: Design System
 
-Extracted from codebase on 2026-06-04. This documents the current state, not the aspirational one.
+Extracted from codebase on 2026-06-08. This documents the current state, not the aspirational one.
+
+Register: **product**. The design serves the workflows (catalog, adoption pipeline, clinical records, admin); it is not the product itself.
 
 ## Color System
 
 ### Architecture
-HSL CSS custom properties defined in `frontend/src/index.css`, consumed via Tailwind config as `hsl(var(--token))`. A parallel `rescue-*` scale in the Tailwind config provides hardcoded hex values used directly in components.
+OKLCH CSS custom properties defined in `frontend/src/index.css`, consumed via the Tailwind config (`frontend/tailwind.config.js`) as `var(--token)`. Two named scales also live in the Tailwind config, both OKLCH: `rescue-*` (the brand teal-green, hue 175) and `warm-*` (the amber accent, hue 70). A third group, `status-*`, holds the six semantic status roles (see below). Every system color is now OKLCH; no hex or HSL remains in the token layer.
 
 ### Semantic Tokens (CSS Variables)
+Hue 175 (teal-green) tints nearly every neutral. Dark values exist for all tokens.
+
 | Token | Light | Dark | Usage |
 |---|---|---|---|
-| `--background` | `120 20% 98%` | `120 10% 10%` | Page background (green-tinted off-white) |
-| `--foreground` | `120 10% 20%` | `120 10% 95%` | Primary text |
-| `--card` | `0 0% 100%` | `120 10% 12%` | Card surfaces |
-| `--primary` | `142 71% 45%` | same | Primary actions, links (green) |
-| `--secondary` | `120 20% 92%` | `120 10% 20%` | Secondary surfaces |
-| `--muted` | `120 20% 92%` | `120 10% 20%` | Subdued backgrounds |
-| `--muted-foreground` | `120 5% 45%` | `120 10% 65%` | Secondary text |
-| `--accent` | `24 95% 53%` | same | Warm orange accent (declared, rarely used) |
-| `--destructive` | `0 84% 60%` | `0 62% 30%` | Error/danger actions |
-| `--border` | `120 15% 85%` | `120 10% 20%` | Borders |
-| `--ring` | `142 71% 45%` | same | Focus rings |
+| `--background` | `oklch(0.98 0.005 175)` | `oklch(0.15 0.01 175)` | Page background (green-tinted off-white) |
+| `--foreground` | `oklch(0.25 0.015 175)` | `oklch(0.93 0.008 175)` | Primary text |
+| `--card` | `oklch(0.995 0.002 175)` | `oklch(0.18 0.01 175)` | Card / sidebar / topbar surfaces |
+| `--popover` | `oklch(0.995 0.002 175)` | `oklch(0.18 0.01 175)` | Dropdowns, popovers |
+| `--primary` | `oklch(0.51 0.14 175)` | `oklch(0.60 0.14 175)` | Primary actions, links, brand mark (light tuned for AA on white text) |
+| `--secondary` | `oklch(0.94 0.01 175)` | `oklch(0.25 0.01 175)` | Secondary surfaces, image placeholders |
+| `--muted` | `oklch(0.94 0.008 175)` | `oklch(0.25 0.008 175)` | Subdued backgrounds |
+| `--muted-foreground` | `oklch(0.55 0.01 175)` | `oklch(0.65 0.01 175)` | Secondary text |
+| `--accent` | `oklch(0.75 0.16 70)` | `oklch(0.70 0.14 70)` | Warm amber accent (hue 70) |
+| `--destructive` | `oklch(0.55 0.20 25)` | `oklch(0.45 0.15 25)` | Error / danger actions (light tuned for AA) |
+| `--border` / `--input` | `oklch(0.90 0.006 175)` | `oklch(0.25 0.008 175)` | Borders, input outlines |
+| `--ring` | `oklch(0.51 0.14 175)` | `oklch(0.60 0.14 175)` | Focus rings |
 | `--radius` | `0.75rem` | same | Base border radius |
 
-### Rescue Scale (Hardcoded Hex)
-| Token | Value | Notes |
+### Brand Scale (`rescue-*`, hue 175)
+| Token | Value | Where used |
 |---|---|---|
-| `rescue-50` | `#f0fdf4` | Tinted backgrounds, active sidebar items, empty states |
-| `rescue-100` | `#dcfce7` | Icon containers, avatar backgrounds, catalog headers |
-| `rescue-500` | `#22c55e` | Loading spinners, sort indicators |
-| `rescue-600` | `#16a34a` | Brand text, sidebar active, link color, CTA buttons |
-| `rescue-900` | `#14532d` | Headings on rescue-tinted backgrounds |
-| `rescue-accent` | `#f97316` | Declared but unused in components |
+| `rescue-50` | `oklch(0.96 0.02 175)` | Active sidebar item bg, avatar bg, empty-state and loader icon bg |
+| `rescue-100` | `oklch(0.92 0.04 175)` | Loader pulse ring, mobile login badge bg |
+| `rescue-500` | `oklch(0.60 0.14 175)` | PetCard hover border tint |
+| `rescue-600` | `oklch(0.51 0.14 175)` | Brand text, active nav text, links, inline accents (kept in sync with `--primary`, AA on white) |
+| `rescue-700` | `oklch(0.48 0.12 175)` | Link hover states |
+| `rescue-900` | `oklch(0.25 0.06 175)` | Reserved for headings on tinted backgrounds |
 
-### Status Colors (Inline Tailwind, No Tokens)
-| Context | Color Pattern |
-|---|---|
-| AVAILABLE | `green-100/800/200` |
-| QUARANTINE | `yellow-100/800/200` |
-| TREATMENT | `blue-100/800/200` |
-| ADOPTED | `purple-100/800/200` |
-| DECEASED | `gray-100/800/200` |
-| Notification INFO | `blue-100/700` |
-| Notification WARNING | `yellow-100/700` |
-| Notification SUCCESS | `green-100/700` |
-| Notification ERROR | `red-100/700` |
-| Compatibility >= 80 | `green-100/800/200` |
-| Compatibility >= 50 | `yellow-100/800/200` |
-| Compatibility < 50 | `red-100/800/200` |
+### Accent Scale (`warm-*`, hue 70)
+The amber accent is no longer dormant. It now appears in two surfaces.
+
+| Token | Value | Where used |
+|---|---|---|
+| `warm-50` / `warm-100` / `warm-700` | amber tints | CompatibilityScoreBadge high tier (score >= 80) |
+| `warm-600` | `oklch(0.68 0.16 70)` | NotificationBell unread-count badge |
+
+### Status Roles (Tokens)
+Status and feedback colors are tokenized as six semantic roles, defined in OKLCH in `index.css` (light + dark), registered in `tailwind.config.js` under the `status` group, and mapped from domain statuses in the single source of truth `src/design/status.ts`. Each role has a soft surface (`bg` / `fg` / `bd`); `success`, `info`, and `danger` also carry a saturated `solid` for filled markers.
+
+| Role | Hue | Pet status | Adoption status | Feedback level |
+|---|---|---|---|---|
+| `success` | 150 (green) | AVAILABLE | APPROVED | SUCCESS |
+| `caution` | 95 (amber) | QUARANTINE | INTERVIEW | WARNING |
+| `info` | 245 (blue) | TREATMENT | RECEIVED | INFO |
+| `adopted` | 300 (purple) | ADOPTED | VISIT | (none) |
+| `neutral` | 175 (brand-tinted) | DECEASED | (none) | (none) |
+| `danger` | 25 (red) | (none) | REJECTED | ERROR |
+
+Utility classes: `bg-status-{role}`, `text-status-{role}-fg`, `border-status-{role}-bd`, plus `bg-status-{role}-solid` and `text-status-on-solid` for filled markers. Components consume them through `roleClasses`, `roleSolid`, `feedbackTagClasses`, and `affinityClasses` from `design/status.ts` rather than hardcoding palette colors. Affinity score keeps the `warm-*` amber accent for the high tier as a deliberate brand choice.
+
+Consumers refactored to the token system: StatusBadge, AdoptionRequestTable, AdoptionStatusTimeline, StatusTransitionActions (labels), NotificationBell (type tags), CompatibilityScoreBadge.
+
+### Raw Palette Still in Use
+Page-level chrome and one-off accents still reach for the raw Tailwind palette and bypass tokens: auth success/error banners (Login, Register, ForgotPassword, ResetPassword, ActivateAccount), table and section chrome and `gray-*` neutrals across pages, and the `gray-*`/`bg-white` surfaces in PetStatusSelector. These are not duplicated semantics, so they were left for a separate neutrals-and-banners pass.
 
 ### Color Strategy
-Currently **Restrained**: green-tinted neutrals with `rescue-600` as the single accent. The declared orange accent (`--accent`, `rescue-accent`) is nearly unused. Status colors use raw Tailwind palette (green, yellow, blue, purple, red) without passing through the design token layer.
+**Restrained.** Teal-green tinted neutrals (hue 175) carry the surface, `rescue-600` is the single brand accent, and the `warm-*` amber appears in roughly 10% of cases (afinidad scores, unread count). This fits the product register and the brand voice ("warm but professional"). It also threads the anti-references: not the cold gray SaaS dashboard, not the pastel pet-shop.
 
 ### Issues
-- Two parallel color systems (CSS variables vs `rescue-*` hex) with no single source of truth.
-- Dark mode variables are defined but dark mode is not implemented (no toggle, no class application).
-- Status colors are hardcoded per-component (StatusBadge, CompatibilityScoreBadge, NotificationBell, AdoptionStatusTimeline) with duplicated mappings.
-- The orange accent exists in three places (`--accent`, `rescue-accent`, inline `#f97316`) and is used in zero visible surfaces.
+- **Neutrals and one-off accents still bypass tokens.** `gray-50/100/400/500/600/900` stand in for `muted` / `border` / `foreground` across Sidebar, Topbar, NotificationBell chrome, EmptyState, tables, and most pages; auth banners use raw green/red. These are the remaining raw-palette usages now that status semantics are tokenized. Heaviest in PetDetail, AdminReports, AdoptionRequestDetail, AuditLog, TaskManagement, AdminUsers.
+- **Dark mode is defined but unreachable.** Every semantic and status token has a complete `.dark` value and `darkMode: ["class"]` is configured, but nothing ever applies the `.dark` class. No toggle, no system-preference listener. The status system is now dark-ready; the remaining raw-palette neutrals and banners would still not respond to a theme switch.
+- **Resolved since the prior extraction:** the token layer is fully OKLCH (previously HSL plus a parallel hardcoded-hex scale); the amber accent is in use; status and feedback colors are extracted into one OKLCH role system with a single source of truth (`design/status.ts`), ending the per-component duplication and the duplicate `AdoptionRequestStatusType` type and triplicated status labels.
 
 ## Typography
 
 ### Font Stack
-No custom font loaded. The app uses Tailwind's default `font-sans` (system font stack via `body` class in `index.css`).
+**Inter** is loaded from Google Fonts in `frontend/index.html` (weights 400/500/600/700, `display=swap`, with `preconnect`). Tailwind's `fontFamily.sans` is set to `Inter, system-ui, -apple-system, sans-serif`. The body enables OpenType features `cv11` and `ss01` and `-webkit-font-smoothing: antialiased`.
+
+### Base Treatment
+- `h1`-`h4` carry `letter-spacing: -0.01em` (set globally in `index.css`).
+- `p` is capped at `max-width: 72ch` globally, so prose line length is bounded without per-component effort.
 
 ### Scale (Observed in Components)
 | Class | Usage |
 |---|---|
-| `text-2xl font-bold` | Page titles (Login, Catalog, Sidebar brand) |
-| `text-lg font-semibold` | Card titles, empty state headings, dialog titles |
-| `text-sm font-medium` | Nav items, labels, form labels, topbar name |
+| `text-2xl font-bold` | Page titles (Login, Catalog headings) |
+| `text-lg font-semibold` | Card titles, dialog titles, error-boundary heading |
+| `text-base font-bold` / `font-semibold` | Sidebar brand, empty-state title |
+| `text-sm font-medium` | Nav items, labels, topbar name, links |
 | `text-sm` | Body text, descriptions, notification messages |
-| `text-xs` | Badges, metadata, timestamps, helper text |
-| `text-[10px]` / `text-[11px]` | Notification type labels, timestamps (arbitrary values) |
+| `text-xs` | Badges, metadata, timestamps, helper text, sublabels |
+| `text-[11px]` | Sidebar section labels (uppercase) |
 
 ### Issues
-- No defined type scale. Sizes are chosen ad-hoc per component.
-- The jump from `text-sm` (14px) to `text-2xl` (24px) skips `text-base` (16px), `text-lg` (18px), and `text-xl` (20px) in most pages.
-- Arbitrary pixel sizes (`text-[10px]`, `text-[11px]`) in NotificationBell bypass the scale entirely.
-- No `max-w-prose` or `ch`-based line length caps anywhere.
+- No formal type scale token set; sizes are still chosen per component, though the range is tighter than before and `text-base` now appears.
+- Arbitrary `text-[11px]` survives in the Sidebar section headers.
 
 ## Spacing
 
 ### Observed Patterns
 | Context | Values |
 |---|---|
-| Page content | `p-4 sm:p-6 lg:p-8` (AppLayout main) |
-| Section gaps | `space-y-6` (nearly universal) |
-| Card padding | `p-6` (Card default), overridden to `p-4` in PetCard |
-| Grid gaps | `gap-6` |
-| Form field gaps | `space-y-2` (FormField), `space-y-4` (Login form) |
-| Sidebar nav | `space-y-1` between items, `px-4` container |
-| Inline element gaps | `gap-2`, `gap-3`, `gap-4` |
+| Page content (AppLayout main) | `px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8` |
+| Section gaps | `space-y-6` (common), `space-y-4` (forms) |
+| Card padding | `p-6` (Card header/content default), `px-3.5 pt-3 pb-3.5` (PetCard, tighter) |
+| Grid gaps | `gap-3` (Dashboard), `gap-4 lg:gap-5` (Catalog), `gap-6` (Pets) |
+| Sidebar | `px-4` nav container, `space-y-0.5` within a group, `mt-5 pt-4` between groups |
+| Form field gaps | `space-y-2` (FormField) |
+| Inline element gaps | `gap-2`, `gap-2.5`, `gap-3` |
 
-### Issues
-- Uniform `space-y-6` on nearly every page creates monotonous rhythm.
-- No spacing scale documented; values are picked per component.
+### Notes
+- Spacing has more rhythm than the prior extraction: the app shell uses asymmetric `py`/`px` that grows by breakpoint, and grid gaps vary by page density (Dashboard tight, Pets loose).
+- Still no documented spacing scale; values are picked per component.
 
 ## Elevation
 
-### Shadow Usage
 | Level | Class | Where |
 |---|---|---|
-| None | (default) | Most elements |
-| Subtle | `shadow-sm` | Buttons, inputs, tables, form containers |
-| Medium | `shadow` | Cards (base component) |
-| Lifted | `shadow-md` | PetCard hover state |
-| Prominent | `shadow-lg` | Login/Register cards, notification dropdown, dialogs |
+| None | (default) | Most surfaces; flat is the norm |
+| Subtle | `shadow-sm` | Inputs, outline / secondary / destructive buttons |
+| Medium | `shadow` | Card base, primary button, default badge |
+| Lifted | `shadow-md` | PetCard hover |
+| Prominent | `shadow-lg` | Dialogs, notification dropdown |
 
-### Issues
-- Card base has `shadow` but most pages wrap content in additional cards or containers that also have shadows, creating inconsistent depth.
+Depth is used sparingly; most layout is separated by borders (`border-border`) rather than shadow.
 
 ## Border Radius
 
-### Observed Scale
 | Class | Rem | Where |
 |---|---|---|
-| `rounded-sm` | calc(0.75rem - 4px) = 0.5rem | Dialog close button |
-| `rounded-md` | calc(0.75rem - 2px) = 0.5625rem | Buttons, inputs, badges, most interactive elements |
-| `rounded-lg` | 0.75rem | Dialogs, image containers, timeline elements |
-| `rounded-xl` | via Card component | Cards, section headers, form containers |
-| `rounded-full` | 50% | Avatars, notification count, icon containers, pill badges |
+| `rounded-md` | calc(0.75rem - 2px) | Buttons, inputs, badges, nav items, native selects |
+| `rounded-lg` | 0.75rem | Dialogs, notification dropdown, image/timeline blocks, brand-mark tiles |
+| `rounded-xl` | via Card | Cards, login brand tiles |
+| `rounded-full` | 50% | Avatars, unread count, icon circles, pill elements |
 
-### Issues
-- `rounded-md` and `rounded-lg` are nearly identical (0.5625rem vs 0.75rem) due to the CSS variable math, reducing their visual distinction.
+`rounded-md` and `rounded-lg` remain close in value (0.5625rem vs 0.75rem) because of the CSS-variable math, so their visual distinction is subtle.
 
 ## Components
 
-### Primitives (ui/)
-Built on shadcn/ui pattern with CVA variants and Radix UI primitives.
+### Primitives (`src/components/ui/`)
+shadcn/ui pattern: CVA variants in `*-variants.ts`, Radix primitives where needed, `cn()` from `lib/utils`.
 
 | Component | Variants | Notes |
 |---|---|---|
-| Button | default, destructive, outline, secondary, ghost, link / default, sm, lg, icon | Standard shadcn setup |
-| Badge | default, secondary, destructive, outline | Standard shadcn setup |
-| Card | (no variants) | rounded-xl + shadow |
-| Input | (no variants) | h-9, rounded-md, shadow-sm |
-| Label | (no variants) | text-sm font-medium |
-| Dialog | (no variants) | Radix-based with animations |
+| Button | default, destructive, outline, secondary, ghost, link / sizes default, sm, lg, icon | `hover:brightness-110/95` instead of color swaps; `active:scale-[0.97]`; `transition-[...] duration-150 ease-out-strong` |
+| Badge | default, secondary, destructive, outline | `hover:brightness` on filled variants |
+| Card | (none) | `rounded-xl border bg-card shadow`; header/content/footer at `p-6` |
+| Input | (none) | `h-9 rounded-md`, `text-base md:text-sm`, `focus-visible:border-ring`, `ease-out-strong` |
+| Label | (none) | `text-sm font-medium` |
+| Dialog | (none) | Radix; overlay `bg-black/60 backdrop-blur-[2px]`; enter/exit fade + zoom + slide via `tailwindcss-animate` |
+
+> Hygiene note: a stray `frontend/@/components/ui/` directory duplicates button, badge, card, input, label, and dialog. It is an artifact of the `@/` path alias being written to a literal `@` folder. The app imports from `src/components/ui/`; the `@/` copy is dead and should be deleted.
 
 ### Domain Components
 | Component | Purpose | Notes |
 |---|---|---|
-| StatusBadge | Pet status display | Maps 5 statuses to inline color classes |
-| RoleBadge | User role display | Maps 4 roles to Badge variants |
-| CompatibilityScoreBadge | Score percentage | Tricolor thresholds (80/50) |
-| AdoptionStatusTimeline | Process step indicator | Custom stepper with circles + connecting lines |
-| PetCard | Animal card in grids | Card + image + status + action button |
-| FormField | Labeled input wrapper | Label + Input + error message |
-| LoadingState | Full-page spinner | Centered Loader2 icon with message |
-| EmptyState | Zero-data placeholder | Icon circle + title + description |
-| ConfirmDialog | Confirmation modal | Dialog with confirm/cancel buttons |
-| NotificationBell | Header notification dropdown | Custom dropdown (not Radix popover) |
-| PetFilters | Search + filter bar | Text input + select dropdowns |
-| LocationPicker | Map selector | Leaflet integration |
-| GalleryManager | Photo upload/manage | Image grid with upload, reorder, delete |
-| QRDisplay | QR code display | Canvas-rendered QR with download |
+| StatusBadge | Pet status pill | 5 statuses mapped to status roles via `design/status.ts` over Badge `outline` |
+| RoleBadge | User role pill | 4 roles mapped to Badge variants (ADMIN destructive, VET default, VOLUNTEER secondary, ADOPTER outline) |
+| CompatibilityScoreBadge | Afinidad percentage | Tricolor thresholds 80/50; high tier uses `warm-*` |
+| AdoptionStatusTimeline | Adoption pipeline stepper | RECEIVED to APPROVED with REJECTED special-cased; Check vs Circle icons plus color |
+| StatusTransitionActions | Allowed adoption-status buttons | State machine (TRANSITIONS map); outline + destructive buttons |
+| PetStatusSelector | Clinical/lifecycle status change | Native select + reason field; double-confirm for DECEASED via ConfirmDialog |
+| RejectionReasonDialog | Capture rejection reason | Dialog around a reason input |
+| CompatibilityExplanation | Explain a score | Breakdown of afinidad factors |
+| CompatibilityTestForm | Adopter affinity questionnaire | Multi-field form |
+| AdoptionRequestTable | Requests list (staff) | Tabular list with status |
+| AdoptionRequestDetail | Single request workspace | Interview scheduling, document/contract handling, canvas signature pad |
+| PetForm | Create/edit pet | Shared form for PetNew and PetEdit |
+| PetCard | Animal card in grids | `<button>` with group-hover image zoom, hover border tint, `active:scale-[0.98]`, lazy image |
+| PetFilters | Search + filter bar | Text input + selects |
+| FormField | Labeled input wrapper | Label + Input + error; errors use raw `red-500` |
+| EmptyState | Zero-data placeholder | `rescue-50` icon circle + title + description + optional action |
+| LoadingState | Full-area loader | Custom pulsing PawPrint (slow spin), not a generic spinner; stagger-fade-in entrance |
+| ConfirmDialog | Confirmation modal | Dialog with confirm/cancel, destructive variant |
+| NotificationBell | Header notification dropdown | Custom dropdown (not Radix); 30s polling, browser push, `dropdown-enter` animation, `warm-600` count |
+| LocationPicker | Map selector | Leaflet |
+| GalleryManager | Photo upload/manage | Image grid: upload, reorder, delete |
+| QRDisplay | QR code | Canvas-rendered with download |
+| ErrorBoundary | App-level error catch | Class component; clean token usage; "Recargar página" CTA |
 
 ### Layout Components
 | Component | Notes |
 |---|---|
-| AppLayout | Sidebar + Topbar + main content area. Sidebar hidden on mobile with overlay toggle. |
-| Sidebar | Fixed 264px, white bg, border-right. 14+ nav items without grouping. |
-| Topbar | 64px height, white bg, border-bottom. Greeting + notification bell + user info. |
+| AppLayout | Sidebar + Topbar + scrollable main. Mobile sidebar is an animated overlay drawer (`sidebar-overlay` + `sidebar-drawer`). Content wrapped `max-w-7xl mx-auto`. |
+| Sidebar | Fixed `w-64`, `bg-card`, border-right. **Now grouped** into labeled sections (Adopción, Mascotas, Operaciones, Sistema, plus an unlabeled general group), role-filtered. Brand mark is a `bg-primary` tile + wordmark. Active item `bg-rescue-50 text-rescue-600`; inactive items use raw `gray-*`. |
+| Topbar | `h-16`, `bg-card`, border-bottom. First-name greeting, NotificationBell, name + RoleBadge, `rescue-50` avatar. |
 | ProtectedRoute | Route guard with role filtering. |
 | SmartRedirect | Role-based redirect from `/`. |
 
 ## Layout Patterns
 
 ### App Shell
-- Sidebar (w-64) + content area, hidden sidebar on mobile with overlay.
-- Topbar (h-16) with hamburger on mobile.
-- Content area: `max-w-7xl mx-auto` with responsive padding.
+- `w-64` sidebar + content; sidebar hidden under `md`, replaced by an animated overlay drawer.
+- `h-16` topbar with hamburger under `md`.
+- Main content scrolls independently; inner column `max-w-7xl mx-auto` with breakpoint-scaling padding.
 
 ### Page Patterns
-- **List pages** (Pets, Catalog, AdminUsers, etc.): Header section + filters + grid/table + pagination.
-- **Detail pages** (PetDetail, AdoptionRequestDetail): Section blocks with gray dividers.
-- **Auth pages** (Login, Register, ForgotPassword): Centered card on gray background.
-- **Form pages** (PetNew, PetEdit, Profile): Card container with stacked form fields.
+- **List pages** (Catalog, Pets, AdminUsers, etc.): header + filters + responsive grid or table.
+- **Detail pages** (PetDetail, AdminAdoptionRequestDetail): section blocks, status actions, related panels.
+- **Auth pages** (Login redesigned, Register, ForgotPassword, ResetPassword, ActivateAccount, ResendActivation): see split layout below.
+- **Form pages** (PetNew, PetEdit, Profile): stacked fields, shared PetForm where applicable.
 
-### Grid
-- Catalog: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
-- Pets management: same pattern.
-- No other grid layouts observed.
+### Auth Split Layout (Login)
+`min-h-screen flex`. Left panel `lg:w-[45%] bg-primary` with brand mark, headline in `primary-foreground`, and two soft decorative circles (`primary-foreground/5`); hidden under `lg`. Right panel centers a `max-w-sm` form with a mobile-only brand badge and a `stagger-fade-in` entrance. This is a committed brand moment inside an otherwise restrained product, and a deliberate departure from the prior "centered card on gray" auth screen.
 
-## Icons
-Lucide React throughout. 60+ icons imported across components. Sizes: `w-4 h-4` (inline), `w-5 h-5` (nav/actions), `w-6 h-6` (topbar), `w-7 h-7` (brand logo), `w-8 h-8` (empty states), `w-10 h-10` (loading).
+### Grids
+- Catalog: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5`
+- Pets: same column ramp, `gap-6`
+- Dashboard: `grid-cols-1 sm:grid-cols-2 gap-3`
+- All three carry the `stagger-grid` class for staggered entrance.
 
 ## Motion
-- `transition-colors` on buttons, nav items, notifications (Tailwind default 150ms).
-- `animate-spin` on loading spinners and recalculate button.
-- Dialog open/close animations via `tailwindcss-animate` (fade + zoom + slide).
-- `hover:shadow-md` transition on PetCard (no explicit duration).
-- No custom easing curves defined.
+
+### Tokens and Curves
+Three easing curves are defined as CSS variables and mirrored in the Tailwind `transitionTimingFunction`:
+- `--ease-out` / `ease-out-strong`: `cubic-bezier(0.23, 1, 0.32, 1)` (ease-out-quint feel), the default for interactions.
+- `--ease-in-out` / `in-out-strong`: `cubic-bezier(0.77, 0, 0.175, 1)`.
+- `--ease-drawer` / `drawer`: `cubic-bezier(0.32, 0.72, 0, 1)` for the mobile drawer.
+
+No bounce, no elastic. Exponential ease-out throughout, consistent with the shared motion law.
+
+### Keyframes (in `index.css`)
+- `dropdown-in` (scale + fade) via `.dropdown-enter`, used by NotificationBell.
+- `fade-in` via `.sidebar-overlay`.
+- `slide-in-left` via `.sidebar-drawer`.
+- `stagger-fade-in` via `.stagger-grid > *` with `nth-child` delays (0 to 300ms), used by Catalog/Dashboard/Pets and inline by LoadingState and the Login form.
+
+### Interaction Patterns
+- Tactile press: `active:scale-[0.97]` on buttons and nav items, `active:scale-[0.93]` on icon buttons, `active:scale-[0.98]` on PetCard.
+- Hover brightness shifts on filled buttons/badges instead of color swaps.
+- PetCard image zoom on hover, gated by `[@media(hover:hover)]` so touch devices skip it.
+- `prefers-reduced-motion: reduce` collapses all animation and transition durations to ~0. This is honored globally.
 
 ## Responsive Behavior
 - Breakpoints: default Tailwind (`sm:640`, `md:768`, `lg:1024`, `xl:1280`).
-- Sidebar collapses to overlay at `md` breakpoint.
-- Content padding scales: `p-4 sm:p-6 lg:p-8`.
-- Grids collapse: 4-col -> 3 -> 2 -> 1.
-- Topbar elements hide on mobile (`hidden sm:block`, `hidden sm:flex`).
-- Tables do not adapt to mobile (horizontal scroll assumed but not implemented).
+- Sidebar collapses to an animated drawer at `md`.
+- Content padding scales `px-4 py-5` to `lg:px-10 lg:py-8`.
+- Grids collapse 4 to 3 to 2 to 1.
+- Topbar greeting and user name hide under `sm`.
+- Login left panel hides under `lg`, with a mobile brand badge as fallback.
+- Tables still assume horizontal scroll rather than reflowing on mobile.
 
 ## Accessibility
-- `aria-label="Abrir menu"` on hamburger button.
-- `sr-only` text on Dialog close button.
-- Focus rings via `focus-visible:ring-1 focus-visible:ring-ring` on inputs and buttons.
-- No skip-to-content link.
-- No ARIA roles on custom widgets (notification dropdown, status timeline).
-- Color-only status indicators (StatusBadge, CompatibilityScoreBadge) without secondary encoding.
+- `lang="es"` on the document.
+- `aria-label="Abrir menú"` on the hamburger; `sr-only` text on the Dialog close.
+- Focus rings via `focus-visible:ring-1 focus-visible:ring-ring` on inputs and buttons; `focus-visible:ring-2` on PetCard.
+- `prefers-reduced-motion` fully honored.
+- Gaps: no skip-to-content link; custom widgets (NotificationBell dropdown, status timeline) lack ARIA roles; status indicators are largely color-coded, though the timeline adds Check/Circle icons as a secondary cue and badges carry text labels.
+- Native `<select>` controls in PetStatusSelector are styled manually rather than through the Input/primitive layer.
 
 ## Language
-All UI copy is in Spanish. No i18n framework. Strings are hardcoded in components. Some strings have missing accents ("sesion" instead of "sesion", "electronico" instead of "electronico").
+All UI copy is in Spanish, hardcoded in components, no i18n framework. Accents are mostly correct in the current components (Adopción, Auditoría, Cerrar sesión, Notificaciones).

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Check, Circle } from 'lucide-react';
+import { ADOPTION_STATUS, roleClasses, roleSolid, type AdoptionRequestStatusType } from '../design/status';
 
-export type AdoptionRequestStatusType = 'RECEIVED' | 'INTERVIEW' | 'VISIT' | 'APPROVED' | 'REJECTED';
+export type { AdoptionRequestStatusType };
 
 interface AdoptionStatusTimelineProps {
   currentStatus: AdoptionRequestStatusType;
@@ -9,20 +10,12 @@ interface AdoptionStatusTimelineProps {
 
 const STATUS_ORDER: AdoptionRequestStatusType[] = ['RECEIVED', 'INTERVIEW', 'VISIT', 'APPROVED'];
 
-const STATUS_LABELS: Record<AdoptionRequestStatusType, string> = {
-  RECEIVED: 'Solicitud Recibida',
-  INTERVIEW: 'Entrevista',
-  VISIT: 'Visita',
-  APPROVED: 'Aprobada',
-  REJECTED: 'Rechazada',
-};
-
 export function AdoptionStatusTimeline({ currentStatus }: AdoptionStatusTimelineProps) {
   if (currentStatus === 'REJECTED') {
     return (
-      <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <Circle className="w-5 h-5 text-red-600 fill-red-600" />
-        <span className="font-medium text-red-800">Solicitud Rechazada</span>
+      <div className={`flex items-center gap-2 p-4 rounded-lg border ${roleClasses.danger}`}>
+        <Circle className="w-5 h-5 fill-current" />
+        <span className="font-medium">Solicitud Rechazada</span>
       </div>
     );
   }
@@ -41,10 +34,10 @@ export function AdoptionStatusTimeline({ currentStatus }: AdoptionStatusTimeline
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
                   isCompleted
-                    ? 'bg-green-500 border-green-500 text-white'
+                    ? roleSolid.success
                     : isCurrent
-                    ? 'bg-blue-500 border-blue-500 text-white'
-                    : 'bg-gray-100 border-gray-300 text-gray-400'
+                    ? roleSolid.info
+                    : 'bg-muted border-border text-muted-foreground'
                 }`}
               >
                 {isCompleted ? (
@@ -55,16 +48,20 @@ export function AdoptionStatusTimeline({ currentStatus }: AdoptionStatusTimeline
               </div>
               <span
                 className={`text-xs mt-2 text-center ${
-                  isCurrent ? 'font-medium text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  isCurrent
+                    ? 'font-medium text-status-info-fg'
+                    : isCompleted
+                    ? 'text-status-success-fg'
+                    : 'text-muted-foreground'
                 }`}
               >
-                {STATUS_LABELS[status]}
+                {ADOPTION_STATUS[status].label}
               </span>
             </div>
             {index < STATUS_ORDER.length - 1 && (
               <div
                 className={`flex-1 h-0.5 mx-2 ${
-                  index < currentIndex ? 'bg-green-500' : 'bg-gray-200'
+                  index < currentIndex ? 'bg-status-success-solid' : 'bg-border'
                 }`}
               />
             )}
