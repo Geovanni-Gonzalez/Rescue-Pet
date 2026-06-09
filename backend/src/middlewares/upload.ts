@@ -106,13 +106,16 @@ export function buildUploadUrl(subdir: UploadSubdir, filename: string): string {
 export async function persistUploadedFile(subdir: UploadSubdir, file: Express.Multer.File): Promise<string> {
   if (!isBlobEnabled()) return buildUploadUrl(subdir, file.filename);
 
-  const { put } = loadBlobSdk();
+  const blobSdk = loadBlobSdk();
   const pathname = `uploads/${subdir}/${file.filename}`;
-  await put(pathname, fs.readFileSync(file.path), {
-    access: blobAccessMode(),
+  const access = blobAccessMode();
+  const putOptions = {
+    access,
     allowOverwrite: true,
     contentType: file.mimetype,
-  });
+  };
+  console.log('[BLOB_UPLOAD] pathname:', pathname, 'access:', access, 'options:', JSON.stringify(putOptions), 'put type:', typeof blobSdk.put);
+  await blobSdk.put(pathname, fs.readFileSync(file.path), putOptions);
 
   cleanupLocalFile(file.path);
   // Always return a relative URL so images are served through our backend
