@@ -35,45 +35,25 @@ function isBlobEnabled() {
   return Boolean(process.env['BLOB_READ_WRITE_TOKEN']);
 }
 
-function loadBlobSdk(): {
-  put: (pathname: string, body: Buffer, options: Record<string, unknown>) => Promise<{ url: string }>;
-  del: (urlOrPathname: string) => Promise<void>;
-} {
+// Blob access mode: configure via BLOB_ACCESS env var ('public' or 'private').
+// Defaults to 'public'. Set to 'private' if your store is private-only.
+function blobAccessMode(): 'public' | 'private' {
+  const mode = process.env['BLOB_ACCESS'];
+  return mode === 'private' ? 'private' : 'public';
+}
+
+function loadBlobSdk() {
   try {
-    return require('@vercel/blob');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@vercel/blob') as {
+      put: (pathname: string, body: Buffer, options: Record<string, unknown>) => Promise<{ url: string; downloadUrl: string }>;
+      del: (urlOrPathname: string, options?: Record<string, unknown>) => Promise<void>;
+      list: (options: Record<string, unknown>) => Promise<{ blobs: Array<{ url: string; downloadUrl: string; pathname: string; contentType: string }> }>;
+    };
   } catch {
     throw new Error(
       'BLOB_READ_WRITE_TOKEN esta definido, pero falta @vercel/blob. Ejecuta npm install en el proyecto antes de desplegar.',
     );
-  }
-}
-
-// Auto-detect store access mode: try 'public' first, fall back to 'private'.
-// Caches result after first successful upload so subsequent calls are fast.
-let _detectedAccess: 'public' | 'private' | null = null;
-
-async function putWithAutoAccess(
-  put: (pathname: string, body: Buffer, opts: Record<string, unknown>) => Promise<{ url: string }>,
-  pathname: string,
-  body: Buffer,
-  opts: Record<string, unknown>,
-): Promise<{ url: string }> {
-  if (_detectedAccess) {
-    return put(pathname, body, { ...opts, access: _detectedAccess });
-  }
-  // Try public first
-  try {
-    const result = await put(pathname, body, { ...opts, access: 'public' });
-    _detectedAccess = 'public';
-    return result;
-  } catch (err: any) {
-    if (err?.message?.includes('private') || err?.message?.includes('public')) {
-      // Store mode mismatch — try the other mode
-      const result = await put(pathname, body, { ...opts, access: 'private' });
-      _detectedAccess = 'private';
-      return result;
-    }
-    throw err;
   }
 }
 
@@ -128,7 +108,8 @@ export async function persistUploadedFile(subdir: UploadSubdir, file: Express.Mu
 
   const { put } = loadBlobSdk();
   const pathname = `uploads/${subdir}/${file.filename}`;
-  await putWithAutoAccess(put, pathname, fs.readFileSync(file.path), {
+  await put(pathname, fs.readFileSync(file.path), {
+    access: blobAccessMode(),
     allowOverwrite: true,
     contentType: file.mimetype,
   });
@@ -149,7 +130,8 @@ export async function persistGeneratedFile(
   if (!isBlobEnabled()) return;
 
   const { put } = loadBlobSdk();
-  await putWithAutoAccess(put, `uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
+  await put(`uploads/${subdir}/${filename}`, fs.readFileSync(filePath), {
+    access: blobAccessMode(),
     allowOverwrite: true,
     contentType,
   });
