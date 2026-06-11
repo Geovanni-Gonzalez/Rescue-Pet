@@ -58,21 +58,22 @@ export function Login() {
     <div className="min-h-screen flex bg-background">
       {/* Brand panel */}
       <div
-        className="hidden lg:flex lg:w-[45%] items-end p-12 relative overflow-hidden bg-cover bg-center"
-        style={{ backgroundImage: `url(${loginFamilyPets})` }}
+        className="hidden lg:flex lg:w-[45%] items-end p-12 pb-16 relative overflow-hidden bg-cover"
+        style={{ backgroundImage: `url(${loginFamilyPets})`, backgroundPosition: '62% center' }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
-        <div className="relative z-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/10" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
+        <div className="relative z-10 max-w-sm text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-primary-foreground/20 rounded-xl flex items-center justify-center">
-              <PawPrint className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 bg-white/20 ring-1 ring-white/25 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <PawPrint className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-primary-foreground">Rescue Pet</span>
+            <span className="text-lg font-bold text-white">Rescue Pet</span>
           </div>
-          <p className="text-2xl font-bold text-primary-foreground leading-snug max-w-xs">
+          <p className="text-3xl font-bold text-white leading-tight">
             Cada adopción cambia dos vidas.
           </p>
-          <p className="text-sm text-primary-foreground/70 mt-3 max-w-xs">
+          <p className="text-base font-medium text-white/90 mt-4 leading-relaxed">
             Conectamos refugios con familias que buscan un compañero.
           </p>
         </div>

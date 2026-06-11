@@ -1,5 +1,6 @@
 import { Input } from './ui/input';
 import { Search } from 'lucide-react';
+import { PET_SIZE, PET_STATUS } from '../design/status';
 
 export interface CatalogFilters {
   species: string;
@@ -34,10 +35,10 @@ export function PetFilters({
 }: PetFiltersProps) {
   const statuses = [
     { value: 'ALL', label: 'Todos los estados' },
-    { value: 'QUARANTINE', label: 'En Cuarentena' },
-    { value: 'AVAILABLE', label: 'Disponibles' },
-    { value: 'TREATMENT', label: 'En Tratamiento' },
-    { value: 'ADOPTED', label: 'Adoptados' },
+    { value: 'QUARANTINE', label: PET_STATUS.QUARANTINE.label },
+    { value: 'AVAILABLE', label: PET_STATUS.AVAILABLE.label },
+    { value: 'TREATMENT', label: PET_STATUS.TREATMENT.label },
+    { value: 'ADOPTED', label: PET_STATUS.ADOPTED.label },
   ];
 
   const patch = (key: keyof CatalogFilters, value: string) => {
@@ -89,9 +90,9 @@ export function PetFilters({
             onChange={(e) => patch('size', e.target.value)}
           >
             <option value="">Todos los tamaños</option>
-            <option value="SMALL">Pequeño</option>
-            <option value="MEDIUM">Mediano</option>
-            <option value="LARGE">Grande</option>
+            <option value="SMALL">{PET_SIZE.SMALL}</option>
+            <option value="MEDIUM">{PET_SIZE.MEDIUM}</option>
+            <option value="LARGE">{PET_SIZE.LARGE}</option>
           </select>
 
           <select

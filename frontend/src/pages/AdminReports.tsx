@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { apiClient, API_BASE, getApiErrorMessage } from '../lib/api';
+import { PET_STATUS, petStatusLabel, roleClasses, type PetStatus } from '../design/status';
 
 type ReportTab = 'adoptions' | 'health';
 
@@ -429,13 +430,12 @@ function HealthTable({ animals }: { animals: HealthAnimal[] }) {
                     <td className="px-4 py-2 font-medium text-foreground">{a.name}</td>
                     <td className="px-4 py-2 text-muted-foreground">{a.species}</td>
                     <td className="px-4 py-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        a.status === 'TREATMENT' ? 'bg-yellow-100 text-yellow-700' :
-                        a.status === 'QUARANTINE' ? 'bg-red-100 text-red-700' :
-                        a.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
-                        'bg-muted text-foreground'
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                        PET_STATUS[a.status as PetStatus]
+                          ? roleClasses[PET_STATUS[a.status as PetStatus].role]
+                          : 'bg-muted text-foreground border-border'
                       }`}>
-                        {a.status}
+                        {petStatusLabel(a.status)}
                       </span>
                     </td>
                     <td className="px-4 py-2 text-right">

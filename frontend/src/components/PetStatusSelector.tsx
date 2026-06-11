@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { ConfirmDialog } from './ConfirmDialog';
 import { apiClient, getApiErrorMessage } from '../lib/api';
+import { PET_STATUS, petStatusLabel } from '../design/status';
 
 interface PetStatusSelectorProps {
   petId: string;
@@ -13,16 +14,16 @@ interface PetStatusSelectorProps {
 
 const STATUS_TRANSITIONS: Record<PetStatus, { value: PetStatus; label: string }[]> = {
   QUARANTINE: [
-    { value: 'AVAILABLE', label: 'Disponible' },
-    { value: 'TREATMENT', label: 'En Tratamiento' },
+    { value: 'AVAILABLE', label: PET_STATUS.AVAILABLE.label },
+    { value: 'TREATMENT', label: PET_STATUS.TREATMENT.label },
   ],
   AVAILABLE: [
-    { value: 'TREATMENT', label: 'En Tratamiento' },
-    { value: 'ADOPTED', label: 'Adoptado' },
+    { value: 'TREATMENT', label: PET_STATUS.TREATMENT.label },
+    { value: 'ADOPTED', label: PET_STATUS.ADOPTED.label },
   ],
   TREATMENT: [
-    { value: 'AVAILABLE', label: 'Disponible' },
-    { value: 'DECEASED', label: 'Fallecido' },
+    { value: 'AVAILABLE', label: PET_STATUS.AVAILABLE.label },
+    { value: 'DECEASED', label: PET_STATUS.DECEASED.label },
   ],
   ADOPTED: [],
   DECEASED: [],
@@ -91,7 +92,7 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
               onChange={(e) => setSelectedStatus(e.target.value as PetStatus)}
             >
               <option value={currentStatus} disabled>
-                Actual: {currentStatus}
+                Actual: {petStatusLabel(currentStatus)}
               </option>
               {allowedTransitions.map((s) => (
                 <option key={s.value} value={s.value}>

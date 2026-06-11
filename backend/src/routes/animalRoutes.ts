@@ -4,6 +4,7 @@ import {
   getAnimalById,
   createAnimal,
   deleteAllAnimals,
+  deleteAnimal,
   updateAnimal,
   updateAnimalStatus,
   getAnimalStatusHistory,
@@ -29,6 +30,7 @@ router.delete('/', authorizeRoles('ADMIN'), deleteAllAnimals);
 // Single animal
 router.get('/:id', getAnimalById);
 router.patch('/:id', authorizeRoles('ADMIN', 'VOLUNTEER', 'VETERINARIAN'), uploadAnimalPhoto.single('mainPhoto'), updateAnimal);
+router.delete('/:id', authorizeRoles('ADMIN'), deleteAnimal);
 
 // Status
 router.patch('/:id/status', authorizeRoles('ADMIN', 'VETERINARIAN'), updateAnimalStatus);

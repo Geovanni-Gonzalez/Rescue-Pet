@@ -34,11 +34,27 @@ export type PetStatus = 'QUARANTINE' | 'AVAILABLE' | 'TREATMENT' | 'ADOPTED' | '
 
 export const PET_STATUS: Record<PetStatus, { label: string; role: SemanticRole }> = {
   AVAILABLE: { label: 'Disponible', role: 'success' },
-  QUARANTINE: { label: 'En Cuarentena', role: 'caution' },
-  TREATMENT: { label: 'En Tratamiento', role: 'info' },
+  QUARANTINE: { label: 'En cuarentena', role: 'caution' },
+  TREATMENT: { label: 'En tratamiento', role: 'info' },
   ADOPTED: { label: 'Adoptado', role: 'adopted' },
   DECEASED: { label: 'Fallecido', role: 'neutral' },
 };
+
+export const petStatusLabel = (status?: string | null): string =>
+  status ? PET_STATUS[status as PetStatus]?.label ?? status : 'N/D';
+
+// Animal size labels. API values are stored as enums in English, but user-facing
+// copy must stay localized and sentence-cased.
+export type PetSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+
+export const PET_SIZE: Record<PetSize, string> = {
+  SMALL: 'Pequeño',
+  MEDIUM: 'Mediano',
+  LARGE: 'Grande',
+};
+
+export const petSizeLabel = (size?: string | null): string =>
+  size ? PET_SIZE[size as PetSize] ?? size : 'N/D';
 
 // ── Adoption request status ──────────────────────────────────────────────────
 export type AdoptionRequestStatusType = 'RECEIVED' | 'INTERVIEW' | 'VISIT' | 'APPROVED' | 'REJECTED';

@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Edit, QrCode as QrIcon, Heart, MapPin, Clock, History, Syringe, Stethoscope, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 import { apiClient, getApiErrorMessage } from '../lib/api';
+import { petSizeLabel } from '../design/status';
 
 const LocationPicker = lazy(() =>
   import('../components/LocationPicker').then((m) => ({ default: m.LocationPicker })),
@@ -359,7 +360,7 @@ export function PetDetail() {
                     <div><p className="text-muted-foreground">Especie</p><p className="font-medium">{pet.species}</p></div>
                     <div><p className="text-muted-foreground">Raza</p><p className="font-medium">{pet.estimatedBreed || 'Desconocida'}</p></div>
                     <div><p className="text-muted-foreground">Edad est.</p><p className="font-medium">{pet.estimatedAge ? `${pet.estimatedAge} meses` : 'N/D'}</p></div>
-                    <div><p className="text-muted-foreground">Tamaño</p><p className="font-medium">{pet.size || 'N/D'}</p></div>
+                    <div><p className="text-muted-foreground">Tamaño</p><p className="font-medium">{petSizeLabel(pet.size)}</p></div>
                   </div>
                 </div>
               </div>

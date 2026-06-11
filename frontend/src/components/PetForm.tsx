@@ -6,6 +6,7 @@ import { Alert } from './ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import { Upload, MapPin } from 'lucide-react';
+import { PET_SIZE } from '../design/status';
 
 // Lazy-load map to avoid SSR issues and reduce initial bundle
 const LocationPicker = lazy(() =>
@@ -230,9 +231,9 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="">Selecciona el tamaño</option>
-            <option value="SMALL">Pequeño</option>
-            <option value="MEDIUM">Mediano</option>
-            <option value="LARGE">Grande</option>
+            <option value="SMALL">{PET_SIZE.SMALL}</option>
+            <option value="MEDIUM">{PET_SIZE.MEDIUM}</option>
+            <option value="LARGE">{PET_SIZE.LARGE}</option>
           </select>
         </div>
         <div className="space-y-2">
@@ -258,9 +259,9 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="">Selecciona el espacio recomendado</option>
-            <option value="SMALL">Pequeño</option>
-            <option value="MEDIUM">Mediano</option>
-            <option value="LARGE">Grande</option>
+            <option value="SMALL">{PET_SIZE.SMALL}</option>
+            <option value="MEDIUM">{PET_SIZE.MEDIUM}</option>
+            <option value="LARGE">{PET_SIZE.LARGE}</option>
           </select>
         </div>
         <div className="space-y-2 flex items-end">

@@ -207,6 +207,44 @@ describe('DELETE /api/animals', () => {
 
 // ─── PATCH /api/animals/:id/status ────────────────────────────────────────────
 
+describe('DELETE /api/animals/:id', () => {
+  it('ADMIN elimina un animal y sus registros asociados', async () => {
+    dbMock.animal.findUnique.mockResolvedValue({ ...ANIMAL_FIXTURE, mainPhotoUrl: 'http://localhost:3000/uploads/animals/photo.png' });
+    dbMock.animalGallery.findMany.mockResolvedValue([]);
+    dbMock.clinicalRecord.findMany.mockResolvedValue([]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([]);
+    dbMock.animalStatusHistory.findMany.mockResolvedValue([]);
+    dbMock.animalRescueLocationHistory.findMany.mockResolvedValue([]);
+    dbMock.vaccine.findMany.mockResolvedValue([]);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([]);
+    dbMock.operationalTask.findMany.mockResolvedValue([]);
+
+    const res = await request(app).delete('/api/animals/animal-1').set(auth('ADMIN'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.deleted.animal).toBe(1);
+    expect(dbMock.animal.delete).toHaveBeenCalledWith({ where: { id: 'animal-1' } });
+    expect(dbMock.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'DELETE_ANIMAL', entityId: 'animal-1' }),
+    }));
+  });
+
+  it('retorna 404 si el animal no existe', async () => {
+    dbMock.animal.findUnique.mockResolvedValue(null);
+
+    const res = await request(app).delete('/api/animals/nope').set(auth('ADMIN'));
+
+    expect(res.status).toBe(404);
+    expect(dbMock.animal.delete).not.toHaveBeenCalled();
+  });
+
+  it('rechaza borrado individual para VOLUNTEER', async () => {
+    const res = await request(app).delete('/api/animals/animal-1').set(auth('VOLUNTEER'));
+
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('PATCH /api/animals/:id/status', () => {
   it('transición válida QUARANTINE → TREATMENT', async () => {
     dbMock.animal.findUnique.mockResolvedValue(ANIMAL_FIXTURE);

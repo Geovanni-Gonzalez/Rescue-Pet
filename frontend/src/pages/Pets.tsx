@@ -6,15 +6,17 @@ import { EmptyState } from '../components/EmptyState';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { Plus } from 'lucide-react';
-import { apiClient } from '../lib/api';
+import { Plus, Trash2 } from 'lucide-react';
+import { Alert } from '../components/ui/alert';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { apiClient, getApiErrorMessage } from '../lib/api';
 import type { PetStatus } from '../components/StatusBadge';
 
 interface Pet {
   id: string;
   name: string;
   species: string;
-  breed?: string;
+  estimatedBreed?: string;
   estimatedAge?: number;
   status: PetStatus;
   mainPhotoUrl?: string;
@@ -25,17 +27,22 @@ export function Pets() {
   const navigate = useNavigate();
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [deleteTarget, setDeleteTarget] = useState<Pet | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchPets = async () => {
       try {
+        setError('');
         const query = statusFilter !== 'ALL' ? `?status=${statusFilter}` : '';
         const res = await apiClient.get(`/animals${query}`);
         setPets(res.data.animals || []);
       } catch (err) {
         console.error('Error al cargar mascotas', err);
+        setError(getApiErrorMessage(err, 'No se pudo cargar el catálogo de mascotas.'));
       } finally {
         setIsLoading(false);
       }
@@ -46,10 +53,27 @@ export function Pets() {
   const filteredPets = pets.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.breed && p.breed.toLowerCase().includes(searchTerm.toLowerCase()))
+    (p.estimatedBreed && p.estimatedBreed.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const canManagePets = role === 'ADMIN' || role === 'VOLUNTEER';
+  const canDeletePets = role === 'ADMIN';
+
+  const handleDeletePet = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
+    setError('');
+    try {
+      await apiClient.delete(`/animals/${deleteTarget.id}`);
+      setPets((current) => current.filter((pet) => pet.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'No se pudo eliminar la mascota.'));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -80,22 +104,40 @@ export function Pets() {
         showStatusFilter={role !== 'ADOPTER'} // Adoptantes no ven el filtro de estado porque el backend fuerza AVAILABLE
       />
 
+      {error && (
+        <Alert variant="danger">{error}</Alert>
+      )}
+
       {isLoading ? (
         <LoadingState message="Cargando catálogo..." />
       ) : filteredPets.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-grid">
           {filteredPets.map(pet => (
-            <PetCard
-              key={pet.id}
-              id={pet.id}
-              name={pet.name}
-              species={pet.species}
-              breed={pet.breed || 'Desconocida'}
-              age={pet.estimatedAge || 0}
-              status={pet.status}
-              photoUrl={pet.mainPhotoUrl}
-              onAction={(id) => navigate(`/pets/${id}`)}
-            />
+            <div key={pet.id} className="relative">
+              <PetCard
+                id={pet.id}
+                name={pet.name}
+                species={pet.species}
+                breed={pet.estimatedBreed || 'Desconocida'}
+                age={pet.estimatedAge || 0}
+                status={pet.status}
+                photoUrl={pet.mainPhotoUrl}
+                onAction={(id) => navigate(`/pets/${id}`)}
+              />
+              {canDeletePets && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute left-2.5 top-2.5 z-10 h-8 w-8 shadow-sm"
+                  onClick={() => setDeleteTarget(pet)}
+                  title={`Eliminar ${pet.name}`}
+                  aria-label={`Eliminar ${pet.name}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           ))}
         </div>
       ) : (
@@ -117,6 +159,19 @@ export function Pets() {
           }
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteTarget(null);
+        }}
+        title="Eliminar mascota"
+        description={`Se eliminará ${deleteTarget?.name ?? 'esta mascota'} del catálogo junto con su historial, galería, solicitudes y documentos asociados. Esta acción no se puede deshacer.`}
+        confirmText={isDeleting ? 'Eliminando...' : 'Eliminar'}
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={handleDeletePet}
+      />
     </div>
   );
 }
