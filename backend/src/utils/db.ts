@@ -275,11 +275,25 @@ function clone<T>(value: T): T {
   return reviveDates(JSON.parse(JSON.stringify(value)));
 }
 
+// ─── Local-mode in-memory cache ───────────────────────────────────────────────
+// Cada consulta solía releer y parsear db.json completo (O(tamaño del archivo)
+// por query, varias queries por request). La caché mantiene el snapshot parseado
+// en memoria y solo relee si el mtime del archivo cambió (ediciones externas).
+// Los reads comparten el snapshot; los writes trabajan sobre una copia privada
+// (copy-on-write en loadForWrite) y la promueven a caché al guardar.
+let _localCache: Db | null = null;
+let _localCacheMtime = -1;
+
 function readLocalDb(): Db {
   ensureDbFile();
+  const mtime = fs.statSync(dbFile).mtimeMs;
+  if (_localCache && mtime === _localCacheMtime) return _localCache;
+
   const parsed = JSON.parse(fs.readFileSync(dbFile, 'utf8')) as Partial<Db>;
   const db = emptyDb();
   for (const name of modelNames) db[name] = reviveDates(parsed[name] ?? []);
+  _localCache = db;
+  _localCacheMtime = mtime;
   return db;
 }
 
@@ -288,6 +302,8 @@ function writeLocalDb(db: Db) {
   const tempFile = `${dbFile}.tmp`;
   fs.writeFileSync(tempFile, serialize(db), 'utf8');
   fs.renameSync(tempFile, dbFile);
+  _localCache = db;
+  _localCacheMtime = fs.statSync(dbFile).mtimeMs;
 }
 
 async function readBlobDb(): Promise<Db> {
@@ -343,13 +359,15 @@ const DB_CACHE_TTL_MS = 3000;
 async function readDb(): Promise<Db> {
   if (!isBlobEnabled()) return readLocalDb();
 
+  // Los lectores comparten el snapshot cacheado: las consultas clonan cada fila
+  // que devuelven, así que no es necesario clonar la base completa por lectura.
   if (_dbCache && Date.now() - _dbCacheAt < DB_CACHE_TTL_MS) {
-    return clone(_dbCache);
+    return _dbCache;
   }
 
   try {
     const db = await readBlobDb();
-    _dbCache = clone(db);
+    _dbCache = db;
     _dbCacheAt = Date.now();
     return db;
   } catch (error) {
@@ -358,7 +376,7 @@ async function readDb(): Promise<Db> {
       logger.error('Failed to read JSON database from Vercel Blob, serving cached copy', {
         error: (error as Error).message,
       });
-      return clone(_dbCache);
+      return _dbCache;
     }
     logger.error('Failed to read JSON database from Vercel Blob', { error: (error as Error).message });
     throw error;
@@ -371,8 +389,9 @@ async function writeDb(db: Db) {
     return;
   }
   // Update the cache first so read-after-write within this process is always
-  // consistent, independent of Blob's eventual consistency.
-  _dbCache = clone(db);
+  // consistent, independent of Blob's eventual consistency. El escritor es dueño
+  // del snapshot (clonado en loadForWrite) y no lo muta después de guardar.
+  _dbCache = db;
   _dbCacheAt = Date.now();
   try {
     await writeBlobDb(db);
@@ -625,7 +644,7 @@ class JsonDelegate {
   async create(args: Row): Promise<any> {
     await writeLock.acquire();
     try {
-      const snapshot = await this.client.load();
+      const snapshot = await this.client.loadForWrite();
       const result = this._createIn(snapshot, args);
       await this.client.save(snapshot);
       return result;
@@ -637,7 +656,7 @@ class JsonDelegate {
   async update(args: Row): Promise<any> {
     await writeLock.acquire();
     try {
-      const snapshot = await this.client.load();
+      const snapshot = await this.client.loadForWrite();
       const result = this._updateIn(snapshot, args);
       await this.client.save(snapshot);
       return result;
@@ -649,7 +668,7 @@ class JsonDelegate {
   async updateMany(args: Row): Promise<{ count: number }> {
     await writeLock.acquire();
     try {
-      const snapshot = await this.client.load();
+      const snapshot = await this.client.loadForWrite();
       const result = this._updateManyIn(snapshot, args);
       await this.client.save(snapshot);
       return result;
@@ -661,7 +680,7 @@ class JsonDelegate {
   async delete(args: Row): Promise<any> {
     await writeLock.acquire();
     try {
-      const snapshot = await this.client.load();
+      const snapshot = await this.client.loadForWrite();
       const result = this._deleteIn(snapshot, args);
       await this.client.save(snapshot);
       return result;
@@ -673,7 +692,7 @@ class JsonDelegate {
   async upsert(args: Row): Promise<any> {
     await writeLock.acquire();
     try {
-      const snapshot = await this.client.load();
+      const snapshot = await this.client.loadForWrite();
       const existing = this._findUniqueIn(snapshot, { where: args.where });
       let result: any;
       if (existing) {
@@ -781,6 +800,15 @@ class JsonDataClient {
     return readDb();
   }
 
+  /**
+   * Copia privada para mutar (copy-on-write): los lectores comparten el snapshot
+   * cacheado, así que las escrituras nunca deben mutarlo directamente. Al
+   * guardar, la copia mutada se promueve a caché en un swap atómico.
+   */
+  async loadForWrite() {
+    return clone(await readDb());
+  }
+
   async save(db: Db) {
     await writeDb(db);
   }
@@ -812,10 +840,11 @@ class JsonDataClient {
       return Promise.all(input);
     }
 
-    // Callback form — true atomic transaction.
+    // Callback form — true atomic transaction (sobre copia privada; los lectores
+    // concurrentes nunca observan estados intermedios de la transacción).
     await writeLock.acquire();
     try {
-      const snapshot = await readDb();
+      const snapshot = await this.loadForWrite();
       const tx = new TransactionalClient(snapshot, this);
       const result = await input(tx);
       await writeDb(snapshot);
@@ -836,9 +865,11 @@ class JsonDataClient {
     const shouldInclude = (key: string) => includeKeys.includes(key);
     const relQuery = (key: string) => (relationArgs?.[key] === true ? {} : relationArgs?.[key] ?? {});
 
+    // Nota: los lectores comparten el snapshot cacheado, por lo que toda fila
+    // relacionada se clona antes de exponerse fuera de esta capa.
     if (model === 'animal') {
-      if (shouldInclude('gallery')) row.gallery = applyQuery(db.animalGallery.filter((g) => g.animalId === row.id), relQuery('gallery'));
-      if (shouldInclude('vaccines')) row.vaccines = applyQuery(db.vaccine.filter((v) => v.animalId === row.id), relQuery('vaccines'));
+      if (shouldInclude('gallery')) row.gallery = applyQuery(db.animalGallery.filter((g) => g.animalId === row.id).map((g) => clone(g)), relQuery('gallery'));
+      if (shouldInclude('vaccines')) row.vaccines = applyQuery(db.vaccine.filter((v) => v.animalId === row.id).map((v) => clone(v)), relQuery('vaccines'));
       if (shouldInclude('clinicalRecord')) {
         const record = db.clinicalRecord.find((r) => r.animalId === row.id) ?? null;
         row.clinicalRecord = record ? this.attachRelations('clinicalRecord', clone(record), relQuery('clinicalRecord').include ?? relQuery('clinicalRecord').select, db) : null;
@@ -870,7 +901,7 @@ class JsonDataClient {
 
     if (model === 'clinicalEntry') {
       if (shouldInclude('veterinarian')) row.veterinarian = this.relatedUser(row.veterinarianId, relQuery('veterinarian'), db);
-      if (shouldInclude('vaccines')) row.vaccines = applyQuery(db.vaccine.filter((v) => v.clinicalEntryId === row.id), relQuery('vaccines'));
+      if (shouldInclude('vaccines')) row.vaccines = applyQuery(db.vaccine.filter((v) => v.clinicalEntryId === row.id).map((v) => clone(v)), relQuery('vaccines'));
     }
 
     if (model === 'vaccine' && shouldInclude('animal')) {
@@ -886,7 +917,7 @@ class JsonDataClient {
     if (model === 'adoptionRequest') {
       if (shouldInclude('animal')) row.animal = this.relatedAnimal(row.animalId, relQuery('animal'), db);
       if (shouldInclude('adopter')) row.adopter = this.relatedUser(row.adopterId, relQuery('adopter'), db);
-      if (shouldInclude('documents')) row.documents = applyQuery(db.adopterDocument.filter((doc) => doc.applicationId === row.id), relQuery('documents'));
+      if (shouldInclude('documents')) row.documents = applyQuery(db.adopterDocument.filter((doc) => doc.applicationId === row.id).map((doc) => clone(doc)), relQuery('documents'));
       if (shouldInclude('contract')) {
         const contract = db.adoptionContract.find((item) => item.applicationId === row.id) ?? null;
         row.contract = contract ? applyProjection(clone(contract), relQuery('contract')) : null;
