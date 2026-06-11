@@ -923,7 +923,12 @@ class JsonDataClient {
         row.contract = contract ? applyProjection(clone(contract), relQuery('contract')) : null;
       }
       if (shouldInclude('interviewSlot')) {
-        const slot = db.interviewSlot.find((item) => item.reservedByApplicationId === row.id) ?? null;
+        // Solo un slot efectivamente reservado cuenta como entrevista vinculada:
+        // un slot cancelado (datos antiguos conservaban reservedByApplicationId)
+        // no debe bloquear el agendado de una nueva entrevista.
+        const slot = db.interviewSlot.find(
+          (item) => item.reservedByApplicationId === row.id && item.status === 'reserved'
+        ) ?? null;
         row.interviewSlot = slot ? applyProjection(clone(slot), relQuery('interviewSlot')) : null;
       }
     }

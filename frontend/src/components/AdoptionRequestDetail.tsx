@@ -107,7 +107,7 @@ export function AdoptionRequestDetail() {
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
-  const [showSlotPicker, setShowSlotPicker] = useState(false);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   // Signature canvas
   const [isDrawing, setIsDrawing] = useState(false);
@@ -176,15 +176,31 @@ export function AdoptionRequestDetail() {
 
   // ── Interview scheduling ───────────────────────────────────────────────────
 
-  const openSlotPicker = async () => {
-    setShowSlotPicker(true);
+  const canScheduleInterview = Boolean(
+    request &&
+      role === 'ADOPTER' &&
+      // INTERVIEW sin slot reservado = la cita anterior fue cancelada por el refugio
+      ['RECEIVED', 'INTERVIEW'].includes(request.status) &&
+      !request.interviewSlot
+  );
+
+  const refreshAvailableSlots = useCallback(async () => {
+    setIsLoadingSlots(true);
     try {
       const res = await apiClient.get('/interview-slots/available');
       setAvailableSlots(res.data.slots ?? []);
     } catch {
       setAvailableSlots([]);
+    } finally {
+      setIsLoadingSlots(false);
     }
-  };
+  }, []);
+
+  // CU-17 pasos 2-3: los slots disponibles se publican en el tablero del
+  // adoptante automáticamente, sin requerir una acción adicional.
+  useEffect(() => {
+    if (canScheduleInterview) refreshAvailableSlots();
+  }, [canScheduleInterview, refreshAvailableSlots]);
 
   const handleScheduleInterview = async () => {
     if (!request || !selectedSlotId) return;
@@ -192,19 +208,13 @@ export function AdoptionRequestDetail() {
     setError('');
     try {
       await apiClient.post(`/adoption-applications/${request.id}/schedule-interview`, { slotId: selectedSlotId });
-      setShowSlotPicker(false);
       setSelectedSlotId('');
       await fetchRequest();
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'No se pudo agendar la entrevista.'));
       // CU-17 5E: si el slot fue tomado por otro adoptante, mostrar los restantes.
       setSelectedSlotId('');
-      try {
-        const res = await apiClient.get('/interview-slots/available');
-        setAvailableSlots(res.data.slots ?? []);
-      } catch {
-        /* la lista existente se mantiene */
-      }
+      await refreshAvailableSlots();
     } finally {
       setIsScheduling(false);
     }
@@ -284,7 +294,6 @@ export function AdoptionRequestDetail() {
   const isAdopter = role === 'ADOPTER';
   const isActive = ['RECEIVED', 'INTERVIEW', 'VISIT'].includes(request.status);
   const canUploadDocs = isAdopter && isActive;
-  const canScheduleInterview = isAdopter && request.status === 'RECEIVED' && !request.interviewSlot;
   const canSignContract = isAdopter && request.status === 'APPROVED' && !!request.contract && request.contract.status !== 'SIGNED';
 
   const uploadedTypes = new Set(request.documents.map((d) => d.documentType));
@@ -361,7 +370,8 @@ export function AdoptionRequestDetail() {
             </Card>
           )}
 
-          {/* Schedule interview (ADOPTER, status RECEIVED) */}
+          {/* Schedule interview (ADOPTER) — CU-17 pasos 2-4: los horarios
+              disponibles se muestran directamente en el tablero del adoptante */}
           {canScheduleInterview && (
             <Card>
               <CardHeader>
@@ -370,66 +380,67 @@ export function AdoptionRequestDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {!showSlotPicker ? (
-                  <Button variant="outline" onClick={openSlotPicker}>
-                    Ver horarios disponibles
-                  </Button>
+                {isLoadingSlots ? (
+                  <p className="text-sm text-muted-foreground">Cargando horarios disponibles...</p>
+                ) : availableSlots.length === 0 ? (
+                  // CU-17 3A
+                  <p className="text-sm text-muted-foreground">
+                    No hay horarios disponibles esta semana. El refugio te notificará cuando haya disponibilidad.
+                  </p>
                 ) : (
                   <>
-                    {availableSlots.length === 0 ? (
-                      // CU-17 3A
-                      <p className="text-sm text-muted-foreground">
-                        No hay horarios disponibles esta semana. El refugio te notificará cuando haya disponibilidad.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {availableSlots.map((slot) => (
-                          <label
-                            key={slot.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                              selectedSlotId === slot.id
-                                ? 'border-rescue-500 bg-rescue-50'
-                                : 'border-border hover:bg-muted'
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="slot"
-                              value={slot.id}
-                              checked={selectedSlotId === slot.id}
-                              onChange={() => setSelectedSlotId(slot.id)}
-                              className="text-rescue-600"
-                            />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {new Date(slot.startsAt).toLocaleDateString('es-CR', {
-                                  weekday: 'short', month: 'short', day: 'numeric',
-                                })}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(slot.startsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
-                                {' — '}
-                                {new Date(slot.endsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        onClick={handleScheduleInterview}
-                        disabled={!selectedSlotId || isScheduling}
-                      >
-                        {isScheduling ? 'Agendando...' : 'Confirmar entrevista'}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowSlotPicker(false)}>
-                        Cancelar
-                      </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Selecciona uno de los horarios disponibles para tu entrevista:
+                    </p>
+                    <div className="space-y-2">
+                      {availableSlots.map((slot) => (
+                        <label
+                          key={slot.id}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedSlotId === slot.id
+                              ? 'border-rescue-500 bg-rescue-50'
+                              : 'border-border hover:bg-muted'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="slot"
+                            value={slot.id}
+                            checked={selectedSlotId === slot.id}
+                            onChange={() => setSelectedSlotId(slot.id)}
+                            className="text-rescue-600"
+                          />
+                          <div>
+                            <p className="text-sm font-medium">
+                              {new Date(slot.startsAt).toLocaleDateString('es-CR', {
+                                weekday: 'short', month: 'short', day: 'numeric',
+                              })}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(slot.startsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
+                              {' — '}
+                              {new Date(slot.endsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
                     </div>
                   </>
                 )}
+                <div className="flex gap-2 pt-2">
+                  {availableSlots.length > 0 && (
+                    <Button
+                      size="sm"
+                      onClick={handleScheduleInterview}
+                      disabled={!selectedSlotId || isScheduling}
+                    >
+                      {isScheduling ? 'Agendando...' : 'Confirmar entrevista'}
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={refreshAvailableSlots} disabled={isLoadingSlots}>
+                    Actualizar horarios
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
