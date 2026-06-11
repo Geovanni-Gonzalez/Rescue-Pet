@@ -170,6 +170,118 @@ export const createAnimal = async (req: Request, res: Response) => {
   res.status(201).json({ success: true, animal: updated });
 };
 
+export const deleteAllAnimals = async (req: Request, res: Response) => {
+  const result = await db.$transaction(async (tx) => {
+    const animals = await tx.animal.findMany({});
+    const animalIds = animals.map((animal) => animal.id);
+    if (animalIds.length === 0) {
+      return {
+        animals: 0,
+        gallery: 0,
+        statusHistory: 0,
+        locationHistory: 0,
+        clinicalRecords: 0,
+        clinicalEntries: 0,
+        vaccines: 0,
+        compatibilityScores: 0,
+        adoptionRequests: 0,
+        adopterDocuments: 0,
+        adoptionContracts: 0,
+        interviewSlots: 0,
+        operationalTasks: 0,
+        uploadTargets: [] as string[],
+      };
+    }
+
+    const gallery = await tx.animalGallery.findMany({ where: { animalId: { in: animalIds } } });
+    const clinicalRecords = await tx.clinicalRecord.findMany({ where: { animalId: { in: animalIds } } });
+    const clinicalRecordIds = clinicalRecords.map((record) => record.id);
+    const clinicalEntries = clinicalRecordIds.length > 0
+      ? await tx.clinicalEntry.findMany({ where: { clinicalRecordId: { in: clinicalRecordIds } } })
+      : [];
+    const clinicalEntryIds = clinicalEntries.map((entry) => entry.id);
+    const adoptionRequests = await tx.adoptionRequest.findMany({ where: { animalId: { in: animalIds } } });
+    const adoptionRequestIds = adoptionRequests.map((request) => request.id);
+    const adopterDocuments = adoptionRequestIds.length > 0
+      ? await tx.adopterDocument.findMany({ where: { applicationId: { in: adoptionRequestIds } } })
+      : [];
+    const adoptionContracts = adoptionRequestIds.length > 0
+      ? await tx.adoptionContract.findMany({ where: { applicationId: { in: adoptionRequestIds } } })
+      : [];
+    const interviewSlots = adoptionRequestIds.length > 0
+      ? await tx.interviewSlot.findMany({ where: { reservedByApplicationId: { in: adoptionRequestIds } } })
+      : [];
+    const statusHistory = await tx.animalStatusHistory.findMany({ where: { animalId: { in: animalIds } } });
+    const locationHistory = await tx.animalRescueLocationHistory.findMany({ where: { animalId: { in: animalIds } } });
+    const vaccines = await tx.vaccine.findMany({ where: { animalId: { in: animalIds } } });
+    const entryVaccines = clinicalEntryIds.length > 0
+      ? await tx.vaccine.findMany({ where: { clinicalEntryId: { in: clinicalEntryIds } } })
+      : [];
+    const allVaccines = [...vaccines, ...entryVaccines.filter((item) => !vaccines.some((vaccine) => vaccine.id === item.id))];
+    const compatibilityScores = await tx.compatibilityScore.findMany({ where: { animalId: { in: animalIds } } });
+    const operationalTasks = await tx.operationalTask.findMany({ where: { animalId: { in: animalIds } } });
+
+    for (const item of adopterDocuments) await tx.adopterDocument.delete({ where: { id: item.id } });
+    for (const item of adoptionContracts) await tx.adoptionContract.delete({ where: { id: item.id } });
+    for (const item of interviewSlots) await tx.interviewSlot.delete({ where: { id: item.id } });
+    for (const item of adoptionRequests) await tx.adoptionRequest.delete({ where: { id: item.id } });
+    for (const item of compatibilityScores) await tx.compatibilityScore.delete({ where: { id: item.id } });
+    for (const item of allVaccines) await tx.vaccine.delete({ where: { id: item.id } });
+    for (const item of clinicalEntries) await tx.clinicalEntry.delete({ where: { id: item.id } });
+    for (const item of clinicalRecords) await tx.clinicalRecord.delete({ where: { id: item.id } });
+    for (const item of operationalTasks) await tx.operationalTask.delete({ where: { id: item.id } });
+    for (const item of statusHistory) await tx.animalStatusHistory.delete({ where: { id: item.id } });
+    for (const item of locationHistory) await tx.animalRescueLocationHistory.delete({ where: { id: item.id } });
+    for (const item of gallery) await tx.animalGallery.delete({ where: { id: item.id } });
+    for (const item of animals) await tx.animal.delete({ where: { id: item.id } });
+
+    const uploadTargets = [
+      ...animals.map((animal) => animal.mainPhotoUrl).filter(Boolean),
+      ...gallery.map((image) => image.fileUrl).filter(Boolean),
+      ...adopterDocuments.map((document) => document.fileUrl).filter(Boolean),
+      ...adoptionContracts.flatMap((contract) => [contract.pdfUrl, contract.signedPdfUrl]).filter(Boolean),
+    ] as string[];
+
+    return {
+      animals: animals.length,
+      gallery: gallery.length,
+      statusHistory: statusHistory.length,
+      locationHistory: locationHistory.length,
+      clinicalRecords: clinicalRecords.length,
+      clinicalEntries: clinicalEntries.length,
+      vaccines: allVaccines.length,
+      compatibilityScores: compatibilityScores.length,
+      adoptionRequests: adoptionRequests.length,
+      adopterDocuments: adopterDocuments.length,
+      adoptionContracts: adoptionContracts.length,
+      interviewSlots: interviewSlots.length,
+      operationalTasks: operationalTasks.length,
+      uploadTargets,
+    };
+  });
+
+  for (const target of result.uploadTargets) {
+    uploadStorage.cleanupUpload(target);
+  }
+
+  await writeAuditLog({
+    userId: req.user!.id,
+    action: 'DELETE_ALL_ANIMALS',
+    entityType: 'Animal',
+    entityId: 'ALL',
+    metadata: { ...result, uploadTargets: result.uploadTargets.length },
+    ipAddress: getClientIp(req),
+  });
+
+  res.json({
+    success: true,
+    deleted: {
+      ...result,
+      uploadTargets: result.uploadTargets.length,
+    },
+  });
+};
+
 export const updateAnimal = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 

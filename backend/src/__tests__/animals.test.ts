@@ -12,6 +12,7 @@ jest.mock('../utils/db', () => ({
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     animalGallery: {
       findMany: jest.fn(),
@@ -19,10 +20,17 @@ jest.mock('../utils/db', () => ({
       findUnique: jest.fn(),
       delete: jest.fn(),
     },
-    animalStatusHistory: { findMany: jest.fn() },
-    animalRescueLocationHistory: { findMany: jest.fn(), create: jest.fn() },
-    clinicalRecord: { count: jest.fn() },
-    adoptionRequest: { findFirst: jest.fn() },
+    animalStatusHistory: { findMany: jest.fn(), create: jest.fn(), delete: jest.fn() },
+    animalRescueLocationHistory: { findMany: jest.fn(), create: jest.fn(), delete: jest.fn() },
+    clinicalRecord: { count: jest.fn(), findMany: jest.fn(), delete: jest.fn() },
+    clinicalEntry: { findMany: jest.fn(), delete: jest.fn() },
+    vaccine: { findMany: jest.fn(), delete: jest.fn() },
+    compatibilityScore: { findMany: jest.fn(), delete: jest.fn() },
+    adoptionRequest: { findFirst: jest.fn(), findMany: jest.fn(), delete: jest.fn() },
+    adopterDocument: { findMany: jest.fn(), delete: jest.fn() },
+    adoptionContract: { findMany: jest.fn(), delete: jest.fn() },
+    interviewSlot: { findMany: jest.fn(), delete: jest.fn() },
+    operationalTask: { findMany: jest.fn(), delete: jest.fn() },
     auditLog: { create: jest.fn().mockResolvedValue({}) },
     $transaction: jest.fn(),
   },
@@ -159,6 +167,40 @@ describe('POST /api/animals', () => {
       .set(auth('ADOPTER'))
       .field('name', 'Max')
       .field('species', 'Perro');
+    expect(res.status).toBe(403);
+  });
+});
+
+// ─── DELETE /api/animals ─────────────────────────────────────────────────────
+
+describe('DELETE /api/animals', () => {
+  it('ADMIN elimina todos los animales y registros asociados', async () => {
+    dbMock.animal.findMany.mockResolvedValue([{ ...ANIMAL_FIXTURE, mainPhotoUrl: 'http://localhost:3000/uploads/animals/photo.png' }]);
+    dbMock.animalGallery.findMany.mockResolvedValue([{ id: 'img-1', animalId: 'animal-1', fileUrl: 'http://localhost:3000/uploads/gallery/a.png' }]);
+    dbMock.clinicalRecord.findMany.mockResolvedValue([{ id: 'record-1', animalId: 'animal-1' }]);
+    dbMock.clinicalEntry.findMany.mockResolvedValue([{ id: 'entry-1', clinicalRecordId: 'record-1' }]);
+    dbMock.vaccine.findMany.mockResolvedValueOnce([{ id: 'vaccine-1', animalId: 'animal-1' }]).mockResolvedValueOnce([]);
+    dbMock.compatibilityScore.findMany.mockResolvedValue([{ id: 'score-1', animalId: 'animal-1' }]);
+    dbMock.adoptionRequest.findMany.mockResolvedValue([{ id: 'request-1', animalId: 'animal-1' }]);
+    dbMock.adopterDocument.findMany.mockResolvedValue([{ id: 'doc-1', applicationId: 'request-1', fileUrl: 'http://localhost:3000/uploads/documents/doc.pdf' }]);
+    dbMock.adoptionContract.findMany.mockResolvedValue([{ id: 'contract-1', applicationId: 'request-1', pdfUrl: 'http://localhost:3000/uploads/contracts/c.pdf', signedPdfUrl: null }]);
+    dbMock.interviewSlot.findMany.mockResolvedValue([{ id: 'slot-1', reservedByApplicationId: 'request-1' }]);
+    dbMock.animalStatusHistory.findMany.mockResolvedValue([{ id: 'status-1', animalId: 'animal-1' }]);
+    dbMock.animalRescueLocationHistory.findMany.mockResolvedValue([{ id: 'loc-1', animalId: 'animal-1' }]);
+    dbMock.operationalTask.findMany.mockResolvedValue([{ id: 'task-1', animalId: 'animal-1' }]);
+
+    const res = await request(app).delete('/api/animals').set(auth('ADMIN'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.deleted.animals).toBe(1);
+    expect(dbMock.animal.delete).toHaveBeenCalledWith({ where: { id: 'animal-1' } });
+    expect(dbMock.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'DELETE_ALL_ANIMALS', entityId: 'ALL' }),
+    }));
+  });
+
+  it('rechaza borrado masivo para VOLUNTEER', async () => {
+    const res = await request(app).delete('/api/animals').set(auth('VOLUNTEER'));
     expect(res.status).toBe(403);
   });
 });

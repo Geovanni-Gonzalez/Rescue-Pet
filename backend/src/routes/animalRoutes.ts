@@ -3,6 +3,7 @@ import {
   getAnimals,
   getAnimalById,
   createAnimal,
+  deleteAllAnimals,
   updateAnimal,
   updateAnimalStatus,
   getAnimalStatusHistory,
@@ -23,6 +24,7 @@ router.use(authenticateToken);
 // List / create
 router.get('/', getAnimals);
 router.post('/', authorizeRoles('ADMIN', 'VOLUNTEER'), uploadAnimalPhoto.single('mainPhoto'), createAnimal);
+router.delete('/', authorizeRoles('ADMIN'), deleteAllAnimals);
 
 // Single animal
 router.get('/:id', getAnimalById);
