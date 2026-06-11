@@ -258,7 +258,7 @@ export const activateAccount = async (req: Request, res: Response) => {
 
 export const resendActivation = async (req: Request, res: Response) => {
   const parsed = emailSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ success: false, error: 'Email inválido' });
+  if (!parsed.success) return res.status(400).json({ success: false, error: 'Correo electrónico inválido.' });
 
   const genericMsg = 'Si la cuenta existe y está pendiente de activación, recibirás un nuevo correo.';
 
@@ -285,7 +285,7 @@ export const resendActivation = async (req: Request, res: Response) => {
 
 export const forgotPassword = async (req: Request, res: Response) => {
   const parsed = emailSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ success: false, error: 'Email inválido' });
+  if (!parsed.success) return res.status(400).json({ success: false, error: 'Correo electrónico inválido.' });
 
   const genericMsg = 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.';
 

@@ -2,6 +2,26 @@ import { Request, Response } from 'express';
 import PDFDocument from 'pdfkit';
 import db from '../utils/db';
 
+// Los reportes son documentos visibles al usuario: los estados (enums internos
+// en inglés) se traducen antes de escribirse en el PDF/CSV.
+const ADOPTION_STATUS_ES: Record<string, string> = {
+  RECEIVED: 'Recibida',
+  INTERVIEW: 'Entrevista',
+  VISIT: 'Visita',
+  APPROVED: 'Aprobada',
+  REJECTED: 'Rechazada',
+};
+
+const ANIMAL_STATUS_ES: Record<string, string> = {
+  QUARANTINE: 'Cuarentena',
+  AVAILABLE: 'Disponible',
+  TREATMENT: 'En tratamiento',
+  ADOPTED: 'Adoptado',
+  DECEASED: 'Fallecido',
+};
+
+const statusEs = (map: Record<string, string>, value: string) => map[value] ?? value;
+
 // ─── Adoption Report ─────────────────────────────────────────────────────────
 
 async function fetchAdoptionData(query: Record<string, unknown>) {
@@ -203,7 +223,7 @@ export const exportAdoptionPdf = async (req: Request, res: Response) => {
       app.animal.species,
       app.adopter.fullName,
       app.adopter.email,
-      app.status,
+      statusEs(ADOPTION_STATUS_ES, app.status),
       score != null ? `${score.toFixed(0)}%` : '-',
       new Date(app.updatedAt).toLocaleDateString('es-CR'),
     ];
@@ -249,7 +269,7 @@ export const exportHealthPdf = async (req: Request, res: Response) => {
     const row = [
       animal.name,
       animal.species,
-      animal.status,
+      statusEs(ANIMAL_STATUS_ES, animal.status),
       String(pendingCount),
       lastEntry?.diagnosis ?? '-',
       lastEntry?.treatment ?? '-',
@@ -296,7 +316,7 @@ export const exportAdoptionCsv = async (req: Request, res: Response) => {
       a.animal.species,
       a.adopter.fullName,
       a.adopter.email,
-      a.status,
+      statusEs(ADOPTION_STATUS_ES, a.status),
       score != null ? score.toFixed(1) : '',
       new Date(a.updatedAt).toLocaleDateString('es-CR'),
     ]);
@@ -323,7 +343,7 @@ export const exportHealthCsv = async (req: Request, res: Response) => {
     return toCsvRow([
       a.name,
       a.species,
-      a.status,
+      statusEs(ANIMAL_STATUS_ES, a.status),
       String(pending),
       lastEntry?.diagnosis ?? '',
       lastEntry?.treatment ?? '',

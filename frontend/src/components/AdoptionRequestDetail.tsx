@@ -85,6 +85,12 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   ADDRESS_PROOF: 'Comprobante de domicilio',
 };
 
+const ENERGY_LABELS: Record<string, string> = {
+  LOW: 'Bajo',
+  MEDIUM: 'Medio',
+  HIGH: 'Alto',
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AdoptionRequestDetail() {
@@ -629,7 +635,7 @@ export function AdoptionRequestDetail() {
                 {request.animal.energyLevel && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Energía:</span>
-                    <span className="font-medium">{request.animal.energyLevel}</span>
+                    <span className="font-medium">{ENERGY_LABELS[request.animal.energyLevel] ?? request.animal.energyLevel}</span>
                   </div>
                 )}
                 <div className="flex justify-between">

@@ -61,6 +61,18 @@ export const FEEDBACK_ROLE: Record<FeedbackLevel, SemanticRole> = {
   ERROR: 'danger',
 };
 
+// Etiquetas en español para los tipos de notificación (el valor crudo del
+// enum está en inglés y no debe mostrarse al usuario).
+export const FEEDBACK_LABELS: Record<FeedbackLevel, string> = {
+  INFO: 'Aviso',
+  WARNING: 'Alerta',
+  SUCCESS: 'Éxito',
+  ERROR: 'Error',
+};
+
+export const feedbackLabel = (level: string): string =>
+  FEEDBACK_LABELS[level as FeedbackLevel] ?? level;
+
 // Compact bg + fg only (no border), for the small notification type tags.
 // Literal strings (not interpolated) so Tailwind's JIT detects every class.
 const roleTag: Record<SemanticRole, string> = {

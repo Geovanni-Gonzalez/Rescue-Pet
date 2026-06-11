@@ -377,7 +377,7 @@ export const downloadQR = async (req: Request, res: Response) => {
   const animal = await db.animal.findUnique({ where: { id }, select: { qrUrl: true, name: true } });
 
   if (!animal) return res.status(404).json({ success: false, error: 'Animal no encontrado' });
-  if (!animal.qrUrl) return res.status(404).json({ success: false, error: 'QR no disponible. Regeneralo primero.' });
+  if (!animal.qrUrl) return res.status(404).json({ success: false, error: 'QR no disponible. Regenéralo primero.' });
 
   res.json({ success: true, qrUrl: animal.qrUrl, fileName: `qr-${animal.name?.replace(/\s+/g, '-').toLowerCase()}.png` });
 };

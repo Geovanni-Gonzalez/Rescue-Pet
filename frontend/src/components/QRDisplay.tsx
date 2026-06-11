@@ -15,7 +15,7 @@ export function QRDisplay({ qrCodeUrl, petName }: QRDisplayProps) {
       </div>
       
       <div className="p-4 bg-card border-2 border-dashed border-border rounded-lg mb-6">
-        <img src={qrCodeUrl} alt={`QR Code para ${petName}`} className="w-48 h-48 object-contain" />
+        <img src={qrCodeUrl} alt={`Código QR de ${petName}`} className="w-48 h-48 object-contain" />
       </div>
 
       <Button 

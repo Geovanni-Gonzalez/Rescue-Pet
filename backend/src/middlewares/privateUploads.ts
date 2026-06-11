@@ -12,12 +12,19 @@ function isBlobEnabled() {
   return Boolean(process.env['BLOB_READ_WRITE_TOKEN']);
 }
 
+function blobAccessMode(): 'public' | 'private' {
+  const mode = process.env['BLOB_ACCESS'];
+  return mode === 'public' ? 'public' : 'private';
+}
+
 function loadBlobSdk(): {
-  list: (options: Record<string, unknown>) => Promise<{ blobs: { url: string; uploadedAt?: Date | string }[] }>;
-  get: (url: string) => Promise<{
-    arrayBuffer: () => Promise<ArrayBuffer>;
+  list: (options: Record<string, unknown>) => Promise<{ blobs: { url: string; uploadedAt?: Date | string; contentType?: string }[] }>;
+  get: (url: string, options: Record<string, unknown>) => Promise<{
+    stream: ReadableStream<Uint8Array> | null;
+    blob?: { contentType?: string | null };
     contentType?: string;
-  }>;
+    arrayBuffer?: () => Promise<ArrayBuffer>;
+  } | null>;
 } {
   try {
     return require('@vercel/blob');
@@ -40,9 +47,22 @@ async function sendPrivateBlob(subdir: 'documents' | 'contracts', filename: stri
     return res.status(404).json({ success: false, error: 'Archivo no encontrado.' });
   }
 
-  const response = await get(blob.url);
-  const buffer = Buffer.from(await response.arrayBuffer());
-  if (response.contentType) res.type(response.contentType);
+  const response = await get(blob.url, { access: blobAccessMode() });
+  if (!response) {
+    return res.status(404).json({ success: false, error: 'Archivo no encontrado.' });
+  }
+
+  let buffer: Buffer;
+  if (response.stream) {
+    buffer = Buffer.from(await new Response(response.stream).arrayBuffer());
+  } else if (typeof response.arrayBuffer === 'function') {
+    buffer = Buffer.from(await response.arrayBuffer());
+  } else {
+    return res.status(502).json({ success: false, error: 'No se pudo leer el archivo.' });
+  }
+
+  const contentType = response.blob?.contentType || response.contentType || blob.contentType;
+  if (contentType) res.type(contentType);
   return res.send(buffer);
 }
 

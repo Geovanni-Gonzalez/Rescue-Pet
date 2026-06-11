@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { requestPushPermission, showBrowserNotification, getPushPermission } from '../lib/pushNotifications';
-import { feedbackTagClasses } from '../design/status';
+import { feedbackTagClasses, feedbackLabel } from '../design/status';
 
 interface Notification {
   id: string;
@@ -187,7 +187,7 @@ export function NotificationBell() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${feedbackTagClasses(n.type)}`}>
-                          {n.type}
+                          {feedbackLabel(n.type)}
                         </span>
                         <span className="text-xs text-muted-foreground">{timeAgo(n.createdAt)}</span>
                       </div>

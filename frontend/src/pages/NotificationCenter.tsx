@@ -6,6 +6,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { apiClient, getApiErrorMessage } from '../lib/api';
+import { feedbackLabel } from '../design/status';
 
 interface Notification {
   id: string;
@@ -139,7 +140,7 @@ export function NotificationCenter() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
-                          {n.type}
+                          {feedbackLabel(n.type)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {new Date(n.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

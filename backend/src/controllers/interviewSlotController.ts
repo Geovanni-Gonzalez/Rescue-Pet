@@ -50,7 +50,7 @@ export const createSlot = async (req: Request, res: Response) => {
     },
   });
   if (overlapping) {
-    return res.status(400).json({ success: false, error: 'El horario se solapa con otro slot existente.' });
+    return res.status(400).json({ success: false, error: 'El horario se solapa con otro horario existente.' });
   }
 
   const slot = await db.interviewSlot.create({
@@ -112,7 +112,7 @@ export const scheduleInterview = async (req: Request, res: Response) => {
   const applicationId = req.params['id'] as string;
   const { slotId } = req.body;
 
-  if (!slotId) return res.status(400).json({ success: false, error: 'slotId es requerido.' });
+  if (!slotId) return res.status(400).json({ success: false, error: 'Debes seleccionar un horario.' });
 
   const application = await db.adoptionRequest.findUnique({
     where: { id: applicationId },
@@ -215,9 +215,9 @@ export const cancelSlot = async (req: Request, res: Response) => {
   const id = req.params['id'] as string;
 
   const slot = await db.interviewSlot.findUnique({ where: { id } });
-  if (!slot) return res.status(404).json({ success: false, error: 'Slot no encontrado' });
+  if (!slot) return res.status(404).json({ success: false, error: 'Horario no encontrado.' });
   if (slot.status === 'cancelled') {
-    return res.status(400).json({ success: false, error: 'El slot ya fue cancelado.' });
+    return res.status(400).json({ success: false, error: 'El horario ya fue cancelado.' });
   }
 
   const reservedByApplicationId = slot.reservedByApplicationId as string | null;
@@ -267,5 +267,5 @@ export const cancelSlot = async (req: Request, res: Response) => {
     ipAddress: getClientIp(req),
   }).catch((err) => logger.error('Failed to audit slot cancellation', { error: (err as Error).message }));
 
-  res.json({ success: true, message: 'Slot cancelado' });
+  res.json({ success: true, message: 'Horario cancelado.' });
 };

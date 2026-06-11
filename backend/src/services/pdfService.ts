@@ -21,6 +21,9 @@ interface SignedContractData extends ContractData {
 const CONTRACTS_DIR = path.join(uploadsRoot, 'contracts');
 
 export function buildContractUrl(filename: string): string {
+  if (process.env.VERCEL) {
+    return `/_/backend/uploads/contracts/${filename}`;
+  }
   const base = process.env.BACKEND_URL || 'http://localhost:3000';
   return `${base}/uploads/contracts/${filename}`;
 }
