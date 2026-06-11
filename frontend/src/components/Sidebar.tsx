@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PawPrint, HeartHandshake, Users, LogOut, Sparkles, ClipboardList, Syringe, Calendar, Bell, ClipboardCheck, Shield, BarChart3, X } from 'lucide-react';
+import { LayoutDashboard, PawPrint, HeartHandshake, Users, LogOut, Sparkles, ClipboardList, Syringe, Calendar, Bell, ClipboardCheck, BarChart3, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
