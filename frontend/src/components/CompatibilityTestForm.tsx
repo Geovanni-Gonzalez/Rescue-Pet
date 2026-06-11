@@ -70,7 +70,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Tipo de Vivienda</label>
+          <label className="text-sm font-medium">Tipo de vivienda</label>
           <select name="housingType" value={formData.housingType} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
             <option value="HOUSE">Casa</option>
             <option value="APARTMENT">Departamento</option>
@@ -82,14 +82,32 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
           <label htmlFor="hasYard" className="text-sm font-medium">¿Tienes patio asegurado?</label>
         </div>
 
-        <FormField label="Cantidad de niños en casa" name="childrenCount" type="number" min={0} value={formData.childrenCount} onChange={handleChange} />
+        <FormField
+          label="Cantidad de niños en casa"
+          name="childrenCount"
+          type="number"
+          min={0}
+          value={formData.childrenCount}
+          onChange={handleChange}
+          placeholder="Ej. 0, 1 o 2"
+          helperText="Incluye solo niños que conviven regularmente en el hogar."
+        />
 
         <div className="flex items-center space-x-2 h-10 mt-6">
           <input type="checkbox" id="hasOtherPets" name="hasOtherPets" checked={formData.hasOtherPets} onChange={handleChange} className="w-4 h-4 text-rescue-600 rounded border-border" />
           <label htmlFor="hasOtherPets" className="text-sm font-medium">¿Tienes otras mascotas?</label>
         </div>
 
-        <FormField label="Horas libres al día (aprox)" name="dailyAvailableTime" type="number" min={0} value={formData.dailyAvailableTime} onChange={handleChange} />
+        <FormField
+          label="Horas libres al dia para convivencia y cuidados"
+          name="dailyAvailableTime"
+          type="number"
+          min={0}
+          value={formData.dailyAvailableTime}
+          onChange={handleChange}
+          placeholder="Ej. 3"
+          helperText="Indica un promedio diario realista para paseos, juego y atención."
+        />
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Experiencia con mascotas</label>
@@ -101,7 +119,14 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
         </div>
 
         <div className="md:col-span-2">
-          <FormField label="Alergias conocidas (opcional)" name="allergies" value={formData.allergies} onChange={handleChange} placeholder="Ej: Pelo de gato" />
+          <FormField
+            label="Alergias conocidas (opcional)"
+            name="allergies"
+            value={formData.allergies}
+            onChange={handleChange}
+            placeholder="Ej. Pelo de gato, polvo, ninguna"
+            helperText="Si no hay alergias conocidas, puedes escribir 'Ninguna'."
+          />
         </div>
       </div>
 

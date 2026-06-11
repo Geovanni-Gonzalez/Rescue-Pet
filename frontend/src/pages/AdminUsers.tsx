@@ -233,6 +233,8 @@ export function AdminUsers() {
                 label="Nombre completo"
                 value={formData.fullName}
                 onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))}
+                placeholder="Ej. Andres Morales"
+                helperText="Nombre que verá el equipo en asignaciones y auditoría."
                 minLength={2}
                 required
               />
@@ -241,13 +243,15 @@ export function AdminUsers() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                placeholder="Ej. andres.morales@rescuepet.org"
+                helperText="Se usará para iniciar sesión y recibir notificaciones."
                 required
               />
               <FormField
                 label="Teléfono (opcional)"
                 value={formData.phone}
                 onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
-                placeholder="+506 8888 8888"
+                placeholder="Ej. +506 8888 8888"
               />
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground">Rol</label>
@@ -375,6 +379,7 @@ export function AdminUsers() {
                 label="Nombre completo"
                 value={editData.fullName}
                 onChange={(e) => setEditData((d) => (d ? { ...d, fullName: e.target.value } : d))}
+                placeholder="Ej. Andres Morales"
                 minLength={2}
                 required
               />
@@ -383,13 +388,14 @@ export function AdminUsers() {
                 type="email"
                 value={editData.email}
                 onChange={(e) => setEditData((d) => (d ? { ...d, email: e.target.value } : d))}
+                placeholder="Ej. andres.morales@rescuepet.org"
                 required
               />
               <FormField
                 label="Teléfono"
                 value={editData.phone}
                 onChange={(e) => setEditData((d) => (d ? { ...d, phone: e.target.value } : d))}
-                placeholder="+506 8888 8888"
+                placeholder="Ej. +506 8888 8888"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

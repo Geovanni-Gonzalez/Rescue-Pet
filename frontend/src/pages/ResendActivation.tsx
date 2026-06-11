@@ -58,7 +58,8 @@ export function ResendActivation() {
               <FormField
                 label="Correo electrónico"
                 type="email"
-                placeholder="ejemplo@correo.com"
+                placeholder="Ej. maria.lopez@correo.com"
+                helperText="Usa el correo con el que creaste tu cuenta de adoptante."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

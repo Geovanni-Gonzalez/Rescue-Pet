@@ -415,7 +415,7 @@ export function PetDetail() {
                 <div className="space-y-3 pt-2 border-t">
                   <input
                     type="text"
-                    placeholder="Dirección de texto (opcional)"
+                    placeholder="Ej. Barrio Escalante, 200 m norte del parque"
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
                     className="w-full h-9 rounded-md border border-border px-3 text-sm"
@@ -492,7 +492,7 @@ export function PetDetail() {
                         value={clinicalForm.diagnosis}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, diagnosis: e.target.value }))}
                         className="w-full h-10 rounded-md border border-border px-3 text-sm"
-                        placeholder="Diagnóstico"
+                        placeholder="Ej. Otitis externa leve"
                         required
                       />
                     </div>
@@ -502,7 +502,7 @@ export function PetDetail() {
                         value={clinicalForm.treatment}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, treatment: e.target.value }))}
                         className="w-full h-10 rounded-md border border-border px-3 text-sm"
-                        placeholder="Tratamiento"
+                        placeholder="Ej. Limpieza auricular y control en 7 dias"
                         required
                       />
                     </div>
@@ -512,7 +512,7 @@ export function PetDetail() {
                         value={clinicalForm.medicine}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, medicine: e.target.value }))}
                         className="w-full h-10 rounded-md border border-border px-3 text-sm"
-                        placeholder="Nombre del medicamento"
+                        placeholder="Ej. Amoxicilina, meloxicam, suero oral"
                       />
                     </div>
                     <div>
@@ -521,7 +521,7 @@ export function PetDetail() {
                         value={clinicalForm.dose}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, dose: e.target.value }))}
                         className="w-full h-10 rounded-md border border-border px-3 text-sm"
-                        placeholder="Ej: 5 mg/kg"
+                        placeholder="Ej. 5 mg/kg cada 12 horas"
                       />
                     </div>
                     <div>
@@ -530,7 +530,7 @@ export function PetDetail() {
                         value={clinicalForm.duration}
                         onChange={(e) => setClinicalForm((p) => ({ ...p, duration: e.target.value }))}
                         className="w-full h-10 rounded-md border border-border px-3 text-sm"
-                        placeholder="Ej: 7 días"
+                        placeholder="Ej. 7 días o hasta nueva revisión"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -540,7 +540,7 @@ export function PetDetail() {
                         onChange={(e) => setClinicalForm((p) => ({ ...p, observations: e.target.value }))}
                         className="w-full rounded-md border border-border px-3 py-2 text-sm resize-none"
                         rows={2}
-                        placeholder="Observaciones adicionales"
+                        placeholder="Ej. Come con normalidad, requiere reposo y seguimiento telefónico."
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -625,7 +625,7 @@ export function PetDetail() {
                         value={vaccineForm.vaccineType}
                         onChange={(e) => setVaccineForm((p) => ({ ...p, vaccineType: e.target.value }))}
                         className="w-full h-10 rounded-md border border-border px-3 text-sm"
-                        placeholder="Ej: Rabia, Parvovirus, Moquillo"
+                        placeholder="Ej. Rabia, parvovirus o polivalente anual"
                         required
                       />
                     </div>

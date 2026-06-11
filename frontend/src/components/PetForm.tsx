@@ -191,6 +191,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           name="name"
           value={formData.name}
           onChange={handleChange}
+          placeholder="Ej. Luna"
+          helperText="Nombre con el que se identificará a la mascota en el catálogo."
           required
         />
         <FormField
@@ -198,7 +200,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           name="species"
           value={formData.species}
           onChange={handleChange}
-          placeholder="Ej. Perro, Gato"
+          placeholder="Ej. Perro, gato o conejo"
           required
         />
         <FormField
@@ -206,6 +208,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           name="estimatedBreed"
           value={formData.estimatedBreed}
           onChange={handleChange}
+          placeholder="Ej. Mestizo, labrador mix, siames"
+          helperText="Si no se conoce la raza, usa una descripción aproximada."
         />
         <FormField
           label="Edad estimada (meses)"
@@ -214,6 +218,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           min={0}
           value={formData.estimatedAge}
           onChange={handleChange}
+          placeholder="Ej. 18"
+          helperText="Ingresa la edad aproximada en meses."
         />
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Tamaño</label>
@@ -223,7 +229,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
             onChange={handleChange}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Selecciona el tamaño</option>
             <option value="SMALL">Pequeño</option>
             <option value="MEDIUM">Mediano</option>
             <option value="LARGE">Grande</option>
@@ -237,7 +243,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
             onChange={handleChange}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Selecciona el nivel de energía</option>
             <option value="LOW">Bajo</option>
             <option value="MEDIUM">Medio</option>
             <option value="HIGH">Alto</option>
@@ -251,7 +257,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
             onChange={handleChange}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Selecciona el espacio recomendado</option>
             <option value="SMALL">Pequeño</option>
             <option value="MEDIUM">Mediano</option>
             <option value="LARGE">Grande</option>
@@ -304,7 +310,8 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
           name="rescueLocationText"
           value={formData.rescueLocationText}
           onChange={handleChange}
-          placeholder="Dirección o referencia de texto (opcional)"
+          placeholder="Ej. Barrio Escalante, 200 m norte del parque"
+          helperText="Agrega una referencia clara si no deseas usar coordenadas exactas."
         />
 
         {showMap && (

@@ -147,7 +147,8 @@ export function Register() {
               label="Nombre completo"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              placeholder="Juan Perez"
+              placeholder="Ej. Maria Fernanda Lopez"
+              helperText="Usa tu nombre y apellidos como aparecen en tu identificación."
               error={fieldErrors.fullName}
               required
             />
@@ -156,7 +157,8 @@ export function Register() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="juan@example.com"
+              placeholder="Ej. maria.lopez@correo.com"
+              helperText="Enviaremos a este correo el enlace de activación de la cuenta."
               error={fieldErrors.email}
               required
             />
@@ -164,13 +166,15 @@ export function Register() {
               label="Teléfono (opcional)"
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
-              placeholder="+506 8888 8888"
+              placeholder="Ej. +506 8888 8888"
+              helperText="Incluye código de país si deseas recibir seguimiento telefónico."
             />
             <FormField
               label="Contraseña"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              placeholder="Crea una contraseña segura"
               error={fieldErrors.password}
               required
             />
@@ -181,6 +185,7 @@ export function Register() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Repite la misma contraseña"
               error={
                 fieldErrors.confirmPassword ||
                 (confirmPassword && confirmPassword !== password ? 'Las contraseñas no coinciden.' : undefined)

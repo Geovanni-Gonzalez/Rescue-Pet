@@ -189,10 +189,10 @@ export function TaskManagement() {
       {showCreateForm && (
         <Card className="border-rescue-200 bg-rescue-50/30">
           <CardContent className="pt-4 space-y-3">
-            <h3 className="font-semibold text-foreground">Nueva Tarea</h3>
+            <h3 className="font-semibold text-foreground">Nueva tarea</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo de tarea</label>
                 <select
                   value={newTask.type}
                   onChange={(e) => setNewTask({ ...newTask, type: e.target.value })}
@@ -204,7 +204,7 @@ export function TaskManagement() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Asignar a</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Responsable</label>
                 <select
                   value={newTask.assignedRole}
                   onChange={(e) => setNewTask({ ...newTask, assignedRole: e.target.value })}
@@ -215,7 +215,7 @@ export function TaskManagement() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha programada</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha y hora programadas</label>
                 <input
                   type="datetime-local"
                   value={newTask.scheduledAt}
@@ -230,7 +230,7 @@ export function TaskManagement() {
                   onChange={(e) => setNewTask({ ...newTask, animalId: e.target.value })}
                   className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 >
-                  <option value="">-- Sin animal --</option>
+                  <option value="">Sin animal asociado</option>
                   {animals.map((a) => (
                     <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
@@ -238,18 +238,18 @@ export function TaskManagement() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Descripción (opcional)</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Descripcion operativa (opcional)</label>
               <textarea
                 value={newTask.description}
                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 rows={2}
                 className="w-full rounded-md border border-border px-2 py-1.5 text-sm"
-                placeholder="Detalles de la tarea..."
+                placeholder="Ej. Aplicar medicamento después de la comida y registrar cualquier reacción."
               />
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleCreate} disabled={isCreating}>
-                {isCreating ? 'Creando...' : 'Crear Tarea'}
+                {isCreating ? 'Creando...' : 'Crear tarea'}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>
                 Cancelar
@@ -320,7 +320,7 @@ export function TaskManagement() {
                               type="text"
                               value={completeComment}
                               onChange={(e) => setCompleteComment(e.target.value)}
-                              placeholder="Comentario (opcional)"
+                              placeholder="Ej. Completada sin novedades"
                               className="h-8 rounded-md border border-border px-2 text-xs w-48"
                             />
                             <div className="flex gap-1">

@@ -5,10 +5,11 @@ import { Input } from './ui/input';
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
+  helperText?: string;
 }
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, error, className, ...props }, ref) => {
+  ({ label, error, helperText, className, ...props }, ref) => {
     return (
       <div className="space-y-2">
         <Label htmlFor={props.id || props.name} className={error ? 'text-red-500' : ''}>
@@ -19,6 +20,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           className={`${error ? 'border-red-500 focus-visible:ring-red-500' : ''} ${className || ''}`}
           {...props}
         />
+        {helperText && !error && <p className="text-xs text-muted-foreground">{helperText}</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
     );

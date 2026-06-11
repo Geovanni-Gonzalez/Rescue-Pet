@@ -56,7 +56,7 @@ export function RejectionReasonDialog({
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Ej: El adoptante no cumple con los requisitos de espacio..."
+              placeholder="Ej. El hogar no cuenta con el espacio requerido para esta mascota."
               disabled={isSubmitting}
             />
           </div>

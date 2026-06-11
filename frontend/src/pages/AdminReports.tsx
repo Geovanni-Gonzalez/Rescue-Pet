@@ -242,7 +242,7 @@ export function AdminReports() {
                 onChange={(e) => setSpecies(e.target.value)}
                 className="w-full h-9 rounded-md border border-border px-2 text-sm"
               >
-                <option value="">Todas</option>
+                <option value="">Todas las especies</option>
                 {speciesList.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -257,7 +257,7 @@ export function AdminReports() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full h-9 rounded-md border border-border px-2 text-sm"
                 >
-                  <option value="">Todos</option>
+                  <option value="">Todos los estados</option>
                   <option value="APPROVED">Aprobadas</option>
                   <option value="REJECTED">Rechazadas</option>
                 </select>

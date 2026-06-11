@@ -486,8 +486,8 @@ export function AdoptionRequestDetail() {
                       onChange={(e) => setDocType(e.target.value as 'ID_CARD' | 'ADDRESS_PROOF')}
                       className="h-10 rounded-md border border-border px-3 text-sm"
                     >
-                      <option value="ID_CARD">Cédula de identidad</option>
-                      <option value="ADDRESS_PROOF">Comprobante de domicilio</option>
+                      <option value="ID_CARD">Cédula de identidad vigente</option>
+                      <option value="ADDRESS_PROOF">Comprobante de domicilio reciente</option>
                     </select>
                     <input
                       type="file"
@@ -498,7 +498,7 @@ export function AdoptionRequestDetail() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Formatos permitidos: PDF, JPG, PNG — máx. 10 MB</p>
+                  <p className="text-xs text-muted-foreground">Sube archivos legibles en PDF, JPG o PNG. Tamaño máximo: 10 MB.</p>
                   <Button type="submit" size="sm" disabled={isUploadingDoc || !docFile}>
                     {isUploadingDoc ? 'Cargando...' : 'Subir documento'}
                   </Button>

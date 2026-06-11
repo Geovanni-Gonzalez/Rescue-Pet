@@ -74,7 +74,8 @@ export function ResetPassword() {
             <FormField
               label="Nueva contraseña"
               type="password"
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Crea una contraseña segura"
+              helperText="Usa una combinación de letras, números y símbolos."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
@@ -84,7 +85,7 @@ export function ResetPassword() {
             <FormField
               label="Confirmar contraseña"
               type="password"
-              placeholder="Repite la contraseña"
+              placeholder="Repite exactamente la nueva contraseña"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               minLength={8}

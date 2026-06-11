@@ -58,7 +58,8 @@ export function ForgotPassword() {
               <FormField
                 label="Correo electrónico"
                 type="email"
-                placeholder="ejemplo@correo.com"
+                placeholder="Ej. maria.lopez@correo.com"
+                helperText="Escribe el correo asociado a tu cuenta para recibir el enlace de restablecimiento."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

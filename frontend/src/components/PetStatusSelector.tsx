@@ -109,7 +109,7 @@ export function PetStatusSelector({ petId, currentStatus, onStatusChanged }: Pet
 
           <input
             type="text"
-            placeholder="Motivo (opcional)"
+            placeholder="Ej. Alta veterinaria, mejoría clínica o adopción confirmada"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm placeholder:text-muted-foreground"

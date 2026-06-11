@@ -191,6 +191,8 @@ export function Profile() {
                 label="Nombre completo"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
+                placeholder="Ej. Maria Fernanda Lopez"
+                helperText="Nombre visible para comunicaciones y registros internos."
                 minLength={2}
                 required
               />
@@ -198,7 +200,8 @@ export function Profile() {
                 label="Teléfono"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
-                placeholder="+506 8888 8888"
+                placeholder="Ej. +506 8888 8888"
+                helperText="Incluye código de país para facilitar el contacto."
                 minLength={7}
                 required
               />
@@ -207,6 +210,7 @@ export function Profile() {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                placeholder="Ej. maria.lopez@correo.com"
                 required
               />
               <div className="space-y-2">
@@ -270,6 +274,7 @@ export function Profile() {
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Ingresa tu contraseña actual"
               required
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -279,7 +284,7 @@ export function Profile() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 minLength={8}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Crea una nueva contraseña segura"
                 required
               />
               <FormField
@@ -288,6 +293,7 @@ export function Profile() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 minLength={8}
+                placeholder="Repite la nueva contraseña"
                 required
               />
             </div>

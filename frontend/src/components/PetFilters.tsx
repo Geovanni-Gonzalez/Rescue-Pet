@@ -52,7 +52,7 @@ export function PetFilters({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
-            placeholder="Buscar por nombre o raza..."
+            placeholder="Buscar por nombre, especie o raza estimada"
             className="pl-10"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}

@@ -113,7 +113,7 @@ export function Login() {
             <FormField
               label="Correo electrónico"
               type="email"
-              placeholder="ejemplo@correo.com"
+              placeholder="Ej. maria.lopez@correo.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
@@ -123,7 +123,7 @@ export function Login() {
               <FormField
                 label="Contraseña"
                 type="password"
-                placeholder="********"
+                placeholder="Ingresa tu contraseña"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
