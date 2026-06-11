@@ -31,9 +31,9 @@ export function CompatibilityTestPage() {
 
   if (submitted) {
     return (
-      <div className="max-w-lg mx-auto mt-20 flex flex-col items-center text-center space-y-6">
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-          <CheckCircle className="w-10 h-10 text-green-600" />
+      <div className="max-w-lg mx-auto mt-20 flex flex-col items-center text-center space-y-6 rounded-lg border border-border bg-card p-8 shadow-sm">
+        <div className="w-16 h-16 rounded-full bg-status-success text-status-success-fg ring-1 ring-status-success-bd flex items-center justify-center">
+          <CheckCircle className="w-8 h-8" />
         </div>
         <h2 className="text-2xl font-bold text-foreground">¡Test completado!</h2>
         <p className="text-muted-foreground">Calculamos la afinidad con las mascotas disponibles. El catálogo ahora estará ordenado por compatibilidad.</p>
@@ -45,14 +45,14 @@ export function CompatibilityTestPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto page-section">
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 bg-rescue-100 text-rescue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 bg-rescue-50 text-rescue-600 ring-1 ring-rescue-100 rounded-lg flex items-center justify-center flex-shrink-0">
           <ClipboardList className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Test de Afinidad</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="page-title">Test de Afinidad</h1>
+          <p className="page-description">
             {initialData
               ? 'Actualiza tus respuestas para recalcular la compatibilidad.'
               : 'Cuéntanos sobre tu estilo de vida para encontrar al compañero ideal.'}

@@ -65,7 +65,7 @@ export function CompatibilityTestForm({ initialData, onSubmitted }: Compatibilit
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-xl shadow-sm border border-border">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg shadow-sm border border-border">
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

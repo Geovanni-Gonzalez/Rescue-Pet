@@ -152,15 +152,15 @@ export function AdminReports() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="page-section max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="page-title flex items-center gap-2">
             <BarChart3 className="w-6 h-6 text-rescue-600" />
             Reportes Administrativos
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Consulta, vista previa y exportación de datos</p>
+          <p className="page-description">Consulta, vista previa y exportación de datos</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -335,7 +335,7 @@ export function AdminReports() {
 
 function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardContent className="pt-4 pb-3 text-center">
         <p className="text-xs text-muted-foreground mb-1">{label}</p>
         <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -368,13 +368,13 @@ function AdoptionTable({ rows }: { rows: AdoptionRow[] }) {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-border hover:bg-muted">
+                <tr key={r.id} className="border-b border-border transition-colors hover:bg-muted">
                   <td className="px-4 py-2 font-medium text-foreground">{r.animal.name}</td>
                   <td className="px-4 py-2 text-muted-foreground">{r.animal.species}</td>
                   <td className="px-4 py-2 text-foreground">{r.adopter.fullName}</td>
                   <td className="px-4 py-2 text-muted-foreground text-xs">{r.adopter.email}</td>
                   <td className="px-4 py-2">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-md border ${
                       r.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
                       {r.status === 'APPROVED' ? 'Aprobada' : 'Rechazada'}
@@ -426,11 +426,11 @@ function HealthTable({ animals }: { animals: HealthAnimal[] }) {
                 const pending = a.vaccines.filter((v) => v.status === 'PENDING').length;
                 const lastEntry = a.clinicalRecord?.entries?.[0];
                 return (
-                  <tr key={a.id} className="border-b border-border hover:bg-muted">
+                  <tr key={a.id} className="border-b border-border transition-colors hover:bg-muted">
                     <td className="px-4 py-2 font-medium text-foreground">{a.name}</td>
                     <td className="px-4 py-2 text-muted-foreground">{a.species}</td>
                     <td className="px-4 py-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-md border ${
                         PET_STATUS[a.status as PetStatus]
                           ? roleClasses[PET_STATUS[a.status as PetStatus].role]
                           : 'bg-muted text-foreground border-border'

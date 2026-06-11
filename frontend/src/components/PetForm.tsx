@@ -134,7 +134,7 @@ export function PetForm({ initialData, isEdit = false }: PetFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 max-w-2xl mx-auto bg-card p-6 rounded-xl border border-border shadow-sm"
+      className="space-y-6 max-w-2xl mx-auto bg-card p-6 rounded-lg border border-border shadow-sm"
     >
       {error && (
         <Alert variant="danger">{error}</Alert>

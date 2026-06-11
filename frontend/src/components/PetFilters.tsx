@@ -21,7 +21,7 @@ interface PetFiltersProps {
   showCatalogFilters?: boolean;
 }
 
-const SELECT_CLASS = 'h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const SELECT_CLASS = 'h-10 px-3 py-2 rounded-md border border-input bg-background text-sm shadow-sm ring-offset-background transition-[border-color,box-shadow] duration-150 ease-out-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export function PetFilters({
   searchTerm,
@@ -48,9 +48,9 @@ export function PetFilters({
   };
 
   return (
-    <div className="space-y-3 mb-6">
+    <div className="space-y-3 mb-6 rounded-lg border border-border bg-card p-3 shadow-sm">
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             placeholder="Buscar por nombre, especie o raza estimada"
@@ -61,7 +61,7 @@ export function PetFilters({
         </div>
 
         {showStatusFilter && onStatusChange && (
-          <select className={SELECT_CLASS} value={statusFilter || 'ALL'} onChange={(e) => onStatusChange(e.target.value)}>
+          <select className={`${SELECT_CLASS} sm:w-56`} value={statusFilter || 'ALL'} onChange={(e) => onStatusChange(e.target.value)}>
             {statuses.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
@@ -70,7 +70,7 @@ export function PetFilters({
       </div>
 
       {showCatalogFilters && catalogFilters && onCatalogFilterChange && (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <select
             className={SELECT_CLASS}
             value={catalogFilters.species}

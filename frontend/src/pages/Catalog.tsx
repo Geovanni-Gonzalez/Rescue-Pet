@@ -100,12 +100,12 @@ export function Catalog() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div>
+    <div className="page-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Catálogo Inteligente</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="page-title">Catálogo Inteligente</h1>
+          <p className="page-description">
             Descubre a tu compañero ideal. Completa el test para orden por afinidad.
           </p>
         </div>
@@ -130,8 +130,8 @@ export function Catalog() {
 
       {/* Onboarding banner or sort indicator */}
       {!isLoading && !sortedByCompatibility && total > 0 && (
-        <div className="flex items-start gap-4 p-4 mb-4 rounded-xl bg-warm-50 border border-warm-100">
-          <div className="w-9 h-9 rounded-lg bg-warm-100 text-warm-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="flex items-start gap-4 p-4 rounded-lg bg-warm-50 border border-warm-100 shadow-sm">
+          <div className="w-9 h-9 rounded-lg bg-warm-100 text-warm-700 ring-1 ring-warm-100 flex items-center justify-center flex-shrink-0 mt-0.5">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -148,7 +148,7 @@ export function Catalog() {
         </div>
       )}
       {!isLoading && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {sortedByCompatibility && <Sparkles className="w-3.5 h-3.5 text-rescue-500" />}
           <span>{sortedByCompatibility ? 'Ordenado por afinidad' : `${total} ${total === 1 ? 'mascota' : 'mascotas'}`}</span>
           {sortedByCompatibility && (

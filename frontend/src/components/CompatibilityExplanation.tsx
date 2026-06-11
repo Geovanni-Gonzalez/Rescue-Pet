@@ -8,7 +8,7 @@ export function CompatibilityExplanation({ explanation }: CompatibilityExplanati
   if (!explanation) return null;
 
   return (
-    <Alert variant="info" className="mt-3 rounded-lg">
+    <Alert variant="info" className="mt-3">
       {explanation}
     </Alert>
   );

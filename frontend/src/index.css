@@ -62,7 +62,7 @@
 
     --status-on-solid: oklch(0.99 0.005 175);
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -138,8 +138,11 @@
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
   }
+  ::selection {
+    @apply bg-rescue-100 text-rescue-900;
+  }
   h1, h2, h3, h4 {
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   p {
     max-width: 72ch;
@@ -172,6 +175,22 @@
   .stagger-grid > *:nth-child(7) { animation-delay: 240ms; }
   .stagger-grid > *:nth-child(8) { animation-delay: 280ms; }
   .stagger-grid > *:nth-child(n+9) { animation-delay: 300ms; }
+
+  .page-section {
+    @apply space-y-6;
+  }
+
+  .page-header {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-foreground;
+  }
+
+  .page-description {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
 }
 
 @keyframes dropdown-in {

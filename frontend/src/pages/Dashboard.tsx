@@ -26,30 +26,32 @@ export function Dashboard() {
   const visible = actions.filter((a) => role && a.roles.includes(role));
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">
+    <div className="page-section max-w-5xl">
+      <div className="page-header">
+        <div>
+        <h1 className="page-title">
           Hola, {user?.fullName?.split(' ')[0]}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="page-description">
           Selecciona una sección para comenzar.
         </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 stagger-grid">
         {visible.map((action) => (
           <button
             key={action.to}
             type="button"
             onClick={() => navigate(action.to)}
-            className="flex items-start gap-3.5 p-4 rounded-xl border border-border bg-card text-left transition-[box-shadow,border-color,transform] duration-200 ease-out-strong hover:shadow-sm hover:border-rescue-500/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-28 items-start gap-3.5 p-4 rounded-lg border border-border bg-card text-left shadow-sm transition-[box-shadow,border-color,transform] duration-200 ease-out-strong hover:shadow-md hover:border-rescue-500/30 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <div className="w-9 h-9 rounded-lg bg-rescue-50 text-rescue-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-rescue-50 text-rescue-600 ring-1 ring-rescue-100 flex items-center justify-center flex-shrink-0">
               <action.icon className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">{action.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{action.description}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{action.description}</p>
             </div>
           </button>
         ))}

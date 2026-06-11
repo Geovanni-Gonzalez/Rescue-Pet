@@ -44,7 +44,7 @@ export function Alert({
     <div
       role={resolvedRole}
       className={cn(
-        "flex items-start gap-2.5 rounded-md border p-3 text-sm",
+        "flex items-start gap-2.5 rounded-md border p-3 text-sm shadow-sm",
         roleClasses[variant],
         className
       )}

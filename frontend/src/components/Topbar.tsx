@@ -11,10 +11,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const { user } = useAuth();
 
   return (
-    <header className="bg-card border-b border-border h-16 flex items-center justify-between px-4 sm:px-6">
+    <header className="bg-card/95 backdrop-blur border-b border-border h-16 flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-4">
         <button
-          className="md:hidden p-2 text-muted-foreground hover:bg-muted rounded-md transition-transform duration-150 ease-out-strong active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="md:hidden p-2 text-muted-foreground hover:bg-muted rounded-md transition-transform duration-150 ease-out-strong active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onMenuClick}
           aria-label="Abrir menú"
         >
@@ -33,7 +33,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             <span className="text-sm font-medium text-foreground leading-tight">{user?.fullName}</span>
             {user?.role && <RoleBadge role={user.role} />}
           </div>
-          <div className="w-8 h-8 rounded-full bg-rescue-50 text-rescue-600 flex items-center justify-center text-sm font-semibold">
+          <div className="w-9 h-9 rounded-full bg-rescue-50 text-rescue-600 ring-1 ring-rescue-100 flex items-center justify-center text-sm font-semibold">
             {user?.fullName?.charAt(0) || 'U'}
           </div>
         </div>

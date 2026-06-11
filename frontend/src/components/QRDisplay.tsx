@@ -8,7 +8,7 @@ interface QRDisplayProps {
 
 export function QRDisplay({ qrCodeUrl, petName }: QRDisplayProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-xl shadow-sm">
+    <div className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-lg shadow-sm">
       <div className="flex items-center gap-2 mb-4 text-rescue-900">
         <QrCode className="w-5 h-5" />
         <h4 className="font-semibold text-lg">Código QR de {petName}</h4>

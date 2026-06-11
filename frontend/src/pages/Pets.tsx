@@ -76,13 +76,13 @@ export function Pets() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="page-section">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="page-title">
             {role === 'ADOPTER' ? 'Mascotas Disponibles' : 'Gestión de Mascotas'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="page-description">
             {role === 'ADOPTER' 
               ? 'Encuentra a tu nuevo mejor amigo.' 
               : 'Administra el catálogo y estado de los animales en el refugio.'}
@@ -111,7 +111,7 @@ export function Pets() {
       {isLoading ? (
         <LoadingState message="Cargando catálogo..." />
       ) : filteredPets.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5 stagger-grid">
           {filteredPets.map(pet => (
             <div key={pet.id} className="relative">
               <PetCard

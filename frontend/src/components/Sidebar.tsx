@@ -44,7 +44,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
       links: [
         { to: '/admin/users', label: 'Usuarios', icon: Users, roles: ['ADMIN'] },
         { to: '/admin/reports', label: 'Reportes', icon: BarChart3, roles: ['ADMIN'] },
-        { to: '/admin/audit', label: 'Auditoría', icon: Shield, roles: ['ADMIN'] },
+        // { to: '/admin/audit', label: 'Auditoría', icon: Shield, roles: ['ADMIN'] },
       ],
     },
     {
@@ -70,9 +70,9 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
 
   return (
     <aside className={`w-64 bg-card border-r border-border h-full flex flex-col ${mobile ? 'flex' : 'hidden md:flex'}`}>
-      <div className="px-6 pt-6 pb-5 flex items-center justify-between border-b border-border">
+      <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-primary text-primary-foreground rounded-lg flex items-center justify-center shadow-sm">
             <PawPrint className="w-4 h-4" />
           </div>
           <span className="text-base font-bold text-foreground tracking-tight">Rescue Pet</span>
@@ -84,9 +84,9 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
         )}
       </div>
 
-      <nav className="flex-1 px-4 overflow-y-auto py-2">
+      <nav className="flex-1 px-3 overflow-y-auto py-3">
         {visibleSections.map((section, sectionIndex) => (
-          <div key={section.label ?? 'general'} className={sectionIndex > 0 ? 'mt-5 pt-4 border-t border-border' : ''}>
+          <div key={section.label ?? 'general'} className={sectionIndex > 0 ? 'mt-4 pt-4 border-t border-border' : ''}>
             {section.label && (
               <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.label}
@@ -100,9 +100,9 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                   end={link.to === '/admin'}
                   onClick={handleNavClick}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    `relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isActive
-                        ? 'bg-rescue-50 text-rescue-600'
+                        ? 'bg-rescue-50 text-rescue-700 shadow-sm'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`
                   }
@@ -116,10 +116,10 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-3 border-t border-border">
         <button
           onClick={() => { logout(); handleNavClick(); }}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-[color,background-color,transform] duration-150 ease-out-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesión
