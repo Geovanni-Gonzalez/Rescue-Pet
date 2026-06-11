@@ -1,0 +1,562 @@
+{
+  "user": [
+    {
+      "id": "admin-seed",
+      "fullName": "Administrador Rescue Pet",
+      "email": "admin@rescuepet.com",
+      "passwordHash": "$2b$12$XYHaSNfsiMhQ3MKLH2g1.OtjtIsGKJY.9ZANG8kq8pSvqqx7z9wOa",
+      "phone": null,
+      "photoUrl": null,
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "emailVerifiedAt": "2026-06-04T14:26:04.158Z",
+      "lastLoginAt": "2026-06-11T18:00:40.128Z",
+      "failedLoginCount": 0,
+      "lockedUntil": null,
+      "activationToken": null,
+      "activationTokenExpiresAt": null,
+      "resetToken": null,
+      "resetTokenExpiresAt": null,
+      "createdAt": "2026-06-04T14:26:04.158Z",
+      "updatedAt": "2026-06-11T18:00:40.130Z"
+    },
+    {
+      "id": "vet-seed",
+      "fullName": "Veterinario Rescue Pet",
+      "email": "vet@rescuepet.com",
+      "passwordHash": "$2b$12$XYHaSNfsiMhQ3MKLH2g1.OtjtIsGKJY.9ZANG8kq8pSvqqx7z9wOa",
+      "phone": null,
+      "photoUrl": null,
+      "role": "VETERINARIAN",
+      "status": "ACTIVE",
+      "emailVerifiedAt": "2026-06-04T14:26:04.158Z",
+      "lastLoginAt": "2026-06-11T17:40:43.625Z",
+      "failedLoginCount": 0,
+      "lockedUntil": null,
+      "activationToken": null,
+      "activationTokenExpiresAt": null,
+      "resetToken": null,
+      "resetTokenExpiresAt": null,
+      "createdAt": "2026-06-04T14:26:04.158Z",
+      "updatedAt": "2026-06-11T17:40:43.626Z"
+    },
+    {
+      "id": "volunteer-seed",
+      "fullName": "Voluntario Rescue Pet",
+      "email": "volunteer@rescuepet.com",
+      "passwordHash": "$2b$12$XYHaSNfsiMhQ3MKLH2g1.OtjtIsGKJY.9ZANG8kq8pSvqqx7z9wOa",
+      "phone": null,
+      "photoUrl": null,
+      "role": "VOLUNTEER",
+      "status": "ACTIVE",
+      "emailVerifiedAt": "2026-06-04T14:26:04.158Z",
+      "lastLoginAt": null,
+      "failedLoginCount": 0,
+      "lockedUntil": null,
+      "activationToken": null,
+      "activationTokenExpiresAt": null,
+      "resetToken": null,
+      "resetTokenExpiresAt": null,
+      "createdAt": "2026-06-04T14:26:04.158Z",
+      "updatedAt": "2026-06-11T01:30:13.305Z"
+    },
+    {
+      "id": "adopter-seed",
+      "fullName": "Adoptante Demo",
+      "email": "adopter1@gmail.com",
+      "passwordHash": "$2b$12$XYHaSNfsiMhQ3MKLH2g1.OtjtIsGKJY.9ZANG8kq8pSvqqx7z9wOa",
+      "phone": "+506 7000 1234",
+      "photoUrl": null,
+      "role": "ADOPTER",
+      "status": "ACTIVE",
+      "emailVerifiedAt": "2026-06-04T14:26:04.158Z",
+      "lastLoginAt": "2026-06-11T17:40:57.397Z",
+      "failedLoginCount": 0,
+      "lockedUntil": null,
+      "activationToken": null,
+      "activationTokenExpiresAt": null,
+      "resetToken": null,
+      "resetTokenExpiresAt": null,
+      "createdAt": "2026-06-04T14:26:04.158Z",
+      "updatedAt": "2026-06-11T17:40:57.398Z"
+    }
+  ],
+  "animal": [
+    {
+      "id": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec",
+      "estimatedBreed": "Labrador",
+      "estimatedAge": 3,
+      "size": "M",
+      "status": "AVAILABLE",
+      "mainPhotoUrl": "http://localhost:3000/uploads/animals/d87e34d342adf3e079f8c52ce55ece02.png",
+      "rescueLocationText": null,
+      "rescueLatitude": null,
+      "rescueLongitude": null,
+      "publicProfileUrl": "http://localhost:5173/pets/ebe5fcfe-defd-4630-96df-d3d3f00bbaec",
+      "qrUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAAklEQVR4AewaftIAABGpSURBVO3BAZFcSw5FweuKoSAaQiOYQiMaAuE1AnWsat7vHvtk/vr9hwAA+D8dAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALHzpG1i4/nadpYmFa9JZ+nQWrklnaWLhutVZumHherfO0qezcD2pszSxcE06S7csXJPO0sTC9bfrLN04AgBg4QgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABa+9B/oLH06C9c7WbhudZYmFq5JZ2li4Zp0lm5ZuJ7UWXqahWvSWbph4brVWfrpLFyTztKTOkufzsL1pCMAABaOAABYOAIAYOEIAICFIwAAFo4AAFg4AgBg4UsfwML1tM7SO1m4Jp2lVyxcn8zC9Upn6UZnaWLhmli4ntZZumHhutFZesXCdaOzNLFw/essXE/rLL3TEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALBwBALDwJXyLztINC9crnaWJhWvSWZpYuCadpVsWrhsWrhudpadZuG50liYWrnezcE06S+9m4Zp0lnDnCACAhSMAABaOAABYOAIAYOEIAICFIwAAFo4AAFj4Ev4ZFq536yxNLFyTztLEwjWxcOHzWbjw+Y4AAFg4AgBg4QgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABa+9AE6Sz+dhetpFq6/XWfpSZ2lp1m4bli43q2zNLFw3bBwTTpLP11n6W93BADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACx86T9g4frXdZYmFq5XOksTC9ekszSxcN2wcL3SWZpYuCadpSdZuF7pLN3oLE0sXJPO0sTC9UpnaWLhmnSWJhauSWdpYuF6pbM0sXBNOks3LFz/uiMAABaOAABYOAIAYOEIAICFIwAAFo4AAFg4AgBg4UvfoLOE51m4Jp2lJ1m4blm4bli4ntRZepqF690sXJh1ljA7AgBg4QgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABZ+/f5Db2bhelpnaWLhmnSWJhauG52lVyxc/7rO0sTC9ek6SzcsXLc6SxML143O0g0L1yudpRsWrid1lm5ZuJ7UWbpxBADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACx86RtYuCadpRudpYmF61ZnaWLhmnSWJhauW52lJ1m4ntZZmli4JhauG52lWxaud+osTSxcr1i4bnSWntRZumXhutFZumHhelpnaWLhetIRAAALRwAALBwBALBwBADAwhEAAAtHAAAsHAEAsPDr9x+6ZOGadJZuWLgmnaVXLFw3OksTC9eks3TLwnWjs/QkC9fTOks3LFyTztItC9eks/TTWbgmnaWJhetWZ2li4Zp0liYWrhudpVsWrhudpScdAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAtHAAAsfOkH6CxNLFyvdJbeycI16Sw9zcI16SxNLFyQLFzvZOGadJZesXDd6CxNLFyTztKn6yzdsHC90lm60VmaWLgmnaUbRwAALBwBALBwBADAwhEAAAtHAAAsHAEAsHAEAMDCl75BZ2li4Zp0liYWrqdZuG50liYWrludpYmF629n4XqShetWZ+nTdZZuWLgmnaUbFq5XOkuTztKTLFyTztIrFq5JZ2li4Zp0lp50BADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACx86RtYuCadpSd1ll6xcE06SxML15MsXO9m4brRWXrFwjXpLN2wcE06S7csXBML16Sz9OksXE+ycE06S69YuG50lt6ts3SjszSxcE06SzeOAABYOAIAYOEIAICFIwAAFo4AAFg4AgBg4QgAgIUv/QUsXLcsXDcsXDc6S69YuG50liYWrkln6d0sXJPO0rt1liYWrklnadJZmli4XuksTTpLEwvXxMI16SxNLFyvdJZuWLhudJaeZuGadJYmnaUnHQEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMIRAAALv37/oQ9n4Zp0lp5m4frXdZZuWbie1Fm6YeG61VmaWLhudJaeZuGadJYmFq4bnaVXLFw3OksTC9ffrrN04wgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABaOAABY+NI3sHD9dBauT9dZmli4Jp2ln66zNLFwPa2zNLFwTTpLT7Jw3eosTSxck87SDQvXrc7SkzpLtyxck87SJzsCAGDhCACAhSMAABaOAABYOAIAYOEIAICFIwAAFo4AAFj40jfoLN2wcD3NwjXpLE0sXJPO0g0L163O0sTCdaOz9LTO0sTCNeksTSxck87S0yxc79ZZmli4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",
+      "energyLevel": "MEDIUM",
+      "spaceNeed": "MEDIUM",
+      "goodWithChildren": true,
+      "goodWithPets": true,
+      "createdByUserId": "admin-seed",
+      "createdAt": "2026-06-11T17:38:36.598Z",
+      "updatedAt": "2026-06-11T17:40:44.024Z",
+      "name": "Luna",
+      "species": "Perro"
+    },
+    {
+      "id": "d81c502c-10bc-4f27-856d-05e8b7a97f37",
+      "estimatedBreed": "Criollo",
+      "estimatedAge": 2,
+      "size": "S",
+      "status": "AVAILABLE",
+      "mainPhotoUrl": "http://localhost:3000/uploads/animals/870f271834149d738f73e11e2ceeaf76.png",
+      "rescueLocationText": null,
+      "rescueLatitude": null,
+      "rescueLongitude": null,
+      "publicProfileUrl": "http://localhost:5173/pets/d81c502c-10bc-4f27-856d-05e8b7a97f37",
+      "qrUrl": "data:image/png;base64,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",
+      "energyLevel": "LOW",
+      "spaceNeed": "SMALL",
+      "goodWithChildren": true,
+      "goodWithPets": false,
+      "createdByUserId": "admin-seed",
+      "createdAt": "2026-06-11T17:38:36.704Z",
+      "updatedAt": "2026-06-11T17:40:44.038Z",
+      "name": "Michi",
+      "species": "Gato"
+    }
+  ],
+  "animalGallery": [],
+  "animalStatusHistory": [
+    {
+      "id": "6da0f0cd-876d-4e41-8310-ccb534470b53",
+      "createdAt": "2026-06-11T17:40:44.027Z",
+      "animalId": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec",
+      "previousStatus": "QUARANTINE",
+      "newStatus": "AVAILABLE",
+      "changedByUserId": "admin-seed",
+      "reason": "Apto para adopcion"
+    },
+    {
+      "id": "93ab8a0e-23fd-490d-ada1-b909e9d5bd30",
+      "createdAt": "2026-06-11T17:40:44.038Z",
+      "animalId": "d81c502c-10bc-4f27-856d-05e8b7a97f37",
+      "previousStatus": "QUARANTINE",
+      "newStatus": "AVAILABLE",
+      "changedByUserId": "admin-seed",
+      "reason": "Apto para adopcion"
+    }
+  ],
+  "animalRescueLocationHistory": [],
+  "clinicalRecord": [
+    {
+      "id": "d3308d4a-0032-4f84-9ae3-822cff40d1e2",
+      "createdAt": "2026-06-11T17:40:43.718Z",
+      "updatedAt": "2026-06-11T17:40:43.718Z",
+      "animalId": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec"
+    },
+    {
+      "id": "46eb0e40-6c26-4c9a-b8e2-83f27989acf1",
+      "createdAt": "2026-06-11T17:40:43.727Z",
+      "updatedAt": "2026-06-11T17:40:43.727Z",
+      "animalId": "d81c502c-10bc-4f27-856d-05e8b7a97f37"
+    }
+  ],
+  "clinicalEntry": [
+    {
+      "id": "00a8c921-4a1e-4890-b70c-d0583445e0f3",
+      "createdAt": "2026-06-11T17:40:43.721Z",
+      "clinicalRecordId": "d3308d4a-0032-4f84-9ae3-822cff40d1e2",
+      "animalId": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec",
+      "veterinarianId": "vet-seed",
+      "datetime": "2026-06-11T17:40:43.000Z",
+      "diagnosis": "Chequeo general: animal sano",
+      "treatment": "Desparasitacion preventiva",
+      "medicine": null,
+      "dose": null,
+      "duration": null,
+      "observations": "Apto para adopcion"
+    },
+    {
+      "id": "2ddf23e0-1ae9-495d-8e99-09d3c47b6d93",
+      "createdAt": "2026-06-11T17:40:43.734Z",
+      "clinicalRecordId": "46eb0e40-6c26-4c9a-b8e2-83f27989acf1",
+      "animalId": "d81c502c-10bc-4f27-856d-05e8b7a97f37",
+      "veterinarianId": "vet-seed",
+      "datetime": "2026-06-11T17:40:43.000Z",
+      "diagnosis": "Chequeo general: animal sano",
+      "treatment": "Desparasitacion preventiva",
+      "medicine": null,
+      "dose": null,
+      "duration": null,
+      "observations": "Apto para adopcion"
+    }
+  ],
+  "vaccine": [],
+  "compatibilityTest": [],
+  "compatibilityScore": [],
+  "adoptionRequest": [
+    {
+      "id": "02fa5fa4-7867-405c-8561-73d716c57b23",
+      "status": "INTERVIEW",
+      "rejectionReason": null,
+      "createdAt": "2026-06-11T17:41:52.432Z",
+      "updatedAt": "2026-06-11T17:47:33.574Z",
+      "adopterId": "adopter-seed",
+      "animalId": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec"
+    }
+  ],
+  "interviewSlot": [
+    {
+      "id": "e320e684-c783-4534-8458-d4d28d9021da",
+      "status": "reserved",
+      "reservedByApplicationId": "02fa5fa4-7867-405c-8561-73d716c57b23",
+      "createdAt": "2026-06-11T17:38:55.556Z",
+      "updatedAt": "2026-06-11T17:47:33.574Z",
+      "startsAt": "2026-06-12T16:00:00.000Z",
+      "endsAt": "2026-06-12T16:30:00.000Z",
+      "createdByAdminId": "admin-seed"
+    },
+    {
+      "id": "53889c38-cf66-41b1-859e-9c6b8ed49625",
+      "status": "available",
+      "reservedByApplicationId": null,
+      "createdAt": "2026-06-11T17:38:55.566Z",
+      "updatedAt": "2026-06-11T17:38:55.566Z",
+      "startsAt": "2026-06-12T17:00:00.000Z",
+      "endsAt": "2026-06-12T17:30:00.000Z",
+      "createdByAdminId": "admin-seed"
+    },
+    {
+      "id": "7b74a0ff-281c-4aaa-86b9-88a7f7531515",
+      "status": "available",
+      "reservedByApplicationId": null,
+      "createdAt": "2026-06-11T17:38:55.572Z",
+      "updatedAt": "2026-06-11T17:38:55.572Z",
+      "startsAt": "2026-06-12T18:00:00.000Z",
+      "endsAt": "2026-06-12T18:30:00.000Z",
+      "createdByAdminId": "admin-seed"
+    }
+  ],
+  "adopterDocument": [],
+  "adoptionContract": [],
+  "notification": [
+    {
+      "id": "945b42c0-a864-4ab3-8cd9-b8475cdb64e4",
+      "readAt": null,
+      "resourceType": "AdoptionRequest",
+      "resourceId": "02fa5fa4-7867-405c-8561-73d716c57b23",
+      "createdAt": "2026-06-11T17:41:52.442Z",
+      "userId": "admin-seed",
+      "type": "INFO",
+      "title": "Nueva solicitud de adopción",
+      "message": "Adoptante Demo solicitó adoptar a Luna"
+    },
+    {
+      "id": "1de7d33c-6efd-4c60-8a94-61cc14747585",
+      "readAt": null,
+      "resourceType": "AdoptionRequest",
+      "resourceId": "02fa5fa4-7867-405c-8561-73d716c57b23",
+      "createdAt": "2026-06-11T17:47:33.580Z",
+      "userId": "admin-seed",
+      "title": "Entrevista agendada",
+      "message": "Adoptante Demo agendó entrevista por Luna el viernes, 12 de junio de 2026, 10:00 a. m..",
+      "type": "INFO"
+    },
+    {
+      "id": "18fc6e0b-f0be-424d-80cc-151a121492a7",
+      "readAt": null,
+      "resourceType": "AdoptionRequest",
+      "resourceId": "02fa5fa4-7867-405c-8561-73d716c57b23",
+      "createdAt": "2026-06-11T17:47:33.582Z",
+      "userId": "adopter-seed",
+      "title": "Entrevista confirmada",
+      "message": "Tu entrevista por Luna quedó agendada para el viernes, 12 de junio de 2026, 10:00 a. m..",
+      "type": "SUCCESS"
+    }
+  ],
+  "operationalTask": [],
+  "auditLog": [
+    {
+      "id": "06413586-647c-492b-a2b5-e3c41619336e",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-08T20:48:14.297Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "6e28b95b-32f7-41c3-ae63-33bb1262b233",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-08T21:47:12.066Z",
+      "userId": "admin-seed",
+      "action": "CREATE_ANIMAL",
+      "entityType": "Animal",
+      "entityId": "39820b08-e58c-427e-85c9-48c68828c320"
+    },
+    {
+      "id": "05004f34-1215-47a1-a0e5-93af7c81d69a",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-09T02:10:51.754Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "fd50491f-8ac4-4202-8aa4-f09420d417c1",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:26:09.163Z",
+      "userId": "adopter-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "adopter-seed"
+    },
+    {
+      "id": "a044162f-5d0e-4cea-a318-3a9f2a4e7bd3",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:26:54.057Z",
+      "userId": "adopter-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "adopter-seed"
+    },
+    {
+      "id": "db824dc7-02b8-4468-8668-7b598bbd3189",
+      "metadataJson": "{\"fields\":[\"fullName\",\"email\",\"phone\"]}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:27:35.743Z",
+      "userId": "adopter-seed",
+      "action": "UPDATE_PROFILE",
+      "entityType": "User",
+      "entityId": "adopter-seed"
+    },
+    {
+      "id": "45452a41-067b-434d-9c85-6f1cae71f916",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:28:38.276Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "5587e4f7-f924-4a8a-98a8-31ad10b4d752",
+      "metadataJson": "{\"fullName\":\"Voluntario Rescue Pet\",\"email\":\"volunteer@rescuepet.com\",\"role\":\"VETERINARIAN\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:29:25.289Z",
+      "userId": "admin-seed",
+      "action": "UPDATE_USER",
+      "entityType": "User",
+      "entityId": "volunteer-seed"
+    },
+    {
+      "id": "5f84c3ab-27ad-4daf-a804-2cb98ffe5dde",
+      "metadataJson": "{\"from\":\"VOLUNTEER\",\"to\":\"VETERINARIAN\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:29:25.293Z",
+      "userId": "admin-seed",
+      "action": "CHANGE_ROLE",
+      "entityType": "User",
+      "entityId": "volunteer-seed"
+    },
+    {
+      "id": "587558a2-ef82-4ac6-8c82-c8d44c09787e",
+      "metadataJson": "{\"fullName\":\"Voluntario Rescue Pet\",\"email\":\"volunteer@rescuepet.com\",\"role\":\"VOLUNTEER\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:30:13.309Z",
+      "userId": "admin-seed",
+      "action": "UPDATE_USER",
+      "entityType": "User",
+      "entityId": "volunteer-seed"
+    },
+    {
+      "id": "5f1b12be-86e4-4e13-9bc3-d99257f7278c",
+      "metadataJson": "{\"from\":\"VETERINARIAN\",\"to\":\"VOLUNTEER\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T01:30:13.314Z",
+      "userId": "admin-seed",
+      "action": "CHANGE_ROLE",
+      "entityType": "User",
+      "entityId": "volunteer-seed"
+    },
+    {
+      "id": "e1e2a39b-5968-41d8-be05-0b68f494c795",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T02:21:27.560Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "406fb7b8-e905-440f-820e-bab267b0e8be",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T02:21:55.998Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "b5d40003-1723-495c-a63a-d45ce765c7a4",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T02:55:55.425Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "e44177ff-bd29-4179-a9e2-a3fb6acbeb0f",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T03:48:59.651Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "796abed1-d426-4533-bf34-8f7ed4955d5d",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:38:09.393Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "979b1d4c-0d7d-49c1-85ad-51bdfa32739b",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:38:36.464Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "5d9c345a-29e4-45f7-bd2b-c94e7e142d7e",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:38:36.657Z",
+      "userId": "admin-seed",
+      "action": "CREATE_ANIMAL",
+      "entityType": "Animal",
+      "entityId": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec"
+    },
+    {
+      "id": "a65881e7-1494-47e5-9ef8-61405f5ece0a",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:38:36.729Z",
+      "userId": "admin-seed",
+      "action": "CREATE_ANIMAL",
+      "entityType": "Animal",
+      "entityId": "d81c502c-10bc-4f27-856d-05e8b7a97f37"
+    },
+    {
+      "id": "5adebc3d-29e0-484a-854d-1f5d3216720b",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:38:55.192Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "7ad5bc5a-359f-4a98-8d4c-2f6e39ef7bdf",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:40:43.629Z",
+      "userId": "vet-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "vet-seed"
+    },
+    {
+      "id": "321084db-3336-4308-92ed-f42c3a913407",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:40:44.019Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    },
+    {
+      "id": "5027fed0-07c6-409e-920b-e510979816e4",
+      "metadataJson": "{\"from\":\"QUARANTINE\",\"to\":\"AVAILABLE\",\"reason\":\"Apto para adopcion\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:40:44.031Z",
+      "userId": "admin-seed",
+      "action": "UPDATE_ANIMAL_STATUS",
+      "entityType": "Animal",
+      "entityId": "ebe5fcfe-defd-4630-96df-d3d3f00bbaec"
+    },
+    {
+      "id": "551dbb89-7fe8-49ba-a193-38f73f7449e1",
+      "metadataJson": "{\"from\":\"QUARANTINE\",\"to\":\"AVAILABLE\",\"reason\":\"Apto para adopcion\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:40:44.041Z",
+      "userId": "admin-seed",
+      "action": "UPDATE_ANIMAL_STATUS",
+      "entityType": "Animal",
+      "entityId": "d81c502c-10bc-4f27-856d-05e8b7a97f37"
+    },
+    {
+      "id": "e3b9ce8f-5e19-4735-8b6f-d6e35bdbb1df",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:40:57.404Z",
+      "userId": "adopter-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "adopter-seed"
+    },
+    {
+      "id": "c7851572-af33-4c49-a35b-86e62858b925",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:41:52.437Z",
+      "userId": "adopter-seed",
+      "action": "CREATE_ADOPTION_APPLICATION",
+      "entityType": "AdoptionRequest",
+      "entityId": "02fa5fa4-7867-405c-8561-73d716c57b23"
+    },
+    {
+      "id": "e2218542-091b-4371-8131-7a5387d1e6ba",
+      "metadataJson": "{\"applicationId\":\"02fa5fa4-7867-405c-8561-73d716c57b23\",\"startsAt\":\"2026-06-12T16:00:00.000Z\"}",
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T17:47:33.584Z",
+      "userId": "adopter-seed",
+      "action": "SCHEDULE_INTERVIEW",
+      "entityType": "InterviewSlot",
+      "entityId": "e320e684-c783-4534-8458-d4d28d9021da"
+    },
+    {
+      "id": "def383ef-7e50-45e8-820b-d8d1dec26d4d",
+      "metadataJson": null,
+      "ipAddress": "::1",
+      "createdAt": "2026-06-11T18:00:40.141Z",
+      "userId": "admin-seed",
+      "action": "LOGIN",
+      "entityType": "User",
+      "entityId": "admin-seed"
+    }
+  ]
+}
