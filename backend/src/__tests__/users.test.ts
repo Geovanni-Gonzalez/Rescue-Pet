@@ -143,6 +143,134 @@ describe('PUT /api/users/me', () => {
     expect(res.status).toBe(200);
     expect(res.body.user.fullName).toBe('Nuevo Nombre');
   });
+
+  it('usuario actualiza su correo electrónico si no está en uso', async () => {
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.update.mockResolvedValue({
+      id: 'user-1',
+      fullName: 'Test',
+      email: 'nuevo@test.com',
+      role: 'ADOPTER',
+      status: 'ACTIVE',
+    });
+
+    const res = await request(app)
+      .put('/api/users/me')
+      .set(authHeader('ADOPTER'))
+      .send({ email: 'nuevo@test.com' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe('nuevo@test.com');
+  });
+
+  it('CU-10 4E: rechaza un correo que pertenece a otra cuenta', async () => {
+    dbMock.user.findUnique.mockResolvedValue({ id: 'otro-usuario', email: 'dup@test.com' });
+
+    const res = await request(app)
+      .put('/api/users/me')
+      .set(authHeader('ADOPTER'))
+      .send({ email: 'dup@test.com' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('El correo electrónico ya está en uso por otra cuenta.');
+    expect(dbMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it('CU-10 3E: rechaza con 403 y registra en auditoría el intento de cambiar el propio rol', async () => {
+    const res = await request(app)
+      .put('/api/users/me')
+      .set(authHeader('ADOPTER'))
+      .send({ fullName: 'Nombre', role: 'ADMIN' });
+
+    expect(res.status).toBe(403);
+    expect(dbMock.user.update).not.toHaveBeenCalled();
+    expect(dbMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: 'SELF_ROLE_CHANGE_DENIED' }),
+      })
+    );
+  });
+
+  it('rechaza campos obligatorios vacíos', async () => {
+    const res = await request(app)
+      .put('/api/users/me')
+      .set(authHeader('ADOPTER'))
+      .send({ fullName: '', email: 'no-es-un-correo' });
+
+    expect(res.status).toBe(400);
+    expect(dbMock.user.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── PATCH /api/users/:id (admin) ─────────────────────────────────────────────
+
+describe('PATCH /api/users/:id', () => {
+  it('ADMIN cambia el rol de otro usuario', async () => {
+    dbMock.user.findUnique.mockResolvedValue({
+      id: 'other-user',
+      email: 'other@test.com',
+      role: 'VOLUNTEER',
+      status: 'ACTIVE',
+    });
+    dbMock.user.update.mockResolvedValue({
+      id: 'other-user',
+      fullName: 'Otro',
+      email: 'other@test.com',
+      role: 'VETERINARIAN',
+      status: 'ACTIVE',
+    });
+
+    const res = await request(app)
+      .patch('/api/users/other-user')
+      .set(authHeader('ADMIN', 'admin-id'))
+      .send({ role: 'VETERINARIAN' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.role).toBe('VETERINARIAN');
+    expect(dbMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: 'CHANGE_ROLE' }),
+      })
+    );
+  });
+
+  it('ADMIN no puede cambiar su propio rol', async () => {
+    dbMock.user.findUnique.mockResolvedValue({
+      id: 'admin-id',
+      email: 'admin@test.com',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+    });
+
+    const res = await request(app)
+      .patch('/api/users/admin-id')
+      .set(authHeader('ADMIN', 'admin-id'))
+      .send({ role: 'ADOPTER' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/propio rol/i);
+    expect(dbMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it('retorna 404 si el usuario no existe', async () => {
+    dbMock.user.findUnique.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch('/api/users/no-existe')
+      .set(authHeader('ADMIN', 'admin-id'))
+      .send({ fullName: 'Nuevo Nombre' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('VOLUNTEER recibe 403', async () => {
+    const res = await request(app)
+      .patch('/api/users/other-user')
+      .set(authHeader('VOLUNTEER'))
+      .send({ role: 'ADMIN' });
+
+    expect(res.status).toBe(403);
+  });
 });
 
 // ─── PUT /api/users/me/password ───────────────────────────────────────────────
@@ -156,13 +284,26 @@ describe('PUT /api/users/me/password', () => {
     const res = await request(app)
       .put('/api/users/me/password')
       .set(authHeader('ADOPTER'))
-      .send({ currentPassword: 'wrong-password', newPassword: 'newpassword123' });
+      .send({ currentPassword: 'wrong-password', newPassword: 'NuevaClave123!' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/incorrecta/i);
   });
 
-  it('cambia la contraseña correctamente', async () => {
+  it('CU-10 4E2: rechaza una contraseña que no cumple la política y detalla los requisitos', async () => {
+    const res = await request(app)
+      .put('/api/users/me/password')
+      .set(authHeader('ADOPTER'))
+      .send({ currentPassword: 'current-password', newPassword: 'newpassword123' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/requisitos/i);
+    expect(Array.isArray(res.body.details)).toBe(true);
+    expect(res.body.details.length).toBeGreaterThan(0);
+    expect(dbMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it('cambia la contraseña correctamente e invalida sesiones previas', async () => {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash('current-password', 10);
     dbMock.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash });
@@ -171,10 +312,53 @@ describe('PUT /api/users/me/password', () => {
     const res = await request(app)
       .put('/api/users/me/password')
       .set(authHeader('ADOPTER'))
-      .send({ currentPassword: 'current-password', newPassword: 'newpassword123' });
+      .send({ currentPassword: 'current-password', newPassword: 'NuevaClave123!' });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+    // passwordChangedAt habilita la invalidación de tokens previos en el middleware
+    expect(dbMock.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ passwordChangedAt: expect.any(Date) }),
+      })
+    );
+  });
+
+  it('CU-10 3A: un token emitido antes del cambio de contraseña queda invalidado', async () => {
+    const oldIat = Math.floor(Date.now() / 1000) - 3600; // emitido hace 1 hora
+    const oldToken = jwt.sign(
+      { id: 'user-1', email: 'adopter@test.com', role: 'ADOPTER', iat: oldIat },
+      JWT_SECRET
+    );
+    dbMock.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      role: 'ADOPTER',
+      status: 'ACTIVE',
+      passwordChangedAt: new Date(), // contraseña cambiada después de emitir el token
+    });
+
+    const res = await request(app)
+      .put('/api/users/me')
+      .set({ Authorization: `Bearer ${oldToken}` })
+      .send({ fullName: 'No debería aplicarse' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/token/i);
+  });
+
+  it('un usuario con baja lógica (INACTIVE) no puede usar tokens existentes', async () => {
+    dbMock.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      role: 'ADOPTER',
+      status: 'INACTIVE',
+    });
+
+    const res = await request(app)
+      .put('/api/users/me')
+      .set(authHeader('ADOPTER'))
+      .send({ fullName: 'No debería aplicarse' });
+
+    expect(res.status).toBe(403);
   });
 });
 

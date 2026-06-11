@@ -6,6 +6,7 @@ import db from '../utils/db';
 import { z } from 'zod';
 import { writeAuditLog, getClientIp } from '../services/auditService';
 import { sendActivationEmail, sendPasswordResetEmail } from '../services/emailService';
+import { getPasswordPolicyViolations } from '../utils/passwordPolicy';
 import { logger } from '../utils/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
@@ -19,9 +20,9 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  fullName: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
+  fullName: z.string().trim().min(2),
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string(),
   phone: z.string().optional(),
 });
 
@@ -29,7 +30,7 @@ const emailSchema = z.object({ email: z.string().email() });
 
 const resetSchema = z.object({
   token: z.string().min(1),
-  password: z.string().min(8),
+  password: z.string(),
 });
 
 export const login = async (req: Request, res: Response) => {
@@ -142,6 +143,7 @@ export const getMe = async (req: Request, res: Response) => {
   res.json({ success: true, user });
 };
 
+// CU-12: registro público de adoptantes con verificación por correo.
 export const registerAdopter = async (req: Request, res: Response) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -150,12 +152,22 @@ export const registerAdopter = async (req: Request, res: Response) => {
 
   const { fullName, email, password, phone } = parsed.data;
 
-  const existingUser = await db.user.findUnique({ where: { email } });
-  if (existingUser) {
-    // Generic message to prevent user enumeration
+  // CU-12 paso 4 / 4.1E: la contraseña debe cumplir la política de seguridad.
+  const violations = getPasswordPolicyViolations(password);
+  if (violations.length > 0) {
     return res.status(400).json({
       success: false,
-      error: 'Si el correo no está registrado, recibirás un enlace de activación.',
+      error: 'La contraseña no cumple los requisitos de seguridad.',
+      details: violations,
+    });
+  }
+
+  // CU-12 5E: correo ya registrado (activo o inactivo), sin revelar el estado de la cuenta.
+  const existingUser = await db.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      error: 'Este correo electrónico ya está registrado.',
     });
   }
 
@@ -176,9 +188,15 @@ export const registerAdopter = async (req: Request, res: Response) => {
     },
   });
 
-  sendActivationEmail(email, activationToken).catch((err) =>
-    logger.error('Failed to send activation email', { error: (err as Error).message })
-  );
+  // CU-12 7E: si el envío falla, la cuenta queda pendiente y se notifica al actor
+  // para que reintente desde la pantalla de inicio de sesión.
+  let emailSent = true;
+  try {
+    await sendActivationEmail(email, activationToken);
+  } catch (err) {
+    emailSent = false;
+    logger.error('Failed to send activation email', { error: (err as Error).message });
+  }
 
   await writeAuditLog({
     userId: newUser.id,
@@ -190,7 +208,10 @@ export const registerAdopter = async (req: Request, res: Response) => {
 
   res.status(201).json({
     success: true,
-    message: 'Cuenta creada. Revisa tu correo para activarla.',
+    emailSent,
+    message: emailSent
+      ? 'Cuenta creada. Revisa tu correo para activarla.'
+      : 'Tu cuenta fue creada, pero no pudimos enviar el correo de activación. Intenta reenviarlo más tarde desde la pantalla de inicio de sesión.',
     ...(process.env.NODE_ENV !== 'production' && { activationToken }),
   });
 };
@@ -220,10 +241,12 @@ export const activateAccount = async (req: Request, res: Response) => {
     });
   }
 
+  // CU-12 paso 10: activa la cuenta y asigna automáticamente el rol "Adoptante".
   await db.user.update({
     where: { id: user.id },
     data: {
       status: 'ACTIVE',
+      role: 'ADOPTER',
       emailVerifiedAt: new Date(),
       activationToken: null,
       activationTokenExpiresAt: null,
@@ -289,6 +312,16 @@ export const resetPassword = async (req: Request, res: Response) => {
   if (!parsed.success) return res.status(400).json({ success: false, error: 'Datos inválidos' });
 
   const { token, password } = parsed.data;
+
+  // Misma política de seguridad que el registro y el cambio de contraseña.
+  const violations = getPasswordPolicyViolations(password);
+  if (violations.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'La contraseña no cumple los requisitos de seguridad.',
+      details: violations,
+    });
+  }
 
   const user = await db.user.findUnique({ where: { resetToken: token } });
 

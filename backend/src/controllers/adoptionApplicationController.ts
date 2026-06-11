@@ -501,7 +501,7 @@ export const signContract = async (req: Request, res: Response) => {
   } catch (err) {
     logger.error('PDF sign contract error', { applicationId, error: (err as Error).message });
     // Fallback: still record the signature even if PDF generation fails
-    signedPdfUrl = `/contracts/adoption-${applicationId}-signed.pdf`;
+    signedPdfUrl = buildContractUrl(`adoption-${applicationId}-signed.pdf`);
   }
 
   const contract = await db.$transaction(async (tx) => {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { PawPrint, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -9,9 +9,13 @@ type Status = 'loading' | 'success' | 'expired' | 'error';
 
 export function ActivateAccount() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState<Status>('loading');
   const [message, setMessage] = useState('');
+  // La activación consume el token (no es idempotente): evita el doble disparo
+  // del efecto en StrictMode/remontajes, que mostraría "token inválido" tras activar.
+  const requestedTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -19,6 +23,9 @@ export function ActivateAccount() {
       setMessage('Token de activación no encontrado en el enlace.');
       return;
     }
+
+    if (requestedTokenRef.current === token) return;
+    requestedTokenRef.current = token;
 
     apiClient
       .get<{ message: string }>(`/auth/activate?token=${encodeURIComponent(token)}`)
@@ -33,6 +40,16 @@ export function ActivateAccount() {
         setStatus(code === 'TOKEN_EXPIRED' ? 'expired' : 'error');
       });
   }, [token]);
+
+  // CU-12 paso 10: tras activar, redirigir al inicio de sesión con el mensaje
+  // de confirmación (aplica igual en móvil — la pantalla es responsive, 8A).
+  useEffect(() => {
+    if (status !== 'success') return;
+    const timer = setTimeout(() => {
+      navigate('/login', { state: { activationMessage: message || 'Cuenta activada correctamente. Ya puedes iniciar sesión.' } });
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [status, message, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -56,6 +73,7 @@ export function ActivateAccount() {
             <>
               <CheckCircle className="w-14 h-14 text-green-500 mx-auto" />
               <p className="text-green-700 font-medium">{message}</p>
+              <p className="text-sm text-muted-foreground">Te llevaremos al inicio de sesión en unos segundos...</p>
               <Button asChild className="w-full mt-2">
                 <Link to="/login">Ir al inicio de sesión</Link>
               </Button>

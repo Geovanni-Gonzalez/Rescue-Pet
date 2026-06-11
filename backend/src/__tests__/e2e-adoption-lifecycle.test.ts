@@ -1,4 +1,4 @@
-/**
+﻿/**
  * E2E Test: Full Adoption Lifecycle
  *
  * Simulates the complete happy-path flow from adopter registration
@@ -8,16 +8,16 @@
  *
  * Steps tested:
  *  1. Registro de adoptante
- *  2. Activación de cuenta
+ *  2. ActivaciÃ³n de cuenta
  *  3. Login
  *  4. Registro de mascota (admin)
  *  5. Cambio de estado a Disponible (admin)
  *  6. Test de compatibilidad (adopter)
- *  7. Solicitud de adopción
+ *  7. Solicitud de adopciÃ³n
  *  8. Agenda de entrevista
  *  9. Carga de documentos
- * 10. Aprobación de solicitud (admin)
- * 11. Generación de contrato
+ * 10. AprobaciÃ³n de solicitud (admin)
+ * 11. GeneraciÃ³n de contrato
  * 12. Firma digital
  * 13. Verificar mascota en estado Adoptado
  */
@@ -26,7 +26,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../app';
 
-// ─── Mocks ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Mocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const mockDb: Record<string, any> = {};
 
@@ -135,10 +135,10 @@ function auth(token: string) { return { Authorization: `Bearer ${token}` }; }
 
 beforeEach(() => jest.clearAllMocks());
 
-// ─── Step 1: Registro de adoptante ───────────────────────────────────────────
+// â”€â”€â”€ Step 1: Registro de adoptante â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('E2E Adoption Lifecycle', () => {
-  it('Step 1 — Register adopter', async () => {
+  it('Step 1 â€” Register adopter', async () => {
     dbMock.user.findUnique.mockResolvedValue(null);
     dbMock.user.create.mockResolvedValue({
       id: ADOPTER_ID, fullName: 'E2E Adoptante', email: 'adopter@e2e.com',
@@ -148,7 +148,7 @@ describe('E2E Adoption Lifecycle', () => {
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'E2E Adoptante',
       email: 'adopter@e2e.com',
-      password: 'secure1234',
+      password: 'Secure1234!',
       phone: '+50699990001',
     });
 
@@ -158,9 +158,9 @@ describe('E2E Adoption Lifecycle', () => {
     mockDb.activationToken = res.body.activationToken;
   });
 
-  // ─── Step 2: Activación de cuenta ──────────────────────────────────────────
+  // â”€â”€â”€ Step 2: ActivaciÃ³n de cuenta â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 2 — Activate account', async () => {
+  it('Step 2 â€” Activate account', async () => {
     dbMock.user.findUnique.mockResolvedValue({
       id: ADOPTER_ID, status: 'PENDING_VERIFICATION',
       activationToken: 'valid-token',
@@ -174,12 +174,12 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.success).toBe(true);
   });
 
-  // ─── Step 3: Login ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Step 3: Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 3 — Login', async () => {
+  it('Step 3 â€” Login', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const bcrypt = require('bcrypt');
-    const hash = await bcrypt.hash('secure1234', 12);
+    const hash = await bcrypt.hash('Secure1234!', 12);
 
     dbMock.user.findUnique.mockResolvedValue({
       id: ADOPTER_ID, email: 'adopter@e2e.com', passwordHash: hash,
@@ -189,7 +189,7 @@ describe('E2E Adoption Lifecycle', () => {
 
     const res = await request(app).post('/api/auth/login').send({
       email: 'adopter@e2e.com',
-      password: 'secure1234',
+      password: 'Secure1234!',
     });
 
     expect(res.status).toBe(200);
@@ -197,9 +197,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.user.role).toBe('ADOPTER');
   });
 
-  // ─── Step 4: Registro de mascota (admin) ───────────────────────────────────
+  // â”€â”€â”€ Step 4: Registro de mascota (admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 4 — Create animal (admin)', async () => {
+  it('Step 4 â€” Create animal (admin)', async () => {
     const newAnimal = {
       id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro', status: 'QUARANTINE',
       mainPhotoUrl: 'http://localhost:3000/uploads/test.jpg',
@@ -218,9 +218,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.success).toBe(true);
   });
 
-  // ─── Step 5: Cambio de estado a Disponible ─────────────────────────────────
+  // â”€â”€â”€ Step 5: Cambio de estado a Disponible â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 5 — Change animal status to AVAILABLE', async () => {
+  it('Step 5 â€” Change animal status to AVAILABLE', async () => {
     dbMock.animal.findUnique.mockResolvedValue({
       id: ANIMAL_ID, status: 'QUARANTINE', mainPhotoUrl: 'http://photo.jpg',
     });
@@ -232,15 +232,15 @@ describe('E2E Adoption Lifecycle', () => {
     const res = await request(app)
       .patch(`/api/animals/${ANIMAL_ID}/status`)
       .set(auth(adminToken))
-      .send({ status: 'AVAILABLE', reason: 'Examen clínico OK' });
+      .send({ status: 'AVAILABLE', reason: 'Examen clÃ­nico OK' });
 
     expect(res.status).toBe(200);
     expect(res.body.animal.status).toBe('AVAILABLE');
   });
 
-  // ─── Step 6: Test de compatibilidad ────────────────────────────────────────
+  // â”€â”€â”€ Step 6: Test de compatibilidad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 6 — Save compatibility test', async () => {
+  it('Step 6 â€” Save compatibility test', async () => {
     dbMock.compatibilityTest.upsert.mockResolvedValue({ id: 'ct1', adopterId: ADOPTER_ID });
     dbMock.animal.findMany.mockResolvedValue([{
       id: ANIMAL_ID, spaceNeed: 'LARGE', goodWithChildren: true,
@@ -261,9 +261,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.success).toBe(true);
   });
 
-  // ─── Step 7: Solicitud de adopción ─────────────────────────────────────────
+  // â”€â”€â”€ Step 7: Solicitud de adopciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 7 — Create adoption application', async () => {
+  it('Step 7 â€” Create adoption application', async () => {
     dbMock.animal.findUnique.mockResolvedValue({ id: ANIMAL_ID, status: 'AVAILABLE', name: 'E2E Rex', species: 'Perro' });
     dbMock.adoptionRequest.findFirst.mockResolvedValue(null);
     dbMock.adoptionRequest.create.mockResolvedValue({
@@ -284,9 +284,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(dbMock.auditLog.create).toHaveBeenCalled();
   });
 
-  // ─── Step 8: Agenda de entrevista ──────────────────────────────────────────
+  // â”€â”€â”€ Step 8: Agenda de entrevista â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 8 — Schedule interview', async () => {
+  it('Step 8 â€” Schedule interview', async () => {
     dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, status: 'RECEIVED',
     });
@@ -311,9 +311,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.slot.status).toBe('reserved');
   });
 
-  // ─── Step 9: Carga de documentos ───────────────────────────────────────────
+  // â”€â”€â”€ Step 9: Carga de documentos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 9 — Upload documents', async () => {
+  it('Step 9 â€” Upload documents', async () => {
     dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, status: 'INTERVIEW',
       adopter: { fullName: 'E2E Adoptante' },
@@ -335,9 +335,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.document.documentType).toBe('ID_CARD');
   });
 
-  // ─── Step 10: Aprobación de solicitud (admin) ──────────────────────────────
+  // â”€â”€â”€ Step 10: AprobaciÃ³n de solicitud (admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 10 — Approve adoption application', async () => {
+  it('Step 10 â€” Approve adoption application', async () => {
     dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'VISIT',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
@@ -365,9 +365,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(dbMock.notification.create).toHaveBeenCalled();
   });
 
-  // ─── Step 11: Generación de contrato ───────────────────────────────────────
+  // â”€â”€â”€ Step 11: GeneraciÃ³n de contrato â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 11 — Generate contract', async () => {
+  it('Step 11 â€” Generate contract', async () => {
     dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'APPROVED',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
@@ -387,9 +387,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.contract.pdfUrl).toContain('.pdf');
   });
 
-  // ─── Step 12: Firma digital ────────────────────────────────────────────────
+  // â”€â”€â”€ Step 12: Firma digital â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 12 — Sign contract', async () => {
+  it('Step 12 â€” Sign contract', async () => {
     dbMock.adoptionRequest.findUnique.mockResolvedValue({
       id: APP_ID, adopterId: ADOPTER_ID, animalId: ANIMAL_ID, status: 'APPROVED',
       animal: { id: ANIMAL_ID, name: 'E2E Rex', species: 'Perro' },
@@ -416,9 +416,9 @@ describe('E2E Adoption Lifecycle', () => {
     expect(res.body.contract.status).toBe('SIGNED');
   });
 
-  // ─── Step 13: Verificar mascota en estado Adoptado ─────────────────────────
+  // â”€â”€â”€ Step 13: Verificar mascota en estado Adoptado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('Step 13 — Verify animal is ADOPTED', async () => {
+  it('Step 13 â€” Verify animal is ADOPTED', async () => {
     dbMock.animal.findUnique.mockResolvedValue({
       id: ANIMAL_ID, name: 'E2E Rex', status: 'ADOPTED', gallery: [],
     });

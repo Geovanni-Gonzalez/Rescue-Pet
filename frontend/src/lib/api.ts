@@ -37,6 +37,17 @@ apiClient.interceptors.response.use(
   }
 );
 
+/**
+ * Los archivos privados (/uploads/documents, /uploads/contracts) exigen JWT.
+ * Los enlaces <a href> no envían el header Authorization, así que el backend
+ * acepta el token como query param — esta función lo adjunta a la URL.
+ */
+export function withUploadToken(url: string): string {
+  const token = localStorage.getItem('rescue_pet_token');
+  if (!token || !url.includes('/uploads/')) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError<{ error?: string }>(error)) {
     return error.response?.data?.error || fallback;

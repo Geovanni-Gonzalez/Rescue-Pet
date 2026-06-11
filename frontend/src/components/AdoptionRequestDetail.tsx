@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { Alert } from './ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ArrowLeft, User, Calendar, FileText, Clock, Upload, CheckCircle, Download } from 'lucide-react';
-import { apiClient, getApiErrorMessage } from '../lib/api';
+import { apiClient, getApiErrorMessage, withUploadToken } from '../lib/api';
 import type { AdoptionRequestStatusType } from './AdoptionRequestTable';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -197,6 +197,14 @@ export function AdoptionRequestDetail() {
       await fetchRequest();
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'No se pudo agendar la entrevista.'));
+      // CU-17 5E: si el slot fue tomado por otro adoptante, mostrar los restantes.
+      setSelectedSlotId('');
+      try {
+        const res = await apiClient.get('/interview-slots/available');
+        setAvailableSlots(res.data.slots ?? []);
+      } catch {
+        /* la lista existente se mantiene */
+      }
     } finally {
       setIsScheduling(false);
     }
@@ -369,7 +377,10 @@ export function AdoptionRequestDetail() {
                 ) : (
                   <>
                     {availableSlots.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No hay horarios disponibles en este momento.</p>
+                      // CU-17 3A
+                      <p className="text-sm text-muted-foreground">
+                        No hay horarios disponibles esta semana. El refugio te notificará cuando haya disponibilidad.
+                      </p>
                     ) : (
                       <div className="space-y-2">
                         {availableSlots.map((slot) => (
@@ -502,7 +513,8 @@ export function AdoptionRequestDetail() {
                         </div>
                         {isAdmin && doc.fileUrl && (
                           <Button variant="outline" size="sm" asChild>
-                            <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                            {/* withUploadToken: los archivos privados exigen JWT vía ?token= */}
+                            <a href={withUploadToken(doc.fileUrl)} target="_blank" rel="noopener noreferrer">
                               <Download className="w-3 h-3 mr-1" /> Ver
                             </a>
                           </Button>
@@ -541,14 +553,14 @@ export function AdoptionRequestDetail() {
                 <div className="flex flex-wrap gap-2">
                   {request.contract.pdfUrl && (
                     <Button variant="outline" size="sm" asChild>
-                      <a href={request.contract.pdfUrl} target="_blank" rel="noopener noreferrer">
+                      <a href={withUploadToken(request.contract.pdfUrl)} target="_blank" rel="noopener noreferrer">
                         <Download className="w-3 h-3 mr-1" /> Ver contrato
                       </a>
                     </Button>
                   )}
                   {request.contract.signedPdfUrl && (
                     <Button variant="outline" size="sm" asChild>
-                      <a href={request.contract.signedPdfUrl} target="_blank" rel="noopener noreferrer">
+                      <a href={withUploadToken(request.contract.signedPdfUrl)} target="_blank" rel="noopener noreferrer">
                         <Download className="w-3 h-3 mr-1" /> Descargar firmado
                       </a>
                     </Button>

@@ -106,7 +106,11 @@ export const router = createBrowserRouter([
               { path: 'pets/:id/edit', element: <PetEdit /> },
               { path: 'adoption-requests', element: <AdminAdoptionRequests /> },
               { path: 'adoption-requests/:id', element: <AdminAdoptionRequestDetail /> },
-              { path: 'interview-slots', element: <AdminInterviewSlots /> },
+              {
+                path: 'interview-slots',
+                element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                children: [{ index: true, element: <AdminInterviewSlots /> }],
+              },
               {
                 path: 'users',
                 element: <ProtectedRoute allowedRoles={['ADMIN']} />,

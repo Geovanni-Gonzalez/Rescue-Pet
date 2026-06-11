@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
+import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Alert } from '../components/ui/alert';
 import { FormField } from '../components/FormField';
@@ -12,16 +13,21 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [pendingVerification, setPendingVerification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const resetSuccess = searchParams.get('reset') === 'ok';
+  // CU-12 paso 10: mensaje de confirmación tras activar la cuenta.
+  const activationMessage = (location.state as { activationMessage?: string } | null)?.activationMessage;
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
+    setPendingVerification(false);
     setIsLoading(true);
 
     try {
@@ -36,6 +42,11 @@ export function Login() {
         setError('No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.');
       } else {
         setError(getApiErrorMessage(err, 'Correo o contraseña incorrectos.'));
+        // CU-12 7A: si la cuenta está pendiente de verificación, ofrecer el reenvío
+        // del correo de activación desde la pantalla de inicio de sesión.
+        if (axios.isAxiosError<{ code?: string }>(err) && err.response?.data?.code === 'PENDING_VERIFICATION') {
+          setPendingVerification(true);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -79,10 +90,25 @@ export function Login() {
           <p className="text-sm text-muted-foreground mt-1 mb-6">Ingresa tus credenciales para continuar.</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
+            {activationMessage && (
+              <Alert variant="success">{activationMessage}</Alert>
+            )}
             {resetSuccess && (
               <Alert variant="success">Contraseña restablecida. Ya puedes iniciar sesión.</Alert>
             )}
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && (
+              <Alert variant="danger">
+                <p>{error}</p>
+                {pendingVerification && (
+                  <p className="mt-1 text-sm">
+                    ¿No recibiste el correo o el enlace expiró?{' '}
+                    <Link to="/resend-activation" className="font-medium underline">
+                      Reenviar correo de activación
+                    </Link>
+                  </p>
+                )}
+              </Alert>
+            )}
 
             <FormField
               label="Correo electrónico"

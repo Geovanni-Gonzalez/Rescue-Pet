@@ -4,6 +4,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
 import { Alert } from '../components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Calendar, Plus, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
@@ -13,6 +14,21 @@ interface Slot {
   endsAt: string;
   status: 'available' | 'reserved' | 'cancelled';
   reservedByApplicationId?: string;
+  reservation?: {
+    applicationId: string;
+    adopterName?: string | null;
+    animalName?: string | null;
+  } | null;
+}
+
+/**
+ * Valor "YYYY-MM-DDTHH:mm" en hora LOCAL para inputs datetime-local.
+ * (toISOString() está en UTC y desplazaba el mínimo +6h, bloqueando
+ * la creación de horarios del día en curso.)
+ */
+function toLocalInputValue(date: Date): string {
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 export function AdminInterviewSlots() {
@@ -22,12 +38,14 @@ export function AdminInterviewSlots() {
   const [showForm, setShowForm] = useState(false);
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
+  const [formError, setFormError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Slot | null>(null);
 
   const fetchSlots = async () => {
     try {
-      const res = await apiClient.get('/interview-slots/available');
+      const res = await apiClient.get('/interview-slots');
       setSlots(res.data.slots ?? []);
     } catch (err) {
       setError(getApiErrorMessage(err, 'No se pudieron cargar los horarios de entrevista.'));
@@ -40,8 +58,16 @@ export function AdminInterviewSlots() {
 
   const handleCreate = async () => {
     if (!startsAt || !endsAt) return;
+    setFormError('');
+    if (new Date(endsAt) <= new Date(startsAt)) {
+      setFormError('La hora de fin debe ser posterior a la hora de inicio.');
+      return;
+    }
+    if (new Date(startsAt) <= new Date()) {
+      setFormError('El horario debe estar en el futuro.');
+      return;
+    }
     setIsCreating(true);
-    setError('');
     try {
       await apiClient.post('/interview-slots', {
         startsAt: new Date(startsAt).toISOString(),
@@ -52,21 +78,31 @@ export function AdminInterviewSlots() {
       setShowForm(false);
       await fetchSlots();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'No se pudo crear el horario.'));
+      setFormError(getApiErrorMessage(err, 'No se pudo crear el horario.'));
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleCancel = async (id: string) => {
-    setCancellingId(id);
+  const handleCancel = async (slot: Slot) => {
+    setCancellingId(slot.id);
+    setError('');
     try {
-      await apiClient.patch(`/interview-slots/${id}/cancel`);
-      setSlots((prev) => prev.filter((s) => s.id !== id));
+      await apiClient.patch(`/interview-slots/${slot.id}/cancel`);
+      await fetchSlots();
     } catch (err) {
       setError(getApiErrorMessage(err, 'No se pudo cancelar el horario.'));
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const requestCancel = (slot: Slot) => {
+    if (slot.status === 'reserved') {
+      // CU-17 1A: cancelar un slot reservado notifica al adoptante — pedir confirmación.
+      setCancelTarget(slot);
+    } else {
+      handleCancel(slot);
     }
   };
 
@@ -77,6 +113,8 @@ export function AdminInterviewSlots() {
   };
 
   if (isLoading) return <LoadingState />;
+
+  const nowLocal = toLocalInputValue(new Date());
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -102,24 +140,27 @@ export function AdminInterviewSlots() {
         <Card>
           <CardHeader><CardTitle className="text-base">Crear Horario Disponible</CardTitle></CardHeader>
           <CardContent className="space-y-3">
+            {formError && <Alert variant="danger">{formError}</Alert>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Inicio *</label>
+                <label className="text-xs text-muted-foreground block mb-1" htmlFor="slot-start">Inicio *</label>
                 <input
+                  id="slot-start"
                   type="datetime-local"
                   value={startsAt}
                   onChange={(e) => setStartsAt(e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={nowLocal}
                   className="w-full h-10 rounded-md border border-border px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Fin *</label>
+                <label className="text-xs text-muted-foreground block mb-1" htmlFor="slot-end">Fin *</label>
                 <input
+                  id="slot-end"
                   type="datetime-local"
                   value={endsAt}
                   onChange={(e) => setEndsAt(e.target.value)}
-                  min={startsAt || new Date().toISOString().slice(0, 16)}
+                  min={startsAt || nowLocal}
                   className="w-full h-10 rounded-md border border-border px-3 text-sm"
                 />
               </div>
@@ -128,7 +169,7 @@ export function AdminInterviewSlots() {
               <Button size="sm" onClick={handleCreate} disabled={isCreating || !startsAt || !endsAt}>
                 {isCreating ? 'Creando...' : 'Crear horario'}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setFormError(''); }}>Cancelar</Button>
             </div>
           </CardContent>
         </Card>
@@ -159,17 +200,24 @@ export function AdminInterviewSlots() {
                     {' — '}
                     {new Date(slot.endsAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
+                  {slot.status === 'reserved' && slot.reservation && (
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      {slot.reservation.adopterName ?? 'Adoptante'}
+                      {slot.reservation.animalName ? ` · ${slot.reservation.animalName}` : ''}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {statusBadge(slot.status)}
-                {slot.status === 'available' && (
+                {(slot.status === 'available' || slot.status === 'reserved') && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleCancel(slot.id)}
+                    onClick={() => requestCancel(slot)}
                     disabled={cancellingId === slot.id}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    title={slot.status === 'reserved' ? 'Cancelar entrevista reservada' : 'Cancelar horario'}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -179,6 +227,22 @@ export function AdminInterviewSlots() {
           ))}
         </div>
       )}
+
+      {/* CU-17 1A: confirmación al cancelar un slot reservado */}
+      <ConfirmDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => { if (!open) setCancelTarget(null); }}
+        title="Cancelar entrevista reservada"
+        description={
+          cancelTarget
+            ? `Este horario está reservado por ${cancelTarget.reservation?.adopterName ?? 'un adoptante'}. Al cancelarlo, su solicitud volverá a "Recibida" y se le notificará para que elija un nuevo horario.`
+            : ''
+        }
+        onConfirm={() => { if (cancelTarget) handleCancel(cancelTarget); }}
+        variant="destructive"
+        confirmText="Cancelar entrevista"
+        cancelText="Volver"
+      />
     </div>
   );
 }

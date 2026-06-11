@@ -19,7 +19,7 @@ jest.mock('../utils/db', () => ({
       findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn(),
     },
     interviewSlot: {
-      findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(),
+      findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(),
     },
     animalStatusHistory: { create: jest.fn() },
     notification: { create: jest.fn() },
@@ -275,27 +275,82 @@ describe('PATCH /api/adoption-applications/:id/status (CU-18)', () => {
 
 describe('POST /api/interview-slots (CU-17)', () => {
   it('ADMIN puede crear un slot', async () => {
+    dbMock.interviewSlot.findFirst.mockResolvedValue(null);
     dbMock.interviewSlot.create.mockResolvedValue({
       id: SLOT_ID,
-      startsAt: new Date('2026-06-01T10:00:00Z'),
-      endsAt: new Date('2026-06-01T11:00:00Z'),
+      startsAt: new Date('2027-06-01T10:00:00Z'),
+      endsAt: new Date('2027-06-01T11:00:00Z'),
       status: 'available',
     });
 
     const res = await request(app)
       .post('/api/interview-slots')
       .set(auth('ADMIN'))
-      .send({ startsAt: '2026-06-01T10:00:00.000Z', endsAt: '2026-06-01T11:00:00.000Z' });
+      .send({ startsAt: '2027-06-01T10:00:00.000Z', endsAt: '2027-06-01T11:00:00.000Z' });
 
     expect(res.status).toBe(201);
     expect(res.body.slot.status).toBe('available');
+  });
+
+  it('rechaza un slot cuyo fin es anterior al inicio', async () => {
+    const res = await request(app)
+      .post('/api/interview-slots')
+      .set(auth('ADMIN'))
+      .send({ startsAt: '2027-06-01T11:00:00.000Z', endsAt: '2027-06-01T10:00:00.000Z' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/posterior/i);
+    expect(dbMock.interviewSlot.create).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un slot en el pasado', async () => {
+    const res = await request(app)
+      .post('/api/interview-slots')
+      .set(auth('ADMIN'))
+      .send({ startsAt: '2020-06-01T10:00:00.000Z', endsAt: '2020-06-01T11:00:00.000Z' });
+
+    expect(res.status).toBe(400);
+    expect(dbMock.interviewSlot.create).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un slot que se solapa con otro existente', async () => {
+    dbMock.interviewSlot.findFirst.mockResolvedValue({ id: 'otro-slot', status: 'available' });
+
+    const res = await request(app)
+      .post('/api/interview-slots')
+      .set(auth('ADMIN'))
+      .send({ startsAt: '2027-06-01T10:00:00.000Z', endsAt: '2027-06-01T11:00:00.000Z' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/solapa/i);
+    expect(dbMock.interviewSlot.create).not.toHaveBeenCalled();
   });
 
   it('ADOPTER no puede crear slots', async () => {
     const res = await request(app)
       .post('/api/interview-slots')
       .set(auth('ADOPTER'))
-      .send({ startsAt: '2026-06-01T10:00:00.000Z', endsAt: '2026-06-01T11:00:00.000Z' });
+      .send({ startsAt: '2027-06-01T10:00:00.000Z', endsAt: '2027-06-01T11:00:00.000Z' });
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('GET /api/interview-slots (CU-17 panel admin)', () => {
+  it('ADMIN ve todos los slots con datos de la reserva', async () => {
+    dbMock.interviewSlot.findMany.mockResolvedValue([
+      { id: SLOT_ID, startsAt: new Date('2027-06-01T10:00:00Z'), endsAt: new Date('2027-06-01T11:00:00Z'), status: 'reserved', reservedByApplicationId: APP_ID },
+    ]);
+    dbMock.adoptionRequest.findUnique.mockResolvedValue(APPLICATION);
+
+    const res = await request(app).get('/api/interview-slots').set(auth('ADMIN'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.slots).toHaveLength(1);
+    expect(res.body.slots[0].reservation.adopterName).toBe('Ana Perez');
+  });
+
+  it('ADOPTER no puede listar el panel completo', async () => {
+    const res = await request(app).get('/api/interview-slots').set(auth('ADOPTER'));
     expect(res.status).toBe(403);
   });
 });
@@ -340,7 +395,7 @@ describe('POST /api/adoption-applications/:id/schedule-interview (CU-17)', () =>
     expect(res.status).toBe(200);
   });
 
-  it('retorna 409 si slot ya esta reservado', async () => {
+  it('CU-17 5E: retorna 409 con el mensaje exacto si el slot ya fue reservado', async () => {
     dbMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
 
     dbMock.$transaction.mockImplementation(async (fn: Function) => {
@@ -359,6 +414,94 @@ describe('POST /api/adoption-applications/:id/schedule-interview (CU-17)', () =>
       .send({ slotId: SLOT_ID });
 
     expect(res.status).toBe(409);
+    expect(res.body.error).toBe('Este horario ya fue reservado. Por favor, seleccione otro disponible.');
+  });
+
+  it('CU-17 4E: bloquea agendar si la solicitud ya no está en estado Recibida', async () => {
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'REJECTED' });
+
+    const res = await request(app)
+      .post(`/api/adoption-applications/${APP_ID}/schedule-interview`)
+      .set(auth('ADOPTER'))
+      .send({ slotId: SLOT_ID });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/tablero de seguimiento/i);
+  });
+
+  it('CU-17 paso 7: notifica a administradores y adoptante al confirmar', async () => {
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
+    dbMock.user.findMany.mockResolvedValue([{ id: ADMIN_ID }]);
+
+    dbMock.$transaction.mockImplementation(async (fn: Function) => {
+      const fakeTx = {
+        interviewSlot: {
+          findUnique: jest.fn().mockResolvedValue({ id: SLOT_ID, status: 'available' }),
+          update: jest.fn().mockResolvedValue({
+            id: SLOT_ID, status: 'reserved', reservedByApplicationId: APP_ID,
+            startsAt: new Date('2027-06-01T10:00:00Z'),
+          }),
+        },
+        adoptionRequest: {
+          update: jest.fn().mockResolvedValue({ ...APPLICATION, status: 'INTERVIEW' }),
+        },
+      };
+      return fn(fakeTx);
+    });
+
+    const res = await request(app)
+      .post(`/api/adoption-applications/${APP_ID}/schedule-interview`)
+      .set(auth('ADOPTER'))
+      .send({ slotId: SLOT_ID });
+
+    expect(res.status).toBe(200);
+    // Notificación al admin y confirmación al adoptante
+    expect(dbMock.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ userId: ADMIN_ID, title: 'Entrevista agendada' }) })
+    );
+    expect(dbMock.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ userId: USER_ID, title: 'Entrevista confirmada' }) })
+    );
+  });
+});
+
+describe('PATCH /api/interview-slots/:id/cancel (CU-17 1A)', () => {
+  it('cancela un slot reservado: libera el bloqueo, revierte la solicitud y notifica al adoptante', async () => {
+    dbMock.interviewSlot.findUnique.mockResolvedValue({
+      id: SLOT_ID, status: 'reserved', reservedByApplicationId: APP_ID,
+      startsAt: new Date('2027-06-01T10:00:00Z'),
+    });
+    dbMock.adoptionRequest.findUnique.mockResolvedValue({ ...APPLICATION, status: 'INTERVIEW' });
+    dbMock.interviewSlot.update.mockResolvedValue({ id: SLOT_ID, status: 'cancelled' });
+    dbMock.adoptionRequest.update.mockResolvedValue({ ...APPLICATION, status: 'RECEIVED' });
+
+    const res = await request(app)
+      .patch(`/api/interview-slots/${SLOT_ID}/cancel`)
+      .set(auth('ADMIN'));
+
+    expect(res.status).toBe(200);
+    // Libera el slot y limpia la reserva
+    expect(dbMock.interviewSlot.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'cancelled', reservedByApplicationId: null }) })
+    );
+    // Revierte la solicitud a RECEIVED para habilitar una nueva selección
+    expect(dbMock.adoptionRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'RECEIVED' }) })
+    );
+    // Notifica al adoptante del cambio
+    expect(dbMock.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ userId: USER_ID, title: 'Entrevista cancelada' }) })
+    );
+  });
+
+  it('retorna 400 si el slot ya estaba cancelado', async () => {
+    dbMock.interviewSlot.findUnique.mockResolvedValue({ id: SLOT_ID, status: 'cancelled' });
+
+    const res = await request(app)
+      .patch(`/api/interview-slots/${SLOT_ID}/cancel`)
+      .set(auth('ADMIN'));
+
+    expect(res.status).toBe(400);
   });
 });
 

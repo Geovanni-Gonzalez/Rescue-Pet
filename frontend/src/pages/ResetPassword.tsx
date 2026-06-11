@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '../components/ui/button';
 import { Alert } from '../components/ui/alert';
 import { FormField } from '../components/FormField';
+import { PasswordRequirementsList } from '../components/PasswordRequirementsList';
+import { getUnmetRequirements } from '../lib/passwordPolicy';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 
 export function ResetPassword() {
@@ -22,6 +24,10 @@ export function ResetPassword() {
     event.preventDefault();
     if (password !== confirm) {
       setError('Las contraseñas no coinciden.');
+      return;
+    }
+    if (getUnmetRequirements(password).length > 0) {
+      setError('La contraseña no cumple los requisitos de seguridad indicados abajo.');
       return;
     }
     setError('');
@@ -57,7 +63,7 @@ export function ResetPassword() {
             <PawPrint className="w-6 h-6" />
           </div>
           <CardTitle className="text-xl font-bold text-foreground">Nueva contraseña</CardTitle>
-          <CardDescription>Mínimo 8 caracteres.</CardDescription>
+          <CardDescription>Debe cumplir la política de seguridad.</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -74,6 +80,7 @@ export function ResetPassword() {
               minLength={8}
               required
             />
+            <PasswordRequirementsList password={password} />
             <FormField
               label="Confirmar contraseña"
               type="password"

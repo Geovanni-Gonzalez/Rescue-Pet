@@ -80,6 +80,7 @@ const dateFields = new Set([
   'lockedUntil',
   'activationTokenExpiresAt',
   'resetTokenExpiresAt',
+  'passwordChangedAt',
   'appliedAt',
   'nextDueAt',
   'postponedTo',

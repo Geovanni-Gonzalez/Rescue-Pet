@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, UserX, RefreshCw } from 'lucide-react';
+import { Plus, UserX, UserCheck, RefreshCw, Pencil } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Alert } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { FormField } from '../components/FormField';
 import { RoleBadge } from '../components/RoleBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
+import { useAuth } from '../context/AuthContext';
 import type { Role } from '../context/AuthContext';
 
 interface UserRow {
@@ -40,11 +49,24 @@ function UserStatusBadge({ status }: { status: string }) {
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Administrador',
   VETERINARIAN: 'Veterinario',
   VOLUNTEER: 'Voluntario',
+  ADOPTER: 'Adoptante',
 };
 
+const ALL_ROLES: Role[] = ['ADMIN', 'VETERINARIAN', 'VOLUNTEER', 'ADOPTER'];
+
+interface EditFormState {
+  fullName: string;
+  email: string;
+  phone: string;
+  role: Role;
+  status: string;
+}
+
 export function AdminUsers() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,6 +75,12 @@ export function AdminUsers() {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<UserRow | null>(null);
+
+  // Edit dialog state (CU-10: el Administrador modifica perfiles y asigna roles)
+  const [editTarget, setEditTarget] = useState<UserRow | null>(null);
+  const [editData, setEditData] = useState<EditFormState | null>(null);
+  const [editError, setEditError] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -101,6 +129,69 @@ export function AdminUsers() {
     } catch (err) {
       setError(getApiErrorMessage(err, 'No se pudo desactivar el usuario.'));
       setDeactivateTarget(null);
+    }
+  };
+
+  const handleReactivate = async (target: UserRow) => {
+    setError('');
+    try {
+      await apiClient.patch(`/users/${target.id}`, { status: 'ACTIVE' });
+      fetchUsers();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'No se pudo reactivar el usuario.'));
+    }
+  };
+
+  const openEdit = (target: UserRow) => {
+    setEditTarget(target);
+    setEditError('');
+    setEditData({
+      fullName: target.fullName,
+      email: target.email,
+      phone: target.phone || '',
+      role: target.role,
+      status: target.status,
+    });
+  };
+
+  const closeEdit = () => {
+    setEditTarget(null);
+    setEditData(null);
+    setEditError('');
+  };
+
+  const isEditingSelf = Boolean(editTarget && currentUser && editTarget.id === currentUser.id);
+
+  const handleEditSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editTarget || !editData) return;
+
+    setEditError('');
+    if (!editData.fullName.trim() || !editData.email.trim()) {
+      setEditError('El nombre completo y el correo electrónico son obligatorios.');
+      return;
+    }
+
+    const payload: Record<string, string> = {
+      fullName: editData.fullName.trim(),
+      email: editData.email.trim(),
+    };
+    if (editData.phone.trim()) payload.phone = editData.phone.trim();
+    // El rol y el estado del propio administrador no se envían (salvaguarda de bloqueo).
+    if (!isEditingSelf) {
+      if (editData.role !== editTarget.role) payload.role = editData.role;
+      if (editData.status !== editTarget.status) payload.status = editData.status;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      await apiClient.patch(`/users/${editTarget.id}`, payload);
+      closeEdit();
+      fetchUsers();
+    } catch (err) {
+      setEditError(getApiErrorMessage(err, 'No se pudo actualizar el usuario.'));
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -224,17 +315,37 @@ export function AdminUsers() {
                     <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                       {new Date(u.createdAt).toLocaleDateString('es-CR')}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {u.status !== 'INACTIVE' && (
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(u)}
+                        title="Editar usuario"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      {u.status === 'INACTIVE' ? (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setDeactivateTarget(u)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          title="Desactivar usuario"
+                          onClick={() => handleReactivate(u)}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="Reactivar usuario"
                         >
-                          <UserX className="w-4 h-4" />
+                          <UserCheck className="w-4 h-4" />
                         </Button>
+                      ) : (
+                        currentUser?.id !== u.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeactivateTarget(u)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Desactivar usuario"
+                          >
+                            <UserX className="w-4 h-4" />
+                          </Button>
+                        )
                       )}
                     </td>
                   </tr>
@@ -246,13 +357,99 @@ export function AdminUsers() {
       )}
       </div>
 
+      {/* CU-10: edición de perfil y asignación de rol por el Administrador */}
+      <Dialog open={editTarget !== null} onOpenChange={(open) => { if (!open) closeEdit(); }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Editar usuario</DialogTitle>
+            <DialogDescription>
+              Actualiza los datos de contacto, el rol o el estado de la cuenta.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editError && <Alert variant="danger" className="mb-2">{editError}</Alert>}
+
+          {editData && (
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <FormField
+                label="Nombre completo"
+                value={editData.fullName}
+                onChange={(e) => setEditData((d) => (d ? { ...d, fullName: e.target.value } : d))}
+                minLength={2}
+                required
+              />
+              <FormField
+                label="Correo electrónico"
+                type="email"
+                value={editData.email}
+                onChange={(e) => setEditData((d) => (d ? { ...d, email: e.target.value } : d))}
+                required
+              />
+              <FormField
+                label="Teléfono"
+                value={editData.phone}
+                onChange={(e) => setEditData((d) => (d ? { ...d, phone: e.target.value } : d))}
+                placeholder="+506 8888 8888"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground" htmlFor="edit-role">Rol</label>
+                  <select
+                    id="edit-role"
+                    className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rescue-500 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
+                    value={editData.role}
+                    onChange={(e) => setEditData((d) => (d ? { ...d, role: e.target.value as Role } : d))}
+                    disabled={isEditingSelf}
+                    title={isEditingSelf ? 'No puedes cambiar tu propio rol.' : undefined}
+                  >
+                    {ALL_ROLES.map((role) => (
+                      <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                    ))}
+                  </select>
+                  {isEditingSelf && (
+                    <p className="text-xs text-muted-foreground">No puedes cambiar tu propio rol.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground" htmlFor="edit-status">Estado</label>
+                  <select
+                    id="edit-status"
+                    className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rescue-500 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
+                    value={editData.status}
+                    onChange={(e) => setEditData((d) => (d ? { ...d, status: e.target.value } : d))}
+                    disabled={isEditingSelf}
+                    title={isEditingSelf ? 'No puedes desactivar tu propia cuenta.' : undefined}
+                  >
+                    <option value="ACTIVE">Activo</option>
+                    <option value="INACTIVE">Inactivo</option>
+                    {!['ACTIVE', 'INACTIVE'].includes(editData.status) && (
+                      <option value={editData.status}>
+                        {USER_STATUS_CONFIG[editData.status]?.label || editData.status}
+                      </option>
+                    )}
+                  </select>
+                </div>
+              </div>
+              <DialogFooter className="mt-2">
+                <Button variant="outline" type="button" onClick={closeEdit}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSavingEdit}>
+                  {isSavingEdit ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={deactivateTarget !== null}
         onOpenChange={(open) => { if (!open) setDeactivateTarget(null); }}
         title="Desactivar usuario"
         description={
           deactivateTarget
-            ? `¿Seguro que deseas desactivar a ${deactivateTarget.fullName}? El usuario perderá acceso inmediatamente.`
+            ? `¿Seguro que deseas desactivar a ${deactivateTarget.fullName}? El usuario no podrá iniciar sesión, pero sus datos históricos se conservarán.`
             : ''
         }
         onConfirm={handleDeactivate}

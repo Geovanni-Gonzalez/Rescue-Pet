@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import { Save, UserCircle, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import type { User } from '../context/AuthContext';
+import type { User, Role } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Alert } from '../components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { FormField } from '../components/FormField';
-import { RoleBadge } from '../components/RoleBadge';
+import { PasswordRequirementsList } from '../components/PasswordRequirementsList';
+import { getUnmetRequirements } from '../lib/passwordPolicy';
 import { LoadingState } from '../components/LoadingState';
 import { getApiErrorMessage } from '../lib/api';
+import axios from 'axios';
 
 interface MeResponse {
   success: boolean;
@@ -22,9 +25,25 @@ interface UpdateUserResponse {
   user: User;
 }
 
+const ROLE_LABELS: Record<Role, string> = {
+  ADMIN: 'Administrador',
+  VETERINARIAN: 'Veterinario',
+  VOLUNTEER: 'Voluntario',
+  ADOPTER: 'Adoptante',
+};
+
+function getPasswordErrorDetails(error: unknown): string[] {
+  if (axios.isAxiosError<{ details?: unknown }>(error) && Array.isArray(error.response?.data?.details)) {
+    return error.response.data.details.filter((item): item is string => typeof item === 'string');
+  }
+  return [];
+}
+
 export function Profile() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState(user?.fullName || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [currentUser, setCurrentUser] = useState<User | null>(user);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +56,7 @@ export function Profile() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwdError, setPwdError] = useState('');
+  const [pwdErrorDetails, setPwdErrorDetails] = useState<string[]>([]);
   const [pwdSuccess, setPwdSuccess] = useState('');
   const [isSavingPwd, setIsSavingPwd] = useState(false);
 
@@ -46,6 +66,7 @@ export function Profile() {
         const response = await apiClient.get<MeResponse>('/auth/me');
         setCurrentUser(response.data.user);
         setFullName(response.data.user.fullName);
+        setEmail(response.data.user.email);
         setPhone(response.data.user.phone || '');
         updateUser(response.data.user);
       } catch (err: unknown) {
@@ -64,17 +85,26 @@ export function Profile() {
 
     setError('');
     setSuccessMessage('');
+
+    // CU-10: los campos obligatorios no pueden quedar vacíos.
+    if (!fullName.trim() || !email.trim() || !phone.trim()) {
+      setError('Nombre completo, correo electrónico y teléfono son obligatorios.');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      const response = await apiClient.patch<UpdateUserResponse>(`/users/${currentUser.id}`, {
-        fullName,
-        phone: phone.trim() || undefined,
+      const response = await apiClient.put<UpdateUserResponse>('/users/me', {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
       });
 
       const mergedUser = { ...currentUser, ...response.data.user };
       setCurrentUser(mergedUser);
       updateUser(mergedUser);
+      setEmail(mergedUser.email);
       setSuccessMessage('Perfil actualizado correctamente.');
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'No se pudo actualizar tu perfil.'));
@@ -83,23 +113,40 @@ export function Profile() {
     }
   };
 
+  const unmetRequirements = getUnmetRequirements(newPassword);
+
   const handlePasswordChange = async (event: FormEvent) => {
     event.preventDefault();
     setPwdError('');
+    setPwdErrorDetails([]);
     setPwdSuccess('');
+
     if (newPassword !== confirmPassword) {
       setPwdError('Las contraseñas nuevas no coinciden.');
       return;
     }
+    // CU-10 4E2: bloquear el guardado mostrando los requisitos no cumplidos.
+    if (unmetRequirements.length > 0) {
+      setPwdError('La nueva contraseña no cumple los requisitos de seguridad.');
+      setPwdErrorDetails(unmetRequirements.map((req) => req.label));
+      return;
+    }
+
     setIsSavingPwd(true);
     try {
       await apiClient.put('/users/me/password', { currentPassword, newPassword });
-      setPwdSuccess('Contraseña actualizada correctamente.');
+      setPwdSuccess('Contraseña actualizada. Por seguridad se cerrarán todas tus sesiones; inicia sesión nuevamente.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      // CU-10 3A: el cambio invalida todas las sesiones activas, incluida esta.
+      setTimeout(() => {
+        logout();
+        navigate('/login');
+      }, 2500);
     } catch (err: unknown) {
       setPwdError(getApiErrorMessage(err, 'No se pudo actualizar la contraseña.'));
+      setPwdErrorDetails(getPasswordErrorDetails(err));
     } finally {
       setIsSavingPwd(false);
     }
@@ -110,19 +157,29 @@ export function Profile() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-rescue-100 text-rescue-600 rounded-xl flex items-center justify-center">
-          <UserCircle className="w-7 h-7" />
-        </div>
+        {currentUser?.photoUrl ? (
+          <img
+            src={currentUser.photoUrl}
+            alt={`Fotografía de ${currentUser.fullName}`}
+            className="w-12 h-12 rounded-xl object-cover border border-border"
+          />
+        ) : (
+          <div className="w-12 h-12 bg-rescue-100 text-rescue-600 rounded-xl flex items-center justify-center">
+            <UserCircle className="w-7 h-7" />
+          </div>
+        )}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Mi Perfil</h1>
-          <p className="text-muted-foreground">Administra tus datos basicos de contacto.</p>
+          <p className="text-muted-foreground">Administra tus datos de contacto.</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Datos de cuenta</CardTitle>
-          <CardDescription>El correo y el rol son gestionados por el sistema.</CardDescription>
+          <CardDescription>
+            Puedes actualizar tu nombre, correo electrónico y teléfono. El rol solo puede modificarlo un administrador.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
@@ -142,17 +199,33 @@ export function Profile() {
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
                 placeholder="+506 8888 8888"
+                minLength={7}
+                required
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div>
-                <p className="text-sm text-muted-foreground">Correo electrónico</p>
-                <p className="font-medium text-foreground">{currentUser?.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Rol</p>
-                {currentUser?.role && <RoleBadge role={currentUser.role} />}
+              <FormField
+                label="Correo electrónico"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground" htmlFor="profile-role">
+                  Rol
+                </label>
+                {/* CU-10 3E: el campo de rol se muestra deshabilitado para el propio usuario. */}
+                <select
+                  id="profile-role"
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-muted text-muted-foreground cursor-not-allowed"
+                  value={currentUser?.role}
+                  disabled
+                  title="Solo un administrador puede modificar tu rol."
+                >
+                  {currentUser?.role && (
+                    <option value={currentUser.role}>{ROLE_LABELS[currentUser.role] || currentUser.role}</option>
+                  )}
+                </select>
+                <p className="text-xs text-muted-foreground">Solo un administrador puede modificar tu rol.</p>
               </div>
             </div>
 
@@ -172,9 +245,23 @@ export function Profile() {
             <Lock className="w-4 h-4 text-muted-foreground" />
             <CardTitle>Cambiar contraseña</CardTitle>
           </div>
+          <CardDescription>
+            Al cambiar tu contraseña se cerrarán todas tus sesiones activas y deberás iniciar sesión de nuevo.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {pwdError && <Alert variant="danger" className="mb-4">{pwdError}</Alert>}
+          {pwdError && (
+            <Alert variant="danger" className="mb-4">
+              <p>{pwdError}</p>
+              {pwdErrorDetails.length > 0 && (
+                <ul className="list-disc pl-5 mt-1 text-sm">
+                  {pwdErrorDetails.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              )}
+            </Alert>
+          )}
           {pwdSuccess && <Alert variant="success" className="mb-4">{pwdSuccess}</Alert>}
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
@@ -204,6 +291,10 @@ export function Profile() {
                 required
               />
             </div>
+
+            {/* CU-10 4E2: requisitos de la política de seguridad en vivo. */}
+            <PasswordRequirementsList password={newPassword} />
+
             <div className="pt-2 flex justify-end">
               <Button type="submit" variant="outline" disabled={isSavingPwd}>
                 <Lock className="w-4 h-4" />

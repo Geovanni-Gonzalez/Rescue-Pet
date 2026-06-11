@@ -10,7 +10,9 @@ export interface User {
   fullName: string;
   email: string;
   phone?: string | null;
+  photoUrl?: string | null;
   role: Role;
+  status?: string;
   isActive?: boolean;
   createdAt?: string;
 }

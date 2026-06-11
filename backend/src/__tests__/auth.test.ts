@@ -126,23 +126,25 @@ describe('POST /api/auth/register-adopter', () => {
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Juan Perez',
       email: 'nuevo@test.com',
-      password: 'password123',
+      password: 'Password123!',
     });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
+    expect(res.body.emailSent).toBe(true);
   });
 
-  it('retorna 400 si el correo ya está registrado', async () => {
+  it('CU-12 5E: retorna el mensaje exacto si el correo ya está registrado', async () => {
     dbMock.user.findUnique.mockResolvedValue({ id: 'existing' });
 
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Juan',
       email: 'existe@test.com',
-      password: 'password123',
+      password: 'Password123!',
     });
 
     expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Este correo electrónico ya está registrado.');
   });
 
   it('retorna 400 si la contraseña tiene menos de 8 caracteres', async () => {
@@ -155,6 +157,38 @@ describe('POST /api/auth/register-adopter', () => {
     expect(res.status).toBe(400);
   });
 
+  it('CU-12 4.1E: rechaza contraseña que no cumple la política con detalle de requisitos', async () => {
+    const res = await request(app).post('/api/auth/register-adopter').send({
+      fullName: 'Juan',
+      email: 'nuevo@test.com',
+      password: 'password123',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/requisitos/i);
+    expect(Array.isArray(res.body.details)).toBe(true);
+    expect(res.body.details.length).toBeGreaterThan(0);
+    expect(dbMock.user.create).not.toHaveBeenCalled();
+  });
+
+  it('CU-12 7E: si falla el envío del correo, conserva la cuenta pendiente y notifica', async () => {
+    const { sendActivationEmail } = await import('../services/emailService');
+    (sendActivationEmail as jest.Mock).mockRejectedValueOnce(new Error('SMTP down'));
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.create.mockResolvedValue({ id: 'new-1', email: 'nuevo@test.com' });
+
+    const res = await request(app).post('/api/auth/register-adopter').send({
+      fullName: 'Juan Perez',
+      email: 'nuevo@test.com',
+      password: 'Password123!',
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.emailSent).toBe(false);
+    expect(res.body.message).toMatch(/reenviarlo|reintenta/i);
+    expect(dbMock.user.create).toHaveBeenCalled();
+  });
+
   it('expone activationToken en entorno no-producción', async () => {
     dbMock.user.findUnique.mockResolvedValue(null);
     dbMock.user.create.mockResolvedValue({ id: 'new-1', email: 'test@test.com' });
@@ -162,7 +196,7 @@ describe('POST /api/auth/register-adopter', () => {
     const res = await request(app).post('/api/auth/register-adopter').send({
       fullName: 'Test User',
       email: 'test@test.com',
-      password: 'password123',
+      password: 'Password123!',
     });
 
     expect(res.body.activationToken).toBeDefined();
@@ -172,7 +206,7 @@ describe('POST /api/auth/register-adopter', () => {
 // ─── Activate ─────────────────────────────────────────────────────────────────
 
 describe('GET /api/auth/activate', () => {
-  it('activa cuenta con token válido', async () => {
+  it('activa cuenta con token válido y asigna el rol ADOPTER', async () => {
     dbMock.user.findUnique.mockResolvedValue({
       id: 'user-1',
       activationToken: 'valid-token',
@@ -184,6 +218,12 @@ describe('GET /api/auth/activate', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+    // CU-12 paso 10: la activación deja la cuenta ACTIVE con rol Adoptante
+    expect(dbMock.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'ACTIVE', role: 'ADOPTER' }),
+      })
+    );
   });
 
   it('retorna 400 para token expirado', async () => {
@@ -248,10 +288,19 @@ describe('POST /api/auth/reset-password', () => {
 
     const res = await request(app)
       .post('/api/auth/reset-password')
-      .send({ token: 'valid-reset', password: 'newpassword123' });
+      .send({ token: 'valid-reset', password: 'NewPassword123!' });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+  });
+
+  it('rechaza una contraseña que no cumple la política', async () => {
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: 'valid-reset', password: 'newpassword123' });
+
+    expect(res.status).toBe(400);
+    expect(Array.isArray(res.body.details)).toBe(true);
   });
 
   it('retorna 400 para token expirado', async () => {
@@ -263,7 +312,7 @@ describe('POST /api/auth/reset-password', () => {
 
     const res = await request(app)
       .post('/api/auth/reset-password')
-      .send({ token: 'expired-reset', password: 'newpassword123' });
+      .send({ token: 'expired-reset', password: 'NewPassword123!' });
 
     expect(res.status).toBe(400);
   });
@@ -273,7 +322,7 @@ describe('POST /api/auth/reset-password', () => {
 
     const res = await request(app)
       .post('/api/auth/reset-password')
-      .send({ token: 'fake', password: 'newpassword123' });
+      .send({ token: 'fake', password: 'NewPassword123!' });
 
     expect(res.status).toBe(400);
   });
