@@ -8,6 +8,7 @@ import { Alert } from '../components/ui/alert';
 import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
 import { apiClient, getApiErrorMessage, isNetworkError } from '../lib/api';
+import loginFamilyPets from '../assets/login-family-pets.webp';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -56,7 +57,11 @@ export function Login() {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Brand panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-primary items-end p-12 relative overflow-hidden">
+      <div
+        className="hidden lg:flex lg:w-[45%] items-end p-12 relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url(${loginFamilyPets})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-primary-foreground/20 rounded-xl flex items-center justify-center">
@@ -71,8 +76,6 @@ export function Login() {
             Conectamos refugios con familias que buscan un compañero.
           </p>
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary-foreground/5 -translate-y-1/3 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-primary-foreground/5 translate-y-1/4 -translate-x-1/4" />
       </div>
 
       {/* Form panel */}
