@@ -25,7 +25,7 @@ jobs:
             frontend/package-lock.json
 
       - name: Install backend dependencies
-        run: npm ci --prefix backend --include=dev --workspaces=false
+        run: npm install --prefix backend --include=dev --workspaces=false
 
       - name: Install frontend dependencies
         run: npm ci --prefix frontend --include=dev --workspaces=false
