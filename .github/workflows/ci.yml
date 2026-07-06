@@ -24,25 +24,17 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
-      - name: Install root dependencies
-        run: npm ci
-
       - name: Install backend dependencies
-        working-directory: backend
-        run: npm ci
+        run: npm ci --prefix backend --include=dev --workspaces=false
 
       - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
+        run: npm ci --prefix frontend --include=dev --workspaces=false
 
       - name: Typecheck backend
-        working-directory: backend
-        run: npm run typecheck
+        run: node backend/node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json
 
       - name: Typecheck frontend
-        working-directory: frontend
-        run: npm run typecheck
+        run: node frontend/node_modules/typescript/bin/tsc -b frontend/tsconfig.json
 
       - name: Build frontend
-        working-directory: frontend
-        run: npm run build
+        run: npm run build --prefix frontend --workspaces=false
