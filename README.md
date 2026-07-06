@@ -4,6 +4,26 @@
 
 Sistema integral de gestion de adopcion de animales rescatados. Permite a refugios administrar mascotas, coordinar procesos de adopcion, gestionar expedientes clinicos, y conectar adoptantes con animales compatibles.
 
+## Caso de estudio
+
+### Problema
+Los refugios suelen coordinar adopciones, expedientes clinicos, documentos y entrevistas con herramientas separadas. Eso dificulta saber que mascota esta disponible, quien debe revisar una solicitud, que documentos faltan y si una adopcion ya puede cerrarse.
+
+### Solucion
+Rescue Pet centraliza el ciclo completo de adopcion en una plataforma full stack: gestion de mascotas, roles de equipo, expediente veterinario, test de compatibilidad, solicitudes, entrevistas, documentos, contratos, firma digital, notificaciones y reportes administrativos.
+
+### Decisiones tecnicas destacadas
+- Backend Express/TypeScript con validacion Zod, JWT, RBAC por rol y auditoria de acciones.
+- Frontend React/Vite con rutas protegidas, paneles por rol, tablas operativas y componentes reutilizables.
+- Persistencia local en JSON para desarrollo y adaptacion a Vercel Blob para despliegue serverless.
+- Pruebas unitarias, de seguridad, RBAC y ciclo E2E de adopcion para cubrir los flujos criticos.
+
+### Flujos principales
+- Adoptante: registro, activacion, test de afinidad, catalogo y solicitud.
+- Voluntario: registro de mascotas, galeria, documentos y seguimiento de solicitudes.
+- Veterinario: expediente clinico, vacunas, alertas y transiciones medicas.
+- Administrador: usuarios, entrevistas, contratos, reportes, auditoria y exportaciones.
+
 ## Demo y vistas
 
 - Demo publica: [rescue-pet.vercel.app](https://rescue-pet.vercel.app)
