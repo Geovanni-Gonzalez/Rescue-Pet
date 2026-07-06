@@ -1,5 +1,7 @@
 # Rescue Pet
 
+[![CI](https://github.com/Geovanni-Gonzalez/Rescue-Pet/actions/workflows/ci.yml/badge.svg)](https://github.com/Geovanni-Gonzalez/Rescue-Pet/actions/workflows/ci.yml)
+
 Sistema integral de gestion de adopcion de animales rescatados. Permite a refugios administrar mascotas, coordinar procesos de adopcion, gestionar expedientes clinicos, y conectar adoptantes con animales compatibles.
 
 ## Arquitectura

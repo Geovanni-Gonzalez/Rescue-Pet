@@ -9,3 +9,27 @@ uploads/
 backend/data/db.json
 backend/data/db.json.tmp
 .claude/
+
+# Node / frontend
+build/
+out/
+.vite/
+.next/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+# Local agent/editor state
+CLAUDE.md
+# Environment and secrets
+.env.local
+.env.*.local
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
