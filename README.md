@@ -4,6 +4,14 @@
 
 Sistema integral de gestion de adopcion de animales rescatados. Permite a refugios administrar mascotas, coordinar procesos de adopcion, gestionar expedientes clinicos, y conectar adoptantes con animales compatibles.
 
+## Demo y vistas
+
+- Demo publica: [rescue-pet.vercel.app](https://rescue-pet.vercel.app)
+
+![Vista principal de Rescue Pet](frontend/src/assets/hero.png)
+
+![Pantalla de acceso de Rescue Pet](frontend/src/assets/login-family-pets.webp)
+
 ## Arquitectura
 
 ```
