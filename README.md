@@ -407,6 +407,16 @@ EXPOSE 3000
 CMD ["node", "dist/index.js"]
 ```
 
+## Pruebas
+
+El backend incluye 13 suites de Jest (~300 casos) que cubren autenticacion, RBAC, seguridad, matchmaking, notificaciones, reportes, auditoria, tareas, usuarios, animales y un E2E del ciclo completo de adopcion (`backend/src/__tests__/`).
+
+```bash
+cd backend
+npm test              # suite completa
+npm run test:coverage # con reporte de cobertura
+```
+
 ## Licencia
 
 ISC
