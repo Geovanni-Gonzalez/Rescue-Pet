@@ -6,11 +6,11 @@ Backlog priorizado. Impacto/Esfuerzo: Alto/Medio/Bajo.
 
 | # | Mejora | Impacto | Esfuerzo | Prioridad |
 |---|---|---|---|---|
-| 1 | Añadir paso `npm test --prefix backend` al workflow de CI — hay ~300 tests sin señal pública | Alto | Bajo | P0 |
+| 1 | ✅ Aplicado: `npm test --prefix backend --workspaces=false -- --runInBand` corre en CI | Alto | Bajo | P0 |
 | 2 | Commitear el untracking de `backend/data/db.backup-*.json` (aplicado en esta revisión: contenía hashes bcrypt de usuarios seed) | Alto | Bajo | P0 |
 | 3 | Mover `tmp_inflate.js` a `scripts/` con un nombre descriptivo (`seed-perf-data.js`) o eliminarlo | Medio | Bajo | P1 |
 | 4 | GitHub Topics: `react`, `typescript`, `express`, `fullstack`, `jwt`, `rbac`, `vercel` + descripción con link a la demo | Medio | Bajo | P1 |
-| 5 | Sección "Pruebas" en el README (13 suites, cómo ejecutarlas, cobertura) | Medio | Bajo | P1 |
+| 5 | ✅ Aplicado: sección "Pruebas" en README con comandos y suite Jest | Medio | Bajo | P1 |
 
 ## Mejoras técnicas
 

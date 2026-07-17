@@ -153,7 +153,7 @@ npm run build         # Build de produccion
 
 ## Suite de pruebas
 
-El proyecto incluye **170+ tests** organizados en las siguientes categorias:
+El proyecto incluye **12 suites / 236 tests** ejecutados por Jest y por GitHub Actions.
 
 | Archivo | Categoria | Tests |
 |---------|-----------|-------|
@@ -409,7 +409,7 @@ CMD ["node", "dist/index.js"]
 
 ## Pruebas
 
-El backend incluye 13 suites de Jest (~300 casos) que cubren autenticacion, RBAC, seguridad, matchmaking, notificaciones, reportes, auditoria, tareas, usuarios, animales y un E2E del ciclo completo de adopcion (`backend/src/__tests__/`).
+El backend incluye 12 suites de Jest que cubren autenticacion, RBAC, seguridad, matchmaking, notificaciones, reportes, auditoria, tareas, usuarios, animales y un E2E del ciclo completo de adopcion (`backend/src/__tests__/`). GitHub Actions ejecuta esta suite despues del typecheck de backend.
 
 ```bash
 cd backend

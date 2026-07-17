@@ -1,7 +1,7 @@
 # TECHNICAL_REVIEW — Rescue-Pet
 
 Fecha de revisión: 2026-07-16
-Método: análisis estático de código, enunciados en `docs/Proyecto {1,2,3} RQS.md`, configuración, CI y git. La suite Jest no se ejecutó en esta pasada (dependencias no instaladas en el sandbox); las afirmaciones sobre tests son 🟦 verificadas por análisis estático.
+Método: análisis estático de código, enunciados en `docs/Proyecto {1,2,3} RQS.md`, configuración, CI y git. Suite Jest ejecutada localmente: 12 suites / 236 tests pasan; CI ahora ejecuta `npm test` para backend.
 
 ## 1. Comprensión del proyecto
 
@@ -23,9 +23,9 @@ Los tres enunciados RQS piden un prototipo web funcional por iteraciones. 🟨 I
 
 ## 4. Calidad y pruebas
 
-- 🟦 13 suites Jest (~3,700 LOC de tests; ~300 bloques `describe/it`): auth, RBAC, seguridad, matchmaking, adopción E2E, notificaciones, reportes, auditoría, tareas, usuarios, animales.
+- ✅ 12 suites Jest / 236 tests: auth, RBAC, seguridad, matchmaking, adopción E2E, notificaciones, reportes, auditoría, tareas, usuarios, animales.
 - ✅ CI (GitHub Actions): typecheck backend + frontend y build de frontend en Node 20.
-- ⛔ **CI no ejecuta la suite Jest** — el mayor gap entre evidencia disponible y evidencia demostrada.
+- ✅ **CI ejecuta la suite Jest de backend** después del typecheck.
 - Sin TODO/FIXME en `backend/src` ni `frontend/src`.
 
 ## 5. Fortalezas
@@ -40,7 +40,7 @@ Los tres enunciados RQS piden un prototipo web funcional por iteraciones. 🟨 I
 | Riesgo | Severidad | Nota |
 |---|---|---|
 | Persistencia JSON no transaccional ni multi-proceso | Media | Aceptable para prototipo; el mutex solo protege dentro del proceso |
-| CI sin ejecución de tests | Media | 3,700 LOC de tests sin señal verde pública |
+| Persistencia prototipo JSON/Blob | Media | Suficiente para demo, no sustituye migraciones/ORM en producción |
 | ~~Backup de datos con hashes bcrypt trackeado~~ | — | Corregido en esta pasada: `git rm --cached` + patrón en `.gitignore` |
 | `tmp_inflate.js` (script de perf) en la raíz | Baja | Mover a `scripts/` o eliminar |
 | Licencia ISC poco común para portafolio | Baja | Considerar MIT por reconocimiento |
@@ -53,4 +53,4 @@ Los tres enunciados RQS piden un prototipo web funcional por iteraciones. 🟨 I
 
 ## 8. Recomendaciones
 
-Ver `IMPROVEMENT_ROADMAP.md`. P0: ejecutar Jest en CI; commitear el untracking del backup.
+Ver `IMPROVEMENT_ROADMAP.md`. P0 de CI aplicado; siguiente foco: persistencia versionada y cobertura publicada.
