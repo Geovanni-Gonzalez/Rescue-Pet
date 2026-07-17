@@ -33,6 +33,9 @@ jobs:
       - name: Typecheck backend
         run: node backend/node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json
 
+      - name: Test backend
+        run: npm test --prefix backend --workspaces=false -- --runInBand
+
       - name: Typecheck frontend
         run: node frontend/node_modules/typescript/bin/tsc -b frontend/tsconfig.json
 
